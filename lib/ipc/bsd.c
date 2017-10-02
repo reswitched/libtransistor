@@ -66,6 +66,8 @@ result_t bsd_init() {
   return 0;
 }
 
+// def tested via PS
+// impl tested via Mephisto
 int bsd_socket(int domain, int type, int protocol) {
   result_t r;
 
@@ -76,11 +78,11 @@ int bsd_socket(int domain, int type, int protocol) {
   rq.raw_data = raw;
   rq.raw_data_size = sizeof(raw);
 
-  uint32_t response[2]; // fd, errno
+  int32_t response[2]; // fd, errno
   
   ipc_response_fmt_t rs = ipc_default_response_fmt;
   rs.raw_data_size = sizeof(response);
-  rs.raw_data = response;
+  rs.raw_data = (uint32_t*) response;
   
   r = ipc_send(bsd_session, &rq, &rs);
   if(r) {
@@ -88,7 +90,7 @@ int bsd_socket(int domain, int type, int protocol) {
     return -1;
   }
 
-  if(response[1]) {
+  if(response[0] < 0) {
     bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
     bsd_errno = response[1];
     return -1;
@@ -97,10 +99,50 @@ int bsd_socket(int domain, int type, int protocol) {
   return response[0];
 }
 
-int bsd_recv(int socket, void *buffer, size_t length, int flags) {
-  return 0;
+// def tested via PS
+// impl untested
+int bsd_recv(int socket, void *message, size_t length, int flags) {
+  result_t r;
+
+  uint32_t raw[] = {socket, flags};
+
+  ipc_buffer_t buffer;
+  buffer.addr = message;
+  buffer.size = length;
+  buffer.type = 0x22;
+
+  ipc_buffer_t *buffers[] = {&buffer};
+
+  ipc_request_t rq = ipc_default_request;
+  rq.num_buffers = 1;
+  rq.buffers = buffers;
+  rq.request_id = 8;
+  rq.raw_data = raw;
+  rq.raw_data_size = sizeof(raw);
+
+  int32_t response[2]; // ret, errno
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(response);
+  rs.raw_data = (uint32_t*) response;
+
+  r = ipc_send(bsd_session, &rq, &rs);
+  if(r) {
+    bsd_result = r;
+    return -1;
+  }
+
+  if(response[0] < 0) {
+    bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    bsd_errno = response[1];
+    return -1;
+  }
+
+  return response[0];
 }
 
+// def tested via PS
+// impl tested via Mephisto
 int bsd_send(int socket, const void *data, size_t length, int flags) {
   result_t r;
 
@@ -141,18 +183,141 @@ int bsd_send(int socket, const void *data, size_t length, int flags) {
   return response[0];
 }
 
+// def tested via PS
+// impl untested
 int bsd_sendto(int socket, const void *message, size_t length, int flags, const struct sockaddr *dest_addr, socklen_t dest_len) {
-  return 0;
+  result_t r;
+
+  uint32_t raw[] = {socket, flags};
+
+  ipc_buffer_t message_buffer;
+  message_buffer.addr = (void*) message;
+  message_buffer.size = length;
+  message_buffer.type = 0x21; // A+X
+
+  ipc_buffer_t addr_buffer;
+  addr_buffer.addr = (void*) dest_addr;
+  addr_buffer.size = dest_len;
+  addr_buffer.type = 0x21; // A+X
+
+  ipc_buffer_t *buffers[] = {&message_buffer, &addr_buffer};
+
+  ipc_request_t rq = ipc_default_request;
+  rq.num_buffers = 2;
+  rq.buffers = buffers;
+  rq.request_id = 11;
+  rq.raw_data = raw;
+  rq.raw_data_size = sizeof(raw);
+
+  int32_t response[2]; // ret, errno
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(response);
+  rs.raw_data = (uint32_t*) response;
+
+  r = ipc_send(bsd_session, &rq, &rs);
+  if(r) {
+    bsd_result = r;
+    return -1;
+  }
+
+  if(response[0] < 0) {
+    bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    bsd_errno = response[1];
+    return -1;
+  }
+  
+  return response[0];
 }
 
+// def tested via PS
+// impl untested
 int bsd_accept(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len) {
-  return 0;
+  result_t r;
+
+  uint32_t raw[] = {socket};
+
+  ipc_buffer_t addr_buffer;
+  addr_buffer.addr = (void*) address;
+  addr_buffer.size = *address_len;
+  addr_buffer.type = 0x22;
+
+  ipc_buffer_t *buffers[] = {&addr_buffer};
+  
+  ipc_request_t rq = ipc_default_request;
+  rq.num_buffers = 1;
+  rq.buffers = buffers;
+  rq.request_id = 12;
+  rq.raw_data = raw;
+  rq.raw_data_size = sizeof(raw);
+
+  int32_t response[3]; // ret, errno, address_len
+  
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(response);
+  rs.raw_data = (uint32_t*) response;
+
+  r = ipc_send(bsd_session, &rq, &rs);
+  if(r) {
+    bsd_result = r;
+    return -1;
+  }
+
+  if(response[0] < 0) {
+    bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    bsd_errno = response[1];
+    return -1;
+  }
+
+  *address_len = response[2];
+  
+  return response[0];
 }
 
+// def tested via PS
+// impl untested
 int bsd_bind(int socket, const struct sockaddr *address, socklen_t address_len) {
-  return 0;
+  result_t r;
+
+  uint32_t raw[] = {socket};
+
+  ipc_buffer_t buffer;
+  buffer.addr = (void*) address;
+  buffer.size = address_len;
+  buffer.type = 0x21; // A+X
+
+  ipc_buffer_t *buffers[] = {&buffer};
+  
+  ipc_request_t rq = ipc_default_request;
+  rq.num_buffers = 1;
+  rq.buffers = buffers;
+  rq.request_id = 13;
+  rq.raw_data = raw;
+  rq.raw_data_size = sizeof(raw);
+
+  int32_t response[2]; // ret, errno
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(response);
+  rs.raw_data = (uint32_t*) response;
+
+  r = ipc_send(bsd_session, &rq, &rs);
+  if(r) {
+    bsd_result = r;
+    return -1;
+  }
+
+  if(response[0] < 0) {
+    bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    bsd_errno = response[1];
+    return -1;
+  }
+  
+  return response[0];
 }
 
+// def tested via PS
+// impl tested via Mephisto
 int bsd_connect(int socket, const struct sockaddr *address, socklen_t address_len) {
   result_t r;
 
@@ -193,22 +358,54 @@ int bsd_connect(int socket, const struct sockaddr *address, socklen_t address_le
   return response[0];
 }
 
+// def untested
 int bsd_getsockname(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len) {
   return 0;
 }
 
+// def tested via PS
 int bsd_listen(int socket, int backlog) {
-  return 0;
+  result_t r;
+
+  uint32_t raw[] = {socket, backlog};
+  
+  ipc_request_t rq = ipc_default_request;
+  rq.request_id = 18;
+  rq.raw_data = raw;
+  rq.raw_data_size = sizeof(raw);
+
+  int32_t response[2]; // ret, errno
+  
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(response);
+  rs.raw_data = (uint32_t*) response;
+  
+  r = ipc_send(bsd_session, &rq, &rs);
+  if(r) {
+    bsd_result = r;
+    return -1;
+  }
+
+  if(response[0] < 0) {
+    bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    bsd_errno = response[1];
+    return -1;
+  }
+  
+  return response[0];
 }
 
+// def untested
 int bsd_setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len) {
   return 0;
 }
 
+// def untested
 int bsd_shutdown(int socket, int how) {
   return 0;
 }
 
+// def tested via PS
 int bsd_close(int socket) {
   return 0;
 }

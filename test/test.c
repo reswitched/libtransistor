@@ -40,22 +40,62 @@ int main() {
       .s_addr = *(uint32_t*) ip_addr
     }
   };
-  
+
+  /*
   if(bsd_connect(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
     printf("failed to connect socket: 0x%x, %d", bsd_result, bsd_errno);
     bsd_finalize();
     sm_finalize();
     return 1;
+    }*/
+
+  if(bsd_bind(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
+    printf("failed to bind socket: 0x%x, %d", bsd_result, bsd_errno);
+    bsd_finalize();
+    sm_finalize();
+    return 1;
   }
 
+  if(bsd_listen(fd, 20) != 0) {
+    printf("failed to listen on socket: 0x%x, %d", bsd_result, bsd_errno);
+    bsd_finalize();
+    sm_finalize();
+    return 1;
+  }
+
+  struct sockaddr_in remote_addr;
+  socklen_t remote_addr_len = sizeof(remote_addr);
+  
+  int cfd;
+  if((cfd = bsd_accept(fd, (struct sockaddr*) &remote_addr, &remote_addr_len)) < 0) {
+    printf("failed to accept: 0x%x, %d", bsd_result, bsd_errno);
+    bsd_finalize();
+    sm_finalize();
+    return 1;
+  }
+  
   char hello[] = "Hello from libtransistor over a socket!";
   
-  if(bsd_send(fd, hello, sizeof(hello), 0) < 0) {
+  if(bsd_send(cfd, hello, sizeof(hello), 0) < 0) {
     printf("failed to send: 0x%x, %d", bsd_result, bsd_errno);
     bsd_finalize();
     sm_finalize();
     return 1;
   }
+
+  int num;
+  char buffer[512];
+  if((num = bsd_recv(cfd, buffer, sizeof(buffer), 0)) < 0) {
+    printf("failed to recv: 0x%x, %d", bsd_result, bsd_errno);
+    bsd_finalize();
+    sm_finalize();
+    return 1;
+  }
+
+  printf("num recvd: %d", num);
+  buffer[num] = 0;
+
+  printf("received '%s'", buffer);
   
   bsd_finalize();
   sm_finalize();
