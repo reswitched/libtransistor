@@ -10,6 +10,35 @@ ipc_buffer_t null_buffer = {
   .type = 0
 };
 
+ipc_request_t ipc_default_request = {
+  .type = 4,
+  .num_buffers = 0,
+  .buffers = NULL,
+  .is_to_domain = false,
+  .domain_object_id = 0,
+  .request_id = 0,
+  .raw_data = 0,
+  .raw_data_size = 0,
+  .send_pid = false,
+  .num_copy_handles = 0,
+  .num_move_handles = 0,
+  .copy_handles = NULL,
+  .move_handles = NULL
+};
+
+ipc_response_fmt_t ipc_default_response_fmt = {
+  .num_copy_handles = 0,
+  .num_move_handles = 0,
+  .copy_handles = NULL,
+  .move_handles = NULL,
+
+  .raw_data_size = 0,
+  .raw_data = NULL,
+
+  .has_pid = false,
+  .pid = NULL
+};
+
 result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
   int h = 0; // h is for HEAD
   

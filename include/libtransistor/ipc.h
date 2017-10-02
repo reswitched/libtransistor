@@ -38,6 +38,10 @@ typedef struct {
   u32 *pid;
 } ipc_response_fmt_t;
 
+// see ipc.c for actual default values
+extern ipc_request_t      ipc_default_request;
+extern ipc_response_fmt_t ipc_default_response_fmt;
+
 result_t ipc_marshal(u32 *buffer, ipc_request_t *rq);
 result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs);
 result_t ipc_send(session_h session, ipc_request_t *rq, ipc_response_fmt_t *rs);

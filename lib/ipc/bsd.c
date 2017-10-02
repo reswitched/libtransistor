@@ -34,26 +34,21 @@ result_t bsd_init() {
   uint64_t raw[] = {32*1024, 32*1024, 16*1024, 16*1024,
                     0, // server copies pid to here
                     TRANSFER_MEM_SIZE};
-  ipc_request_t rq;
+  
+  ipc_request_t rq = ipc_default_request;
   rq.type = 4;
-  rq.num_buffers = 0;
-  rq.is_to_domain = false;
   rq.request_id = 0;
   rq.raw_data = (uint32_t*) raw;
   rq.raw_data_size = sizeof(raw)/sizeof(uint32_t);
   rq.send_pid = true;
   rq.num_copy_handles = 1;
-  rq.num_move_handles = 0;
   rq.copy_handles = &transfer_mem;
 
   uint32_t response[1];
   
-  ipc_response_fmt_t rs;
-  rs.num_copy_handles = 0;
-  rs.num_move_handles = 0;
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
   rs.raw_data_size = 1;
   rs.raw_data = response;
-  rs.has_pid = false;
   
   r = ipc_send(bsd_session, &rq, &rs); // not working under mephisto
   
@@ -76,25 +71,16 @@ int bsd_socket(int domain, int type, int protocol) {
 
   uint32_t raw[] = {domain, type, protocol};
   
-  ipc_request_t rq;
-  rq.type = 4;
-  rq.num_buffers = 0;
-  rq.is_to_domain = false;
+  ipc_request_t rq = ipc_default_request;
   rq.request_id = 2;
   rq.raw_data = raw;
   rq.raw_data_size = 3;
-  rq.send_pid = false;
-  rq.num_copy_handles = 0;
-  rq.num_move_handles = 0;
 
   uint32_t response[2]; // fd, errno
   
-  ipc_response_fmt_t rs;
-  rs.num_copy_handles = 0;
-  rs.num_move_handles = 0;
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
   rs.raw_data_size = 2;
   rs.raw_data = response;
-  rs.has_pid = false;
   
   r = ipc_send(bsd_session, &rq, &rs);
   if(r) {
@@ -127,26 +113,18 @@ int bsd_send(int socket, const void *data, size_t length, int flags) {
 
   ipc_buffer_t *buffers[] = {&buffer};
   
-  ipc_request_t rq;
-  rq.type = 4;
+  ipc_request_t rq = ipc_default_request;
   rq.num_buffers = 1;
   rq.buffers = buffers;
-  rq.is_to_domain = false;
   rq.request_id = 10;
   rq.raw_data = raw;
   rq.raw_data_size = sizeof(raw) / sizeof(uint32_t);
-  rq.send_pid = false;
-  rq.num_copy_handles = 0;
-  rq.num_move_handles = 0;
 
   int32_t response[2]; // ret, errno
 
-  ipc_response_fmt_t rs;
-  rs.num_copy_handles = 0;
-  rs.num_move_handles = 0;
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
   rs.raw_data_size = 2;
-  rs.raw_data = response;
-  rs.has_pid = false;
+  rs.raw_data = (uint32_t*) response;
 
   r = ipc_send(bsd_session, &rq, &rs);
   if(r) {
@@ -187,26 +165,18 @@ int bsd_connect(int socket, const struct sockaddr *address, socklen_t address_le
 
   ipc_buffer_t *buffers[] = {&buffer};
   
-  ipc_request_t rq;
-  rq.type = 4;
+  ipc_request_t rq = ipc_default_request;
   rq.num_buffers = 1;
   rq.buffers = buffers;
-  rq.is_to_domain = false;
   rq.request_id = 14;
   rq.raw_data = raw;
   rq.raw_data_size = 1;
-  rq.send_pid = false;
-  rq.num_copy_handles = 0;
-  rq.num_move_handles = 0;
 
   uint32_t response[2]; // ret, errno
 
-  ipc_response_fmt_t rs;
-  rs.num_copy_handles = 0;
-  rs.num_move_handles = 0;
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
   rs.raw_data_size = 2;
   rs.raw_data = response;
-  rs.has_pid = false;
 
   r = ipc_send(bsd_session, &rq, &rs);
   if(r) {

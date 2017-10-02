@@ -44,23 +44,14 @@ result_t sm_get_service(session_h *session, char *name) {
     return LIBTRANSISTOR_ERR_SM_SERVICE_NAME_TOO_LONG;
   }
   
-  ipc_request_t rq;
-  rq.type = 4;
-  rq.num_buffers = 0;
-  rq.is_to_domain = false;
+  ipc_request_t rq = ipc_default_request;
   rq.request_id = 1;
   rq.raw_data = (u32*) &service_name;
   rq.raw_data_size = 2;
-  rq.send_pid = false;
-  rq.num_copy_handles = 0;
-  rq.num_move_handles = 0;
 
-  ipc_response_fmt_t rs;
-  rs.num_copy_handles = 0;
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
   rs.num_move_handles = 1;
   rs.move_handles = session;
-  rs.raw_data_size = 0;
-  rs.has_pid = false;
 
   printf("sending to 0x%x", sm_session);
   return ipc_send(sm_session, &rq, &rs);
