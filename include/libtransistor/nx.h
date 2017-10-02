@@ -15,6 +15,7 @@ extern "C" {
 #include<libtransistor/tls.h>
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
+#include<libtransistor/ipc/bsd.h>
   
 #ifdef __cplusplus
 }

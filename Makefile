@@ -6,7 +6,7 @@ CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu 
 AS_FLAGS := -arch=aarch64
 PYTHON2 := python2
 
-libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/lib/util.o build/lib/ipc/sm.o
+libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/lib/util.o build/lib/ipc/sm.o build/lib/ipc/bsd.o
 
 .SUFFIXES: # disable built-in rules
 

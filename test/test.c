@@ -7,22 +7,32 @@ int calc() {
 }
 
 int main() {
-  log_string("Hello from log_string! This was linked with lld!", 0x200);
-  return 2;
-  printf("Hello from printf!");
-  return 2;
-
-  if(sm_init()) {
-    printf("failed to init sm");
-    svcExitThread();
+  for(int i = 0; i < 10; i++) {
+    if(sm_init() != RESULT_OK) {
+      if(i == 9) {
+        printf("failed to init sm");
+        return 1;
+      }
+    } else {
+      break;
+    }
   }
 
-  session_h service;
-  if(sm_get_service(&service, "bsd:u")) {
-    printf("failed to get service");
-    svcExitThread();
+  result_t r;
+  if((r = bsd_init()) != RESULT_OK) {
+    printf("failed to init bsd: 0x%x", r);
+    sm_finalize();
+    return 1;
   }
-    
-  printf("got back handle 0x%x", service);
-  svcExitThread();
+
+  int fd = bsd_socket(2, 1, 6); // AF_INET, SOCK_STREAM, PROTO_TCP
+  if(fd < 0) {
+    printf("failed to create socket: 0x%x, %d", bsd_result, bsd_errno);
+  }
+
+  printf("got socket %d", fd);
+  
+  bsd_finalize();
+  sm_finalize();
+  return 0;
 }

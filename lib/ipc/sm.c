@@ -2,6 +2,8 @@
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
+#include<libtransistor/util.h>
+#include<libtransistor/ipc/sm.h>
 
 static session_h sm_session = 0;
 
@@ -19,7 +21,12 @@ static u64 str2u64(char *str) {
 }
 
 result_t sm_init() {
+  printf("initializing sm");
   return svcConnectToNamedPort(&sm_session, "sm:");
+}
+
+void sm_finalize() {
+  svcCloseHandle(sm_session);
 }
 
 result_t sm_get_service(session_h *session, char *name) {
@@ -55,5 +62,6 @@ result_t sm_get_service(session_h *session, char *name) {
   rs.raw_data_size = 0;
   rs.has_pid = false;
 
+  printf("sending to 0x%x", sm_session);
   return ipc_send(sm_session, &rq, &rs);
 }

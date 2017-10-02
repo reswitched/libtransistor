@@ -102,3 +102,11 @@ int printf(char const *fmt, ...) {
   va_end(vl);
   return ret;
 }
+
+void *memset(void *s, int c, size_t n) {
+  uint8_t *buf = s;
+  for(int i = 0; i < n; i++) {
+    buf[i] = c;
+  }
+  return s;
+}
