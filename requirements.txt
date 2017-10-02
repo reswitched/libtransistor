@@ -1,1 +1,2 @@
 pyelftools>=0.24
+lz4>=0.10
