@@ -16,7 +16,7 @@ typedef struct {
   u32 domain_object_id;
   u32 request_id;
   u32 *raw_data;
-  u64 raw_data_size; // in words
+  u64 raw_data_size; // in BYTES
   bool send_pid;
   u8 num_copy_handles;
   u8 num_move_handles;
@@ -31,7 +31,7 @@ typedef struct {
   handle_t *copy_handles;
   handle_t *move_handles;
 
-  int raw_data_size; // in words
+  int raw_data_size; // in BYTES
   u32 *raw_data;
 
   bool has_pid;

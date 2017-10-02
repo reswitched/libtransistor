@@ -131,7 +131,12 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
     c_descriptor_flags = num_c_descriptors + 2;
   }
 
-  int raw_data_section_size = rq->raw_data_size + 4 + 4;
+  if(rq->raw_data_size & 3) {
+    return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
+  }
+  
+  int raw_data_words = rq->raw_data_size / sizeof(uint32_t);
+  int raw_data_section_size = raw_data_words + 4 + 4;
   int handle_descriptor_enabled = rq->num_copy_handles || rq->num_move_handles || rq->send_pid;
 
   // header field 2
@@ -220,7 +225,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
   buffer[h++] = rq->request_id;
   buffer[h++] = 0;
   
-  for(int i = 0; i < rq->raw_data_size; i++) {
+  for(int i = 0; i < raw_data_words; i++) {
     buffer[h++] = rq->raw_data[i];
   }
 
@@ -262,6 +267,12 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
 }
 
 result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs) {
+  if(rs->raw_data_size & 3) {
+    return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
+  }
+
+  int raw_data_words = rs->raw_data_size / sizeof(uint32_t);
+  
   int h = 0; // h for HEAD
 
   u32 header0 = buffer[h++];
@@ -328,9 +339,9 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs) {
 
   u32 *raw_data = buffer + h;
   
-  if((raw_data_section_size - 8) != rs->raw_data_size) {
+  if((raw_data_section_size - 8) != raw_data_words) {
     hexnum(raw_data_section_size);
-    printf("raw data size doesn't match (0x%x != 0x%x)", raw_data_section_size - 8, rs->raw_data_size);
+    printf("raw data word count doesn't match (0x%x != 0x%x)", raw_data_section_size - 8, raw_data_words);
     return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
   }
   
@@ -348,7 +359,7 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs) {
   
   for(int i = 0; i < rs->num_copy_handles; i++) { rs->copy_handles[i] = copy_handles[i]; }
   for(int i = 0; i < rs->num_move_handles; i++) { rs->move_handles[i] = move_handles[i]; }
-  for(int i = 0; i < rs->raw_data_size; i++) {
+  for(int i = 0; i < raw_data_words; i++) {
     rs->raw_data[i] = raw_data[i];
   }
   

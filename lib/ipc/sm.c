@@ -47,7 +47,7 @@ result_t sm_get_service(session_h *session, char *name) {
   ipc_request_t rq = ipc_default_request;
   rq.request_id = 1;
   rq.raw_data = (u32*) &service_name;
-  rq.raw_data_size = 2;
+  rq.raw_data_size = sizeof(service_name);
 
   ipc_response_fmt_t rs = ipc_default_response_fmt;
   rs.num_move_handles = 1;

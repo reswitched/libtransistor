@@ -39,7 +39,7 @@ result_t bsd_init() {
   rq.type = 4;
   rq.request_id = 0;
   rq.raw_data = (uint32_t*) raw;
-  rq.raw_data_size = sizeof(raw)/sizeof(uint32_t);
+  rq.raw_data_size = sizeof(raw);
   rq.send_pid = true;
   rq.num_copy_handles = 1;
   rq.copy_handles = &transfer_mem;
@@ -47,7 +47,7 @@ result_t bsd_init() {
   uint32_t response[1];
   
   ipc_response_fmt_t rs = ipc_default_response_fmt;
-  rs.raw_data_size = 1;
+  rs.raw_data_size = sizeof(response);
   rs.raw_data = response;
   
   r = ipc_send(bsd_session, &rq, &rs); // not working under mephisto
@@ -74,12 +74,12 @@ int bsd_socket(int domain, int type, int protocol) {
   ipc_request_t rq = ipc_default_request;
   rq.request_id = 2;
   rq.raw_data = raw;
-  rq.raw_data_size = 3;
+  rq.raw_data_size = sizeof(raw);
 
   uint32_t response[2]; // fd, errno
   
   ipc_response_fmt_t rs = ipc_default_response_fmt;
-  rs.raw_data_size = 2;
+  rs.raw_data_size = sizeof(response);
   rs.raw_data = response;
   
   r = ipc_send(bsd_session, &rq, &rs);
@@ -118,12 +118,12 @@ int bsd_send(int socket, const void *data, size_t length, int flags) {
   rq.buffers = buffers;
   rq.request_id = 10;
   rq.raw_data = raw;
-  rq.raw_data_size = sizeof(raw) / sizeof(uint32_t);
+  rq.raw_data_size = sizeof(raw);
 
   int32_t response[2]; // ret, errno
 
   ipc_response_fmt_t rs = ipc_default_response_fmt;
-  rs.raw_data_size = 2;
+  rs.raw_data_size = sizeof(response);
   rs.raw_data = (uint32_t*) response;
 
   r = ipc_send(bsd_session, &rq, &rs);
@@ -170,12 +170,12 @@ int bsd_connect(int socket, const struct sockaddr *address, socklen_t address_le
   rq.buffers = buffers;
   rq.request_id = 14;
   rq.raw_data = raw;
-  rq.raw_data_size = 1;
+  rq.raw_data_size = sizeof(raw);
 
   uint32_t response[2]; // ret, errno
 
   ipc_response_fmt_t rs = ipc_default_response_fmt;
-  rs.raw_data_size = 2;
+  rs.raw_data_size = sizeof(response);
   rs.raw_data = response;
 
   r = ipc_send(bsd_session, &rq, &rs);
