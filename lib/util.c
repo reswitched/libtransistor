@@ -14,7 +14,7 @@ size_t log_length = 0;
 char log_buffer[0x10000];
 
 int log_string(char *string, size_t len) {
-  //svcOutputDebugString(string, len);
+  svcOutputDebugString(string, len);
   for(int i = 0; i < len; i++) {
     if(string[i] == 0) { break; }
     log_buffer[log_length++] = string[i];
