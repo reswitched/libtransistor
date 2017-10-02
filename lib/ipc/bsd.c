@@ -6,7 +6,7 @@
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 
-#define TRANSFER_MEM_SIZE 64*1024
+#define TRANSFER_MEM_SIZE 256*1024
 
 result_t bsd_result;
 int      bsd_errno;
@@ -31,7 +31,9 @@ result_t bsd_init() {
   if(r) { return r; }
   printf("opened transfer mem 0x%x", transfer_mem);
 
-  uint64_t raw[] = {256*1024, 256*1024, 256*1024, 256*1024, 0, TRANSFER_MEM_SIZE};
+  uint64_t raw[] = {32*1024, 32*1024, 16*1024, 16*1024,
+                    0, // server copies pid to here
+                    TRANSFER_MEM_SIZE};
   ipc_request_t rq;
   rq.type = 4;
   rq.num_buffers = 0;
@@ -53,7 +55,7 @@ result_t bsd_init() {
   rs.raw_data = response;
   rs.has_pid = false;
   
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_session, &rq, &rs); // not working under mephisto
   
   if(r) {
     svcCloseHandle(transfer_mem);
@@ -109,47 +111,135 @@ int bsd_socket(int domain, int type, int protocol) {
   return response[0];
 }
 
-result_t bsd_recv(int socket, void *buffer, size_t length, int flags) {
+int bsd_recv(int socket, void *buffer, size_t length, int flags) {
   return 0;
 }
 
-result_t bsd_send(int socket, const void *buffer, size_t length, int flags) {
+int bsd_send(int socket, const void *data, size_t length, int flags) {
+  result_t r;
+
+  uint32_t raw[] = {socket, flags};
+
+  ipc_buffer_t buffer;
+  buffer.addr = (void*) data;
+  buffer.size = length;
+  buffer.type = 0x21; // A+X
+
+  ipc_buffer_t *buffers[] = {&buffer};
+  
+  ipc_request_t rq;
+  rq.type = 4;
+  rq.num_buffers = 1;
+  rq.buffers = buffers;
+  rq.is_to_domain = false;
+  rq.request_id = 10;
+  rq.raw_data = raw;
+  rq.raw_data_size = sizeof(raw) / sizeof(uint32_t);
+  rq.send_pid = false;
+  rq.num_copy_handles = 0;
+  rq.num_move_handles = 0;
+
+  int32_t response[2]; // ret, errno
+
+  ipc_response_fmt_t rs;
+  rs.num_copy_handles = 0;
+  rs.num_move_handles = 0;
+  rs.raw_data_size = 2;
+  rs.raw_data = response;
+  rs.has_pid = false;
+
+  r = ipc_send(bsd_session, &rq, &rs);
+  if(r) {
+    bsd_result = r;
+    return -1;
+  }
+
+  if(response[0] < 0) {
+    bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    bsd_errno = response[1];
+    return -1;
+  }
+  
+  return response[0];
+}
+
+int bsd_sendto(int socket, const void *message, size_t length, int flags, const struct sockaddr *dest_addr, socklen_t dest_len) {
   return 0;
 }
 
-result_t bsd_sendto(int socket, const void *message, size_t length, int flags, const struct sockaddr *dest_addr, socklen_t dest_len) {
+int bsd_accept(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len) {
   return 0;
 }
 
-result_t bsd_accept(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len) {
+int bsd_bind(int socket, const struct sockaddr *address, socklen_t address_len) {
   return 0;
 }
 
-result_t bsd_bind(int socket, const struct sockaddr *address, socklen_t address_len) {
+int bsd_connect(int socket, const struct sockaddr *address, socklen_t address_len) {
+  result_t r;
+
+  uint32_t raw[] = {socket};
+
+  ipc_buffer_t buffer;
+  buffer.addr = (void*) address;
+  buffer.size = address_len;
+  buffer.type = 0x21; // A+X
+
+  ipc_buffer_t *buffers[] = {&buffer};
+  
+  ipc_request_t rq;
+  rq.type = 4;
+  rq.num_buffers = 1;
+  rq.buffers = buffers;
+  rq.is_to_domain = false;
+  rq.request_id = 14;
+  rq.raw_data = raw;
+  rq.raw_data_size = 1;
+  rq.send_pid = false;
+  rq.num_copy_handles = 0;
+  rq.num_move_handles = 0;
+
+  uint32_t response[2]; // ret, errno
+
+  ipc_response_fmt_t rs;
+  rs.num_copy_handles = 0;
+  rs.num_move_handles = 0;
+  rs.raw_data_size = 2;
+  rs.raw_data = response;
+  rs.has_pid = false;
+
+  r = ipc_send(bsd_session, &rq, &rs);
+  if(r) {
+    bsd_result = r;
+    return -1;
+  }
+
+  if(response[0] != 0) {
+    bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    bsd_errno = response[1];
+    return -1;
+  }
+  
+  return response[0];
+}
+
+int bsd_getsockname(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len) {
   return 0;
 }
 
-result_t bsd_connect(int socket, const struct sockaddr *address, socklen_t address_len) {
+int bsd_listen(int socket, int backlog) {
   return 0;
 }
 
-result_t bsd_getsockname(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len) {
+int bsd_setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len) {
   return 0;
 }
 
-result_t bsd_listen(int socket, int backlog) {
+int bsd_shutdown(int socket, int how) {
   return 0;
 }
 
-result_t bsd_setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len) {
-  return 0;
-}
-
-result_t bsd_shutdown(int socket, int how) {
-  return 0;
-}
-
-result_t bsd_close(int socket) {
+int bsd_close(int socket) {
   return 0;
 }
 

@@ -110,3 +110,12 @@ void *memset(void *s, int c, size_t n) {
   }
   return s;
 }
+
+void *memcpy(void *dest, const void *src, size_t n) {
+  uint8_t *dest8 = dest;
+  const uint8_t *src8 = src;
+  for(int i = 0; i < n; i++) {
+    dest8[i] = src8[i];
+  }
+  return dest;
+}

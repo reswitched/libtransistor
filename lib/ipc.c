@@ -4,6 +4,12 @@
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 
+ipc_buffer_t null_buffer = {
+  .addr = 0,
+  .size = 0,
+  .type = 0
+};
+
 result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
   int h = 0; // h is for HEAD
   
@@ -18,10 +24,11 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
   // group buffers by descriptor type
   for(int i = 0; i < rq->num_buffers; i++) {
     ipc_buffer_t *buffer = rq->buffers[i];
-    if(!(buffer->type & 0x20)) {
-      int direction = (buffer->type & 0b0011) >> 0; // in or out (ax or bc)
-      int family    = (buffer->type & 0b1100) >> 2; // ab or xc
 
+    int direction = (buffer->type & 0b0011) >> 0; // in or out (ax or bc)
+    int family    = (buffer->type & 0b1100) >> 2; // ab or xc
+    
+    if(!(buffer->type & 0x20)) {
       ipc_buffer_t **list;
       int *count;
       
@@ -56,8 +63,23 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
 
       // add the buffer to the list
       list[(*count)++] = buffer;
-    } else { // flag 0x20 is complicated
-      return LIBTRANSISTOR_ERR_UNSUPPORTED_BUFFER_TYPE;
+    } else { // flag 0x20 set
+      // this isn't entirely correct. the nintendo code is kinda complicated though
+      if(buffer->type == 0x21) { // IN (ax)
+        if(num_a_descriptors >= 16 || num_x_descriptors >= 16) {
+          return LIBTRANSISTOR_ERR_TOO_MANY_BUFFERS;
+        }
+        a_descriptors[num_a_descriptors++] = buffer;
+        x_descriptors[num_x_descriptors++] = &null_buffer;
+      } else if(buffer->type == 0x22) { // OUT (bc)
+        if(num_b_descriptors >= 16 || num_c_descriptors >= 16) {
+          return LIBTRANSISTOR_ERR_TOO_MANY_BUFFERS;
+        }
+        b_descriptors[num_b_descriptors++] = buffer;
+        c_descriptors[num_c_descriptors++] = &null_buffer;
+      } else {
+        return LIBTRANSISTOR_ERR_UNSUPPORTED_BUFFER_TYPE;
+      }
     }
   }
 
@@ -113,7 +135,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
     int counter = i;
     ipc_buffer_t *buf = x_descriptors[i];
 
-    if((u64) buf->addr >> 38) {
+    if((u64) buf->addr >> 39) {
       return LIBTRANSISTOR_ERR_INVALID_BUFFER_ADDRESS;
     }
 
@@ -134,7 +156,8 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
   for(int i = 0; i < num_a_descriptors + num_b_descriptors; i++) {
     ipc_buffer_t *buf = ((i < num_a_descriptors) ? a_descriptors : b_descriptors)[i];
 
-    if((u64) buf->addr >> 38) {
+    if((u64) buf->addr >> 39) {
+      printf("a descriptor addr too long: %p", buf->addr);
       return LIBTRANSISTOR_ERR_INVALID_BUFFER_ADDRESS;
     }
 
@@ -145,7 +168,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
     buffer[h++] = buf->size & 0xFFFFFFFF;
     buffer[h++] = (u64) buf->addr & 0xFFFFFFFF;
 
-    if(buf->type >> 6) {
+    if(buf->type >> 8) {
       return LIBTRANSISTOR_ERR_INVALID_PROTECTION;
     }
     
