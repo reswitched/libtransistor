@@ -43,6 +43,7 @@ NORELOC_DYNAMIC_END_ = .;
   .bss : ALIGN(0x1000) {
 NORELOC_BSS_START_ = .;
     *(.bss)
+    *(COMMON)
 NORELOC_BSS_END_ = .;
   }
 
