@@ -7,18 +7,14 @@ int calc() {
 }
 
 int main() {
-  for(int i = 0; i < 10; i++) {
-    if(sm_init() != RESULT_OK) {
-      if(i == 9) {
-        printf("failed to init sm");
-        return 1;
-      }
-    } else {
-      break;
-    }
+  result_t r;
+  
+  svcSleepThread(100000000);
+  if((r = sm_init()) != RESULT_OK) {
+    printf("failed to init sm: 0x%x", r);
+    return 1;
   }
 
-  result_t r;
   if((r = bsd_init()) != RESULT_OK) {
     printf("failed to init bsd: 0x%x", r);
     sm_finalize();
