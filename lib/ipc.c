@@ -203,7 +203,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq) {
   // c descriptor u16 length list
   for(int i = 0; i < num_c_descriptors; i++) {
     ipc_buffer_t *buf = c_descriptors[i];
-    if(buf->type & 0x10) { // u16 length list flag
+    if(!(buf->type & 0x10)) { // u16 length list flag
       if(buf->size >> 16) {
         return LIBTRANSISTOR_ERR_INVALID_BUFFER_SIZE;
       }
