@@ -50,7 +50,7 @@ int main() {
 
   char hello[] = "Hello from libtransistor over a socket!";
   
-  if(bsd_send(fd, hello, sizeof(hello)) < 0) {
+  if(bsd_send(fd, hello, sizeof(hello), 0) < 0) {
     printf("failed to send: 0x%x, %d", bsd_result, bsd_errno);
     bsd_finalize();
     sm_finalize();
