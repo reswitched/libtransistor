@@ -15,23 +15,25 @@ ipc_request_t ipc_default_request = {
   .num_buffers = 0,
   .buffers = NULL,
   .is_to_domain = false,
-  .domain_object_id = 0,
-  .request_id = 0,
   .raw_data = 0,
   .raw_data_size = 0,
   .send_pid = false,
   .num_copy_handles = 0,
   .num_move_handles = 0,
+  .num_objects = 0,
   .copy_handles = NULL,
-  .move_handles = NULL
+  .move_handles = NULL,
+  .objects = NULL
 };
 
 ipc_response_fmt_t ipc_default_response_fmt = {
   .num_copy_handles = 0,
   .num_move_handles = 0,
+  .num_objects = 0,
   .copy_handles = NULL,
   .move_handles = NULL,
-
+  .objects = NULL,
+  
   .raw_data_size = 0,
   .raw_data = NULL,
 
@@ -366,10 +368,10 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs) {
   return RESULT_OK;
 }
 
-result_t ipc_send(session_h session, ipc_request_t *rq, ipc_response_fmt_t *rs) {
+result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs) {
   result_t r;
   u32 *tls = get_tls();
-  r = ipc_marshal(tls, rq); if(r) { return r; }
+  r = ipc_marshal(tls, rq, object); if(r) { return r; }
   hexdump(tls, 0x40);  
   r = svcSendSyncRequest(session); if(r) { return r; }
   hexdump(tls, 0x40);
