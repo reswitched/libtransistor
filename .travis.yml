@@ -1,0 +1,18 @@
+dist: trusty
+sudo: required
+language: python
+python:
+    - "2.7"
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-trusty-5.0
+    packages:
+      - clang-5.0
+      - llvm-5.0
+      - llvm-5.0-dev
+      - lld-5.0
+before_script: # ln -s /usr/bin/ld.lld-5.0 /usr/bin/ld.lld
+script:  make LD=ld.lld-5.0
