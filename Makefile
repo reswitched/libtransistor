@@ -6,11 +6,13 @@ CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu 
 AS_FLAGS := -arch=aarch64
 PYTHON2 := python2
 
+libtransistor_TESTS := bsd
+
 libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/lib/util.o build/lib/ipc/sm.o build/lib/ipc/bsd.o
 
 .SUFFIXES: # disable built-in rules
 
-all: build/test/libtransistor_test.nro build/test/libtransistor_test.nso
+all: build/lib/libtransistor.nro.a build/lib/libtransistor.nso.a $(addprefix build/test/test_,$(addsuffix .nro,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso,$(libtransistor_TESTS)))
 
 build/test/%.o: test/%.c
 	mkdir -p $(@D)
@@ -32,11 +34,11 @@ build/test/%.nso: build/test/%.nso.so
 	mkdir -p $(@D)
 	$(PYTHON2) ./tools/elf2nxo.py $< $@ nso
 
-build/test/libtransistor_test.nro.so: build/lib/libtransistor.nro.a build/test/test.o
+build/test/%.nro.so: build/lib/libtransistor.nro.a build/test/%.o
 	mkdir -p $(@D)
 	$(LD) $(LD_FLAGS) -o $@ --whole-archive $+
 
-build/test/libtransistor_test.nso.so: build/lib/libtransistor.nso.a build/test/test.o
+build/test/%.nso.so: build/lib/libtransistor.nso.a build/test/%.o
 	mkdir -p $(@D)
 	$(LD) $(LD_FLAGS) -o $@ --whole-archive $+
 

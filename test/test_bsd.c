@@ -1,15 +1,9 @@
 #include<libtransistor/nx.h>
 
-int foo = 88;
-
-int calc() {
-  return foo;
-}
-
 int main() {
-  result_t r;
-  
   svcSleepThread(100000000);
+  
+  result_t r;
   if((r = sm_init()) != RESULT_OK) {
     printf("failed to init sm: 0x%x", r);
     return 1;
