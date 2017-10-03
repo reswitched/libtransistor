@@ -1,6 +1,6 @@
 #pragma once
 
-#define LIBTRANSISTOR_RESULT(code) ((code << 8) | 0xDD)
+#define LIBTRANSISTOR_RESULT(code) (((code) << 8) | 0xDD)
 
 // Misc
 #define LIBTRANSISTOR_ERR_UNSPECIFIED LIBTRANSISTOR_RESULT(1)
