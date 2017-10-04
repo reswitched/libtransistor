@@ -407,7 +407,34 @@ int bsd_shutdown(int socket, int how) {
 
 // def tested via PS
 int bsd_close(int socket) {
-  return 0;
+  result_t r;
+
+  uint32_t raw[] = {socket};
+  
+  ipc_request_t rq = ipc_default_request;
+  rq.request_id = 26;
+  rq.raw_data = raw;
+  rq.raw_data_size = sizeof(raw);
+
+  int32_t response[2]; // ret, errno
+  
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(response);
+  rs.raw_data = (uint32_t*) response;
+  
+  r = ipc_send(bsd_session, &rq, &rs);
+  if(r) {
+    bsd_result = r;
+    return -1;
+  }
+
+  if(response[0] < 0) {
+    bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    bsd_errno = response[1];
+    return -1;
+  }
+  
+  return response[0];
 }
 
 void bsd_finalize() {
