@@ -5,6 +5,8 @@ LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined -T
 CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -I include/
 AS_FLAGS := -arch=aarch64
 PYTHON2 := python2
+MEPHISTO := ctu
+RUBY := ruby
 
 libtransistor_TESTS := bsd
 
@@ -13,6 +15,11 @@ libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/l
 .SUFFIXES: # disable built-in rules
 
 all: build/lib/libtransistor.nro.a build/lib/libtransistor.nso.a $(addprefix build/test/test_,$(addsuffix .nro,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nro.so,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso.so,$(libtransistor_TESTS)))
+
+run_tests: run_bsd_test
+
+run_bsd_test: build/test/test_bsd.nro test_helpers/bsd.rb
+	$(RUBY) test_helpers/bsd.rb $(MEPHISTO)
 
 build/test/%.o: test/%.c
 	mkdir -p $(@D)

@@ -61,12 +61,18 @@ int main() {
     printf("failed to recv: 0x%x, %d", bsd_result, bsd_errno);
     goto err;
   }
-
-  if(bsd_close(cfd) < 0) {
-    printf("failed to close: 0x%x, %d", bsd_result, bsd_errno);
+  response[num_bytes] = 0;
+  if(num_bytes != sizeof(expected_response)) {
+    printf("got back wrong response: %s", response);
     goto err;
   }
-
+  for(int i = 0; i < num_bytes; i++) {
+    if(response[i] != expected_response[i]) {
+      printf("got back wrong response: %s", response);
+      goto err;
+    }
+  }
+  
   // server socket test
   // socket, bind, listen, accept, send, recv, close
   int sfd = bsd_socket(2, 1, 6); // AF_INET, SOCK_STREAM, PROTO_TCP
@@ -85,6 +91,14 @@ int main() {
     goto err;
   }
 
+  // don't close client test's socket until we're all set up.
+  // closing the client test's socket signals to the test helper
+  // that we're listening.
+  if(bsd_close(cfd) < 0) {
+    printf("failed to close: 0x%x, %d", bsd_result, bsd_errno);
+    goto err;
+  }
+  
   struct sockaddr_in remote_addr;
   socklen_t remote_addr_len = sizeof(remote_addr);
   
