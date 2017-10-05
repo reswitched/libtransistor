@@ -1,9 +1,6 @@
 dist: trusty
+language: c
 sudo: required
-language: python
-python:
-    - "2.7"
-
 addons:
   apt:
     sources:
@@ -14,5 +11,17 @@ addons:
       - llvm-5.0
       - llvm-5.0-dev
       - lld-5.0
-before_script: # ln -s /usr/bin/ld.lld-5.0 /usr/bin/ld.lld
-script:  make LD=ld.lld-5.0
+      - liblz4-dev
+before_script:
+  - git clone https://github.com/reswitched/unicorn.git
+  - cd unicorn
+  - UNICORN_ARCHS="aarch64" ./make.sh
+  - sudo ./make.sh install
+  - cd ..
+  - git clone https://github.com/reswitched/Mephisto.git
+  - cd Mephisto
+  - sudo pip2 install -r  requirements.txt
+  - make
+  - cd ..
+  - sudo pip2 install -r  requirements.txt
+script:  make LD=ld.lld-5.0 && make run_tests MEPHISTO=./Mephisto/ctu
