@@ -1,6 +1,6 @@
 dist: trusty
 language: c
-sudo:required
+sudo: required
 addons:
   apt:
     sources:
@@ -20,8 +20,8 @@ before_script:
   - cd ..
   - git clone https://github.com/reswitched/Mephisto.git
   - cd Mephisto
-  - sudo pip2 install -r requirements.txt
+  - sudo pip2 install -r  requirements.txt
   - make
   - cd ..
-  - sudo pip2 install -r requirements.txt
+  - sudo pip2 install -r  requirements.txt
 script:  make LD=ld.lld-5.0 && make run_tests MEPHISTO=./Mephisto/ctu
