@@ -11,20 +11,20 @@
 result_t bsd_result;
 int      bsd_errno;
 
-static session_h bsd_session = 0;
+static ipc_object_t bsd_object;
 
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
 static transfer_memory_h transfer_mem;
 
 result_t bsd_init() {
   result_t r;
-  r = sm_get_service(&bsd_session, "bsd:u");
+  r = sm_get_service(&bsd_object, "bsd:u");
   if(r) {
-    r = sm_get_service(&bsd_session, "bsd:s");
+    r = sm_get_service(&bsd_object, "bsd:s");
     if(r) { return r; }
   }
 
-  printf("opened bsd: 0x%x", bsd_session);
+  printf("opened bsd: 0x%x", bsd_object);
   printf("transfer mem at %p", transfer_buffer);
   
   r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
@@ -50,7 +50,7 @@ result_t bsd_init() {
   rs.raw_data_size = sizeof(response);
   rs.raw_data = response;
   
-  r = ipc_send(bsd_session, &rq, &rs); // not working under mephisto
+  r = ipc_send(bsd_object, &rq, &rs); // not working under mephisto
   
   if(r) {
     svcCloseHandle(transfer_mem);
@@ -84,7 +84,7 @@ int bsd_socket(int domain, int type, int protocol) {
   rs.raw_data_size = sizeof(response);
   rs.raw_data = (uint32_t*) response;
   
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_object, &rq, &rs);
   if(r) {
     bsd_result = r;
     return -1;
@@ -126,7 +126,7 @@ int bsd_recv(int socket, void *message, size_t length, int flags) {
   rs.raw_data_size = sizeof(response);
   rs.raw_data = (uint32_t*) response;
 
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_object, &rq, &rs);
   if(r) {
     bsd_result = r;
     return -1;
@@ -168,7 +168,7 @@ int bsd_send(int socket, const void *data, size_t length, int flags) {
   rs.raw_data_size = sizeof(response);
   rs.raw_data = (uint32_t*) response;
 
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_object, &rq, &rs);
   if(r) {
     bsd_result = r;
     return -1;
@@ -215,7 +215,7 @@ int bsd_sendto(int socket, const void *message, size_t length, int flags, const 
   rs.raw_data_size = sizeof(response);
   rs.raw_data = (uint32_t*) response;
 
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_object, &rq, &rs);
   if(r) {
     bsd_result = r;
     return -1;
@@ -257,7 +257,7 @@ int bsd_accept(int socket, struct sockaddr *restrict address, socklen_t *restric
   rs.raw_data_size = sizeof(response);
   rs.raw_data = (uint32_t*) response;
 
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_object, &rq, &rs);
   if(r) {
     bsd_result = r;
     return -1;
@@ -301,7 +301,7 @@ int bsd_bind(int socket, const struct sockaddr *address, socklen_t address_len) 
   rs.raw_data_size = sizeof(response);
   rs.raw_data = (uint32_t*) response;
 
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_object, &rq, &rs);
   if(r) {
     bsd_result = r;
     return -1;
@@ -343,7 +343,7 @@ int bsd_connect(int socket, const struct sockaddr *address, socklen_t address_le
   rs.raw_data_size = sizeof(response);
   rs.raw_data = response;
 
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_object, &rq, &rs);
   if(r) {
     bsd_result = r;
     return -1;
@@ -380,7 +380,7 @@ int bsd_listen(int socket, int backlog) {
   rs.raw_data_size = sizeof(response);
   rs.raw_data = (uint32_t*) response;
   
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_object, &rq, &rs);
   if(r) {
     bsd_result = r;
     return -1;
@@ -422,7 +422,7 @@ int bsd_close(int socket) {
   rs.raw_data_size = sizeof(response);
   rs.raw_data = (uint32_t*) response;
   
-  r = ipc_send(bsd_session, &rq, &rs);
+  r = ipc_send(bsd_object, &rq, &rs);
   if(r) {
     bsd_result = r;
     return -1;
@@ -439,5 +439,5 @@ int bsd_close(int socket) {
 
 void bsd_finalize() {
   svcCloseHandle(transfer_mem);
-  svcCloseHandle(bsd_session);
+  ipc_close(bsd_object);
 }

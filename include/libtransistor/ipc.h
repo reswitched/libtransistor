@@ -48,9 +48,10 @@ typedef struct {
 // see ipc.c for actual default values
 extern ipc_request_t      ipc_default_request;
 extern ipc_response_fmt_t ipc_default_response_fmt;
+extern ipc_object_t       ipc_null_object;
 
-result_t ipc_marshal(u32 *buffer, ipc_request_t *rq);
-result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs);
+result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object);
+result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object);
 result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs);
 result_t ipc_convert_to_domain(ipc_object_t *session);
-result_t ipc_close(ipc_object_t object);
+result_t ipc_close(ipc_object_t object, bool whole_session);
