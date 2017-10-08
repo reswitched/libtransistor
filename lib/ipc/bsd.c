@@ -411,6 +411,93 @@ int bsd_shutdown(int socket, int how) {
   return 0;
 }
 
+// def untested
+int bsd_select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds, fd_set *restrict errorfds, struct timeval *restrict timeout) {
+  result_t r;
+
+  uint64_t timeout_words[3];
+  if(timeout != NULL) {
+    timeout_words[0] = timeout->tv_sec;
+    timeout_words[1] = timeout->tv_usec;
+    timeout_words[2] = 0;
+  } else {
+    timeout_words[0] = 0;
+    timeout_words[1] = 0;
+    timeout_words[2] = 1;
+  }
+
+  uint32_t raw[7];
+  raw[0] = nfds;
+  memcpy(raw + 1, timeout_words, sizeof(timeout_words));
+  
+  ipc_buffer_t readfds_in = {
+    .addr = readfds,
+    .size = (readfds == NULL) ? 0 : sizeof(readfds),
+    .type = 0x21
+  };
+  ipc_buffer_t writefds_in = {
+    .addr = writefds,
+    .size = (writefds == NULL) ? 0 : sizeof(writefds),
+    .type = 0x21
+  };
+  ipc_buffer_t errorfds_in = {
+    .addr = errorfds,
+    .size = (errorfds == NULL) ? 0 : sizeof(errorfds),
+    .type = 0x21
+  };
+  ipc_buffer_t readfds_out = {
+    .addr = readfds,
+    .size = (readfds == NULL) ? 0 : sizeof(readfds),
+    .type = 0x22
+  };
+  ipc_buffer_t writefds_out = {
+    .addr = writefds,
+    .size = (writefds == NULL) ? 0 : sizeof(writefds),
+    .type = 0x22
+  };
+  ipc_buffer_t errorfds_out = {
+    .addr = errorfds,
+    .size = (errorfds == NULL) ? 0 : sizeof(errorfds),
+    .type = 0x22
+  };
+  
+  ipc_buffer_t *buffers[] = {
+    &readfds_in,
+    &writefds_in,
+    &errorfds_in,
+    &readfds_out,
+    &writefds_out,
+    &errorfds_out
+  };
+    
+  ipc_request_t rq = ipc_default_request;
+  rq.num_buffers = 6;
+  rq.buffers = buffers;
+  rq.request_id = 5;
+  rq.raw_data = raw;
+  rq.raw_data_size = sizeof(raw);
+
+  int32_t response[2];
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(response);
+  rs.raw_data = (uint32_t*) response;
+
+  r = ipc_send(bsd_object, &rq, &rs);
+  if(r) {
+    bsd_result = r;
+    return -1;
+  }
+
+  if(response[0] < 0) {
+    bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    bsd_errno = response[1];
+    return -1;
+  }
+
+  return response[0];
+}
+
 // def tested via PS
 int bsd_close(int socket) {
   result_t r;

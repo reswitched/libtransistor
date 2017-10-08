@@ -19,6 +19,22 @@ struct sockaddr_in {
   uint8_t pad[8]; // struct size has to be 16
 } __attribute__((packed));
 
+typedef uint64_t fd_mask;
+typedef struct fd_set {
+  fd_mask fds_bits[16];
+} fd_set;
+
+#define NFDBITS (sizeof(fd_mask) * 8)
+#define FD_SET(n, p) ((p)->fds_bits[(n)/NFDBITS] |= (1L << ((n) % NFDBITS)))
+#define FD_CLR(n, p) ((p)->fds_bits[(n)/NFDBITS] &= ~(1L << ((n) % NFDBITS)))
+#define FD_ISSET(n, p) ((p)->fds_bits[(n)/NFDBITS] & (1L << ((n) % NFDBITS)))
+#define FD_ZERO(p) memset(p, 0, sizeof(p))
+
+struct timeval {
+  int64_t tv_sec;
+  int64_t tv_usec;
+};
+
 result_t bsd_init();
 int bsd_socket(int domain, int type, int protocol);
 int bsd_recv(int socket, void *message, size_t length, int flags);
@@ -31,5 +47,6 @@ int bsd_getsockname(int socket, struct sockaddr *restrict address, socklen_t *re
 int bsd_listen(int socket, int backlog);
 int bsd_setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);
 int bsd_shutdown(int socket, int how);
+int bsd_select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds, fd_set *restrict errorfds, struct timeval *restrict timeout);
 int bsd_close(int socket);
 void bsd_finalize();
