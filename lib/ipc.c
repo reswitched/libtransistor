@@ -27,7 +27,8 @@ ipc_request_t ipc_default_request = {
   .num_objects = 0,
   .copy_handles = NULL,
   .move_handles = NULL,
-  .objects = NULL
+  .objects = NULL,
+  .close_object = false
 };
 
 ipc_response_fmt_t ipc_default_response_fmt = {
@@ -252,28 +253,44 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
     if(rq->num_objects > 8) { // server code responds with result code 0x1d60a
       return LIBTRANSISTOR_ERR_TOO_MANY_OBJECTS;
     }
-    buffer[h++] = 1 // command id 1 = send message
+    buffer[h++] = (rq->close_object ? 2 : 1)
       | (rq->num_objects << 8); // we OR in the data payload size later;
     buffer[h++] = object.object_id;
     h+= 2; // alignment
   }
 
   int payload_start = h;
-  
-  buffer[h++] = *((uint32_t*) "SFCI");
-  buffer[h++] = 0;
-  buffer[h++] = rq->request_id;
-  buffer[h++] = 0;
-  
-  for(int i = 0; i < raw_data_words; i++) {
-    buffer[h++] = rq->raw_data[i];
+
+  if(!rq->close_object) {
+    buffer[h++] = *((uint32_t*) "SFCI");
+    buffer[h++] = 0;
+    buffer[h++] = rq->request_id;
+    buffer[h++] = 0;
+    
+    for(int i = 0; i < raw_data_words; i++) {
+      buffer[h++] = rq->raw_data[i];
+    }
+  } else {
+    if(!to_domain) {
+      return LIBTRANSISTOR_ERR_CANT_CLOSE_SESSIONS_LIKE_DOMAIN_OBJECTS;
+    }
+    if(
+       (rq->type != 4) ||
+       (rq->num_buffers != 0) ||
+       (rq->raw_data_size != 0) ||
+       (rq->send_pid != false) ||
+       (rq->num_copy_handles != 0) ||
+       (rq->num_move_handles != 0) ||
+       (rq->num_objects != 0)) {
+      return LIBTRANSISTOR_ERR_MALFORMED_CLOSE_REQUEST;
+    }
   }
 
   if(to_domain) {
     buffer[domain_header_location]|= ((h - payload_start) * sizeof(*buffer)) << 16;
     for(int i = 0; i < rq->num_objects; i++) {
-      if(rq->objects[i].session != object.session) {
-        return LIBTRANSISTOR_ERR_CANT_SEND_OBJECT_ACROSS_SESSIONS;
+      if(rq->objects[i].domain != object.domain) {
+        return LIBTRANSISTOR_ERR_CANT_SEND_OBJECT_ACROSS_DOMAINS;
       }
       buffer[h++] = rq->objects[i].object_id;
     }
@@ -433,7 +450,7 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
 
     uint32_t *domain_ids = (uint32_t*) (domain_header + 16 + raw_data_size);
     for(int i = 0; i < rs->num_objects; i++) {
-      rs->objects[i].session = object.session;
+      rs->objects[i].domain = object.domain;
       rs->objects[i].object_id = domain_ids[i];
     }
   }
@@ -454,20 +471,25 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
   return RESULT_OK;
 }
 
-result_t ipc_convert_to_domain(ipc_object_t *session) {
-  if(session->object_id != -1) {
+result_t ipc_convert_to_domain(ipc_object_t *object, ipc_domain_t *domain) {
+  ipc_object_t session = *object;  
+  domain->session = session.session;
+
+  if(object->object_id != -1) {
     return LIBTRANSISTOR_ERR_ALREADY_A_DOMAIN;
   }
 
+  object->domain = domain;
+  
   ipc_request_t rq = ipc_default_request;
   rq.type = 5;
   rq.request_id = 0;
 
   ipc_response_fmt_t rs = ipc_default_response_fmt;
-  rs.raw_data_size = sizeof(session->object_id);
-  rs.raw_data = (uint32_t*) &(session->object_id);
+  rs.raw_data_size = sizeof(object->object_id);
+  rs.raw_data = (uint32_t*) &(object->object_id);
 
-  return ipc_send(*session, &rq, &rs);
+  return ipc_send(session, &rq, &rs);
 }
 
 result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs) {
@@ -475,13 +497,33 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
   u32 *tls = get_tls();
   r = ipc_marshal(tls, rq, object); if(r) { return r; }
   hexdump(tls, 0x40);  
-  r = svcSendSyncRequest(object.session); if(r) { return r; }
+  r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session); if(r) { return r; }
   hexdump(tls, 0x40);
   r = ipc_unmarshal(tls, rs, object); if(r) { return r; }
 
   return RESULT_OK;
 }
 
-result_t ipc_close(ipc_object_t object, bool whole_session) {
-  // implement me
+result_t ipc_close(ipc_object_t object) {
+  if(object.object_id < 0) {
+    return svcCloseHandle(object.session);
+  }
+  
+  ipc_request_t rq = ipc_default_request;
+  rq.close_object = true;
+
+  u32 *tls = get_tls();
+  
+  result_t r;
+  r = ipc_marshal(tls, &rq, object); if(r) { return r; }
+  hexdump(tls, 0x40);
+  r = svcSendSyncRequest(object.domain->session); if (r) { return r; }
+
+  // remote end doesn't seem to actually write a response
+  
+  return RESULT_OK;
+}
+
+result_t ipc_close_domain(ipc_domain_t domain) {
+  return svcCloseHandle(domain.session);
 }

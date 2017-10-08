@@ -11,6 +11,7 @@
 result_t bsd_result;
 int      bsd_errno;
 
+static ipc_domain_t bsd_domain;
 static ipc_object_t bsd_object;
 
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
@@ -24,7 +25,12 @@ result_t bsd_init() {
     if(r) { return r; }
   }
 
-  printf("opened bsd: 0x%x", bsd_object);
+  r = ipc_convert_to_domain(&bsd_object, &bsd_domain);
+  if(r) {
+    ipc_close_domain(bsd_domain);
+    return r;
+  }
+  
   printf("transfer mem at %p", transfer_buffer);
   
   r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
@@ -440,4 +446,5 @@ int bsd_close(int socket) {
 void bsd_finalize() {
   svcCloseHandle(transfer_mem);
   ipc_close(bsd_object);
+  ipc_close_domain(bsd_domain);
 }

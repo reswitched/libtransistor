@@ -5,7 +5,7 @@
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
 
-static session_h sm_session = 0;
+static ipc_object_t sm_object;
 
 static u64 str2u64(char *str) {
   char buf[8];
@@ -22,15 +22,16 @@ static u64 str2u64(char *str) {
 
 result_t sm_init() {
   printf("initializing sm");
-  return svcConnectToNamedPort(&sm_session, "sm:");
+  sm_object.object_id = -1;
+  return svcConnectToNamedPort(&(sm_object.session), "sm:");
 }
 
 void sm_finalize() {
-  svcCloseHandle(sm_session);
+  ipc_close(sm_object);
 }
 
-result_t sm_get_service(session_h *session, char *name) {
-  if(!sm_session) {
+result_t sm_get_service(ipc_object_t *out_object, char *name) {
+  if(!sm_object.session) {
     return LIBTRANSISTOR_ERR_SM_NOT_INITIALIZED;
   }
   
@@ -43,6 +44,8 @@ result_t sm_get_service(session_h *session, char *name) {
   if(i >= 8) {
     return LIBTRANSISTOR_ERR_SM_SERVICE_NAME_TOO_LONG;
   }
+
+  out_object->object_id = -1;
   
   ipc_request_t rq = ipc_default_request;
   rq.request_id = 1;
@@ -51,8 +54,8 @@ result_t sm_get_service(session_h *session, char *name) {
 
   ipc_response_fmt_t rs = ipc_default_response_fmt;
   rs.num_move_handles = 1;
-  rs.move_handles = session;
+  rs.move_handles = &(out_object->session);
 
-  printf("sending to 0x%x", sm_session);
-  return ipc_send(sm_session, &rq, &rs);
+  printf("sending to 0x%x", sm_object);
+  return ipc_send(sm_object, &rq, &rs);
 }
