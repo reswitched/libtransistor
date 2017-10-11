@@ -12,6 +12,13 @@ libtransistor_TESTS := bsd
 
 libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/lib/util.o build/lib/ipc/sm.o build/lib/ipc/bsd.o
 
+# for building newlib
+export AR_FOR_TARGET = llvm-ar
+export AS_FOR_TARGET = llvm-mc -arch=aarch64 -mattr=+neon
+export LD_FOR_TARGET = ld.lld
+export RANLIB_FOR_TARGET = llvm-ranlib
+export CC_FOR_TARGET = clang -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc
+
 .SUFFIXES: # disable built-in rules
 
 all: build/lib/libtransistor.nro.a build/lib/libtransistor.nso.a $(addprefix build/test/test_,$(addsuffix .nro,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nro.so,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso.so,$(libtransistor_TESTS)))
@@ -41,11 +48,11 @@ build/test/%.nso: build/test/%.nso.so
 	mkdir -p $(@D)
 	$(PYTHON2) ./tools/elf2nxo.py $< $@ nso
 
-build/test/%.nro.so: build/lib/libtransistor.nro.a build/test/%.o
+build/test/%.nro.so: build/lib/libtransistor.nro.a build/test/%.o newlib/aarch64-switch-elf/newlib/libc.a
 	mkdir -p $(@D)
 	$(LD) $(LD_FLAGS) -o $@ --whole-archive $+
 
-build/test/%.nso.so: build/lib/libtransistor.nso.a build/test/%.o
+build/test/%.nso.so: build/lib/libtransistor.nso.a build/test/%.o newlib/aarch64-switch-elf/newlib/libc.a
 	mkdir -p $(@D)
 	$(LD) $(LD_FLAGS) -o $@ --whole-archive $+
 
@@ -58,6 +65,12 @@ build/lib/libtransistor.nso.a: build/lib/crt0.nso.o $(libtransistor_OBJECTS)
 	mkdir -p $(@D)
 	rm -f $@
 	ar rcs $@ $+
+
+newlib/Makefile:
+	cd newlib; ./configure --target=aarch64-switch-elf
+
+newlib/aarch64-switch-elf/newlib/libc.a: newlib/Makefile
+	make -C newlib/
 
 clean:
 	rm -rf build/lib/* build/test/*
