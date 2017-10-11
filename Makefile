@@ -2,7 +2,7 @@ LD := ld.lld
 CC := clang
 AS := llvm-mc
 LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined -T link.T
-CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -I include/
+CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -I include/ -I newlib/newlib/libc/include/
 AS_FLAGS := -arch=aarch64
 PYTHON2 := python2
 MEPHISTO := ctu

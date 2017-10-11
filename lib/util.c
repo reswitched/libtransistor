@@ -92,30 +92,13 @@ void hexnum(int num) {
 
 #include<stdarg.h>
 
-int printf(char const *fmt, ...) {
+int dbg_printf(char const *fmt, ...) {
   va_list vl;
   char buf[512];
   int ret;
   va_start(vl, fmt);
-  ret = vsnprintf(buf, 511, fmt, vl);
+  ret = dbg_vsnprintf(buf, 511, fmt, vl);
   log_string(buf, ret+1);
   va_end(vl);
   return ret;
-}
-
-void *memset(void *s, int c, size_t n) {
-  uint8_t *buf = s;
-  for(int i = 0; i < n; i++) {
-    buf[i] = c;
-  }
-  return s;
-}
-
-void *memcpy(void *dest, const void *src, size_t n) {
-  uint8_t *dest8 = dest;
-  const uint8_t *src8 = src;
-  for(int i = 0; i < n; i++) {
-    dest8[i] = src8[i];
-  }
-  return dest;
 }

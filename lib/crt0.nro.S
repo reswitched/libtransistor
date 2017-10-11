@@ -38,8 +38,20 @@ NORELOC__nro_modhdr:
 .global start
 start:
         sub sp, sp, 0x10
-        stp x29, x30, [sp]        
+        stp x29, x30, [sp]
+        ldr x1, __crt0_exit_frame
+        stp x29, x30, [x1]
         bl main
         ldp x29, x30, [sp], 0x10
         ret
+
+.global _exit
+_exit:
+        ldr x1, __crt0_exit_frame
+        ldp x29, x30, [x1]
+        ret
         
+.section .bss
+__crt0_exit_frame:       
+        .quad 0
+        .quad 0

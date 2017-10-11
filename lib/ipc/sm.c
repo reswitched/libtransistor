@@ -21,7 +21,7 @@ static u64 str2u64(char *str) {
 }
 
 result_t sm_init() {
-  printf("initializing sm");
+  dbg_printf("initializing sm");
   sm_object.object_id = -1;
   return svcConnectToNamedPort(&(sm_object.session), "sm:");
 }
@@ -56,6 +56,5 @@ result_t sm_get_service(ipc_object_t *out_object, char *name) {
   rs.num_move_handles = 1;
   rs.move_handles = &(out_object->session);
 
-  printf("sending to 0x%x", sm_object);
   return ipc_send(sm_object, &rq, &rs);
 }

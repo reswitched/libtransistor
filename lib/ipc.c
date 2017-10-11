@@ -218,7 +218,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
     ipc_buffer_t *buf = ((i < num_a_descriptors) ? a_descriptors : b_descriptors)[i];
 
     if((u64) buf->addr >> 39) {
-      printf("a descriptor addr too long: %p", buf->addr);
+      dbg_printf("a descriptor addr too long: %p", buf->addr);
       return LIBTRANSISTOR_ERR_INVALID_BUFFER_ADDRESS;
     }
 

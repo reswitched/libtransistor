@@ -37,4 +37,6 @@ NORELOC__nro_modhdr:
 start:
 	bl main
 loop:
+.global _exit
+_exit:  
 	b loop

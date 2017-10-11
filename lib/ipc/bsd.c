@@ -31,11 +31,11 @@ result_t bsd_init() {
     return r;
   }
   
-  printf("transfer mem at %p", transfer_buffer);
+  dbg_printf("transfer mem at %p", transfer_buffer);
   
   r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
   if(r) { return r; }
-  printf("opened transfer mem 0x%x", transfer_mem);
+  dbg_printf("opened transfer mem 0x%x", transfer_mem);
 
   uint64_t raw[] = {32*1024, 32*1024, 16*1024, 16*1024,
                     0, // server copies pid to here
