@@ -14,6 +14,9 @@ int      bsd_errno;
 static ipc_domain_t bsd_domain;
 static ipc_object_t bsd_object;
 
+static ipc_domain_t iresolver_domain;
+static ipc_object_t iresolver_object;
+
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
 static transfer_memory_h transfer_mem;
 
@@ -30,12 +33,26 @@ result_t bsd_init() {
     ipc_close_domain(bsd_domain);
     return r;
   }
-  
-  printf("transfer mem at %p", transfer_buffer);
+
+  r = sm_get_service(&iresolver_object, "sfdnsres");
+  if(r) {
+    ipc_close_domain(bsd_domain);
+    return r;
+  }
+
+  r = ipc_convert_to_domain(&iresolver_object, &iresolver_domain);
+  if(r) {
+    ipc_close_domain(bsd_domain);
+    ipc_close_domain(iresolver_domain);
+    return r;
+  }
   
   r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
-  if(r) { return r; }
-  printf("opened transfer mem 0x%x", transfer_mem);
+  if(r) {
+    ipc_close_domain(bsd_domain);
+    ipc_close_domain(iresolver_domain);
+    return r;
+  }
 
   uint64_t raw[] = {32*1024, 32*1024, 16*1024, 16*1024,
                     0, // server copies pid to here
@@ -60,12 +77,16 @@ result_t bsd_init() {
   
   if(r) {
     svcCloseHandle(transfer_mem);
+    ipc_close_domain(bsd_domain);
+    ipc_close_domain(iresolver_domain);
     return r;
   }
 
   if(response[0]) {
-    svcCloseHandle(transfer_mem);
     bsd_errno = response[0];
+    svcCloseHandle(transfer_mem);
+    ipc_close_domain(bsd_domain);
+    ipc_close_domain(iresolver_domain);
     return LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
   }
   
