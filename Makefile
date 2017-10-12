@@ -1,7 +1,7 @@
 LD := ld.lld
 CC := clang
 AS := llvm-mc
-LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined -T link.T
+LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined --allow-multiple-definition -T link.T -error-limit=0
 CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -I include/ -I newlib/newlib/libc/include/
 AS_FLAGS := -arch=aarch64
 PYTHON2 := python2
@@ -17,7 +17,7 @@ export AR_FOR_TARGET = llvm-ar
 export AS_FOR_TARGET = llvm-mc -arch=aarch64 -mattr=+neon
 export LD_FOR_TARGET = ld.lld
 export RANLIB_FOR_TARGET = llvm-ranlib
-export CC_FOR_TARGET = clang -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc
+export CC_FOR_TARGET = clang -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc -Wno-unused-command-line-argument
 
 .SUFFIXES: # disable built-in rules
 
@@ -48,13 +48,13 @@ build/test/%.nso: build/test/%.nso.so
 	mkdir -p $(@D)
 	$(PYTHON2) ./tools/elf2nxo.py $< $@ nso
 
-build/test/%.nro.so: build/lib/libtransistor.nro.a build/test/%.o newlib/aarch64-switch-elf/newlib/libc.a
+build/test/%.nro.so: build/test/%.o build/lib/libtransistor.nro.a newlib/aarch64-none-switch/newlib/libc.a 
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ --whole-archive $+
+	$(LD) $(LD_FLAGS) -o $@ $< --whole-archive build/lib/libtransistor.nro.a --no-whole-archive newlib/aarch64-none-switch/newlib/libc.a
 
-build/test/%.nso.so: build/lib/libtransistor.nso.a build/test/%.o newlib/aarch64-switch-elf/newlib/libc.a
+build/test/%.nso.so: build/test/%.o build/lib/libtransistor.nso.a newlib/aarch64-none-switch/newlib/libc.a 
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ --whole-archive $+
+	$(LD) $(LD_FLAGS) -o $@ $< --whole-archive build/lib/libtransistor.nso.a --no-whole-archive newlib/aarch64-none-switch/newlib/libc.a
 
 build/lib/libtransistor.nro.a: build/lib/crt0.nro.o $(libtransistor_OBJECTS)
 	mkdir -p $(@D)
@@ -67,10 +67,13 @@ build/lib/libtransistor.nso.a: build/lib/crt0.nso.o $(libtransistor_OBJECTS)
 	ar rcs $@ $+
 
 newlib/Makefile:
-	cd newlib; ./configure --target=aarch64-switch-elf
+	cd newlib; ./configure --target=aarch64-none-switch --without-rdimon
 
-newlib/aarch64-switch-elf/newlib/libc.a: newlib/Makefile
+newlib/aarch64-none-switch/newlib/libc.a: newlib/Makefile
 	make -C newlib/
+
+newlib/aarch64-none-switch/libgloss/libnosys/libnosys.a: newlib/aarch64-none-switch/newlib/libc.a
+newlib/aarch64-none-switch/libgloss/aarch64/librdimon.a: newlib/aarch64-none-switch/newlib/libc.a
 
 clean:
 	rm -rf build/lib/* build/test/*
