@@ -5,6 +5,8 @@
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
 
+#include<string.h>
+
 static ipc_object_t sm_object;
 
 static u64 str2u64(char *str) {
@@ -37,11 +39,8 @@ result_t sm_get_service(ipc_object_t *out_object, char *name) {
   
   u64 service_name = str2u64(name);
   int i;
-  for(i = 0; i < 9; i++) {
-    if(name[i] == 0) { break; }
-  }
   
-  if(i >= 8) {
+  if(strlen(name) > 8) {
     return LIBTRANSISTOR_ERR_SM_SERVICE_NAME_TOO_LONG;
   }
 
