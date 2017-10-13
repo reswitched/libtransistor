@@ -1,38 +1,13 @@
 #pragma once
 
 #include<libtransistor/types.h>
+#include<sys/types.h>
+#include<sys/socket.h>
 #include<netinet/in.h>
+#include<netdb.h>
 
 extern result_t bsd_result;
 extern int      bsd_errno;
-
-typedef uint64_t fd_mask;
-typedef struct fd_set {
-  fd_mask fds_bits[16];
-} fd_set;
-
-#define NFDBITS (sizeof(fd_mask) * 8)
-#define FD_SET(n, p) ((p)->fds_bits[(n)/NFDBITS] |= (1L << ((n) % NFDBITS)))
-#define FD_CLR(n, p) ((p)->fds_bits[(n)/NFDBITS] &= ~(1L << ((n) % NFDBITS)))
-#define FD_ISSET(n, p) ((p)->fds_bits[(n)/NFDBITS] & (1L << ((n) % NFDBITS)))
-#define FD_ZERO(p) memset(p, 0, sizeof(p))
-
-struct timeval {
-  int64_t tv_sec;
-  int64_t tv_usec;
-};
-
-struct addrinfo;
-struct addrinfo {
-  int ai_flags;
-  int ai_family;
-  int ai_socktype;
-  int ai_protocol;
-  socklen_t ai_addrlen;
-  struct sockaddr *ai_addr;
-  char *ai_canonname;
-  struct addrinfo *ai_next;
-};
 
 result_t bsd_init();
 int bsd_socket(int domain, int type, int protocol);
