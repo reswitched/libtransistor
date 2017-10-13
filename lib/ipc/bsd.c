@@ -6,6 +6,10 @@
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 
+#include<string.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+
 #define TRANSFER_MEM_SIZE 256*1024
 
 result_t bsd_result;

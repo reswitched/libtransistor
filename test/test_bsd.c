@@ -1,5 +1,7 @@
 #include<libtransistor/nx.h>
 
+#include<sys/socket.h>
+
 int main() {
   svcSleepThread(100000000);
   
@@ -18,16 +20,16 @@ int main() {
   char server_ip_addr[4] = {127, 0, 0, 1};
   
   struct sockaddr_in bind_addr = {
-    .sin_family = 0x0200, // AF_INET
-    .sin_port = 0x5c11, // 4444 in big endian
+    .sin_family = AF_INET,
+    .sin_port = htons(4444),
     .sin_addr = {
       .s_addr = *(uint32_t*) bind_ip_addr
     }
   };
 
   struct sockaddr_in server_addr = {
-    .sin_family = 0x0200, // AF_INET
-    .sin_port = 0xb315, // 5555 in big endian
+    .sin_family = AF_INET,
+    .sin_port = htons(5555),
     .sin_addr = {
       .s_addr = *(uint32_t*) server_ip_addr
     }
