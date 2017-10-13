@@ -8,7 +8,7 @@ PYTHON2 := python2
 MEPHISTO := ctu
 RUBY := ruby
 
-libtransistor_TESTS := bsd malloc
+libtransistor_TESTS := bsd_ai_packing bsd malloc
 
 libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/lib/util.o build/lib/ipc/sm.o build/lib/ipc/bsd.o
 
@@ -23,13 +23,13 @@ export CC_FOR_TARGET = clang -g -fPIC -ffreestanding -fexceptions -target aarch6
 
 all: build/lib/libtransistor.nro.a build/lib/libtransistor.nso.a $(addprefix build/test/test_,$(addsuffix .nro,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nro.so,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso.so,$(libtransistor_TESTS)))
 
-run_tests: run_bsd_test run_malloc_test
+run_tests: run_bsd_ai_packing_test run_bsd_test run_malloc_test
 
 run_bsd_test: build/test/test_bsd.nro test_helpers/bsd.rb
 	$(RUBY) test_helpers/bsd.rb $(MEPHISTO)
 
-run_malloc_test: build/test/test_malloc.nro
-	$(MEPHISTO) --load-nro build/test/test_malloc.nro
+run_%_test: build/test/test_%.nro
+	$(MEPHISTO) --load-nro $<
 
 build/test/%.o: test/%.c
 	mkdir -p $(@D)
