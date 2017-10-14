@@ -19,7 +19,6 @@ int      bsd_errno;
 static ipc_domain_t bsd_domain;
 static ipc_object_t bsd_object;
 
-static ipc_domain_t iresolver_domain;
 static ipc_object_t iresolver_object;
 
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
@@ -33,29 +32,28 @@ result_t bsd_init() {
     if(r) { return r; }
   }
 
+  dbg_printf("connected to bsd");
+  
   r = ipc_convert_to_domain(&bsd_object, &bsd_domain);
   if(r) {
     ipc_close_domain(bsd_domain);
     return r;
   }
 
+  dbg_printf("converted bsd to domain");
+  
   r = sm_get_service(&iresolver_object, "sfdnsres");
   if(r) {
     ipc_close_domain(bsd_domain);
     return r;
   }
 
-  r = ipc_convert_to_domain(&iresolver_object, &iresolver_domain);
-  if(r) {
-    ipc_close_domain(bsd_domain);
-    ipc_close_domain(iresolver_domain);
-    return r;
-  }
+  dbg_printf("connected to sfdnsres");
   
   r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
   if(r) {
     ipc_close_domain(bsd_domain);
-    ipc_close_domain(iresolver_domain);
+    ipc_close(iresolver_object);
     return r;
   }
 
@@ -83,7 +81,7 @@ result_t bsd_init() {
   if(r) {
     svcCloseHandle(transfer_mem);
     ipc_close_domain(bsd_domain);
-    ipc_close_domain(iresolver_domain);
+    ipc_close(iresolver_object);
     return r;
   }
 
@@ -91,7 +89,7 @@ result_t bsd_init() {
     bsd_errno = response[0];
     svcCloseHandle(transfer_mem);
     ipc_close_domain(bsd_domain);
-    ipc_close_domain(iresolver_domain);
+    ipc_close(iresolver_object);
     return LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
   }
   
@@ -570,7 +568,7 @@ int bsd_getaddrinfo(const char *node, const char *service, const struct addrinfo
     .size = sizeof(response_packed),
     .type = 6
   };
-
+  
   ipc_buffer_t *buffers[] = {
     &host_buf,
     &service_buf,
