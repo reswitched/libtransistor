@@ -50,7 +50,7 @@ int main() {
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   
-  int e = bsd_getaddrinfo("foo.bar", "6767", &hints, &ai);
+  int e = bsd_getaddrinfo("conntest.nintendowifi.net", "6767", &hints, &ai);
   if(e) {
     dbg_printf("failed to getaddrinfo: %d, 0x%x", e, bsd_result);
     goto err;
