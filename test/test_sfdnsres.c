@@ -62,7 +62,9 @@ int main() {
   }
   
   dumpaddrinfo(ai);
-  
+
+  bsd_finalize();
+  sm_finalize();
   return 0;
   
  err:
