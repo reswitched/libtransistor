@@ -215,7 +215,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
 
   // a & b descriptors
   for(int i = 0; i < num_a_descriptors + num_b_descriptors; i++) {
-    ipc_buffer_t *buf = ((i < num_a_descriptors) ? a_descriptors : b_descriptors)[i];
+    ipc_buffer_t *buf = ((i < num_a_descriptors) ? a_descriptors : (b_descriptors - num_a_descriptors))[i];
 
     if((u64) buf->addr >> 39) {
       dbg_printf("a descriptor addr too long: %p", buf->addr);
