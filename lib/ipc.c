@@ -496,9 +496,7 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
   result_t r;
   u32 *tls = get_tls();
   r = ipc_marshal(tls, rq, object); if(r) { return r; }
-  hexdump(tls, 0x40);  
   r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session); if(r) { return r; }
-  hexdump(tls, 0x40);
   r = ipc_unmarshal(tls, rs, object); if(r) { return r; }
 
   return RESULT_OK;
@@ -516,7 +514,6 @@ result_t ipc_close(ipc_object_t object) {
   
   result_t r;
   r = ipc_marshal(tls, &rq, object); if(r) { return r; }
-  hexdump(tls, 0x40);
   r = svcSendSyncRequest(object.domain->session); if (r) { return r; }
 
   // remote end doesn't seem to actually write a response
