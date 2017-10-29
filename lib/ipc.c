@@ -419,6 +419,7 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
       - 4 // padding
       - (from_domain ? 4 + rs->num_objects : 0) // domain header + out objects
       ) != raw_data_words) {
+    hexdump(buffer, 0x50);
     return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
   }
   
