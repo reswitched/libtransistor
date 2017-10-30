@@ -419,7 +419,6 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
       - 4 // padding
       - (from_domain ? 4 + rs->num_objects : 0) // domain header + out objects
       ) != raw_data_words) {
-    hexdump(buffer, 0x50);
     return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
   }
   
@@ -496,8 +495,12 @@ result_t ipc_convert_to_domain(ipc_object_t *object, ipc_domain_t *domain) {
 result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs) {
   result_t r;
   u32 *tls = get_tls();
+  memset(tls, 0, 0x1f8);
   r = ipc_marshal(tls, rq, object); if(r) { return r; }
-  r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session); if(r) { return r; }
+  r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session); if(r) {
+    hexdump(tls, 0x50);
+    return r;
+  }
   r = ipc_unmarshal(tls, rs, object); if(r) { return r; }
 
   return RESULT_OK;

@@ -9,12 +9,11 @@
 #include<string.h>
 #include<malloc.h>
 
-#define TRANSFER_MEM_SIZE 256*1024
+#define TRANSFER_MEM_SIZE 3*1024*1024
 
 result_t nv_result;
 int nv_errno;
 
-static ipc_domain_t nv_domain;
 static ipc_object_t nv_object;
 
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
@@ -27,15 +26,14 @@ result_t nv_init() {
     goto fail_no_service;
   }
 
-  r = ipc_convert_to_domain(&nv_object, &nv_domain);
-  if(r) {
-    goto fail_no_domain;
-  }
-
+  dbg_printf("connected to nv: 0x%x, %d", nv_object.session, nv_object.object_id);
+  
   r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
   if(r) {
-    goto fail;
+    goto fail_no_tmem;
   }
+
+  dbg_printf("made transfer memory 0x%x", transfer_mem);
   
   uint32_t raw[] = {TRANSFER_MEM_SIZE};
   uint32_t handles[] = {0xFFFF8001, transfer_mem};
@@ -44,7 +42,6 @@ result_t nv_init() {
   rq.request_id = 3;
   rq.raw_data = (uint32_t*) raw;
   rq.raw_data_size = sizeof(raw);
-  rq.send_pid = true;
   rq.num_copy_handles = 2;
   rq.copy_handles = handles;
 
@@ -69,8 +66,8 @@ result_t nv_init() {
   
  fail:
   svcCloseHandle(transfer_mem);
- fail_no_domain:
-  ipc_close_domain(nv_domain);
+ fail_no_tmem:
+  ipc_close(nv_object);
  fail_no_service:
   return r;
 }
@@ -111,7 +108,7 @@ int nv_open(const char *path) {
   return response[0]; // fd
 }
 
-int nv_ioctl(int fd, int rqid, void *arg, size_t size) {
+int nv_ioctl(int fd, uint32_t rqid, void *arg, size_t size) {
   result_t r;
 
   ipc_buffer_t ioc_in_b;
@@ -126,7 +123,7 @@ int nv_ioctl(int fd, int rqid, void *arg, size_t size) {
 
   ipc_buffer_t *buffers[] = {&ioc_in_b, &ioc_out_b};
 
-  int32_t raw[] = {fd, rqid};
+  int32_t raw[] = {fd, rqid, 0, 0}; // don't know what the zeroes are
   
   ipc_request_t rq = ipc_default_request;
   rq.request_id = 1;
@@ -178,5 +175,4 @@ int nv_close(int fd) {
 void nv_finalize() {
   svcCloseHandle(transfer_mem);
   ipc_close(nv_object);
-  ipc_close_domain(nv_domain);
 }
