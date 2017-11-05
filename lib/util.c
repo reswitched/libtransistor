@@ -1,6 +1,8 @@
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/util.h>
+#include<libtransistor/ipc.h>
+#include<libtransistor/ipc/bsd.h>
 
 char nybble2hex(u8 nybble) {
   if(nybble < 10) {
@@ -10,16 +12,29 @@ char nybble2hex(u8 nybble) {
   }
 }
 
+static int bsd_log = -1;
+
+void dbg_set_bsd_log(int fd) {
+  bsd_log = fd;
+}
+
 size_t log_length = 0;
-char log_buffer[0x10000];
+char log_buffer[0x20000];
 
 int log_string(char *string, size_t len) {
   svcOutputDebugString(string, len);
+  size_t start = log_length;
   for(int i = 0; i < len; i++) {
     if(string[i] == 0) { break; }
     log_buffer[log_length++] = string[i];
   }
   log_buffer[log_length++] = '\n';
+  if(bsd_log >= 0) {
+    int olddebug = ipc_debug_flag;
+    ipc_debug_flag = 0;
+    bsd_send(bsd_log, log_buffer + start, log_length - start, 0);
+    ipc_debug_flag = olddebug;
+  }
   log_buffer[log_length] = 0;
   return 4;
 }

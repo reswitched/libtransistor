@@ -12,4 +12,4 @@ int log_string(char *string, size_t len);
 
 int dbg_printf(char const *fmt, ...);
 int dbg_vprintf(char const *fmt, va_list va);
-
+void dbg_set_bsd_log(int fd);
