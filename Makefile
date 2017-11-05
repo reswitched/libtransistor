@@ -8,9 +8,9 @@ PYTHON2 := python2
 MEPHISTO := ctu
 RUBY := ruby
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv vi
 
-libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/lib/util.o build/lib/ipc/sm.o build/lib/ipc/bsd.o build/lib/ipc/nv.o
+libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/lib/util.o build/lib/ipc/sm.o build/lib/ipc/bsd.o build/lib/ipc/nv.o build/lib/ipc/vi.o
 
 # for building newlib
 export AR_FOR_TARGET = llvm-ar
@@ -23,7 +23,7 @@ export CC_FOR_TARGET = clang -g -fPIC -ffreestanding -fexceptions -target aarch6
 
 all: build/lib/libtransistor.nro.a build/lib/libtransistor.nso.a $(addprefix build/test/test_,$(addsuffix .nro,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nro.so,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso.so,$(libtransistor_TESTS)))
 
-run_tests: run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test
+run_tests: run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test run_vi_test
 
 run_bsd_test: build/test/test_bsd.nro test_helpers/bsd.rb
 	$(RUBY) test_helpers/bsd.rb $(MEPHISTO)
