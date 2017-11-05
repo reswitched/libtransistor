@@ -1,7 +1,7 @@
 #pragma once
 
 char nybble2hex(u8 nybble);
-void hexdump(void *rawbuf, size_t size);
+void hexdump(const void *rawbuf, size_t size);
 void hexnum(int num);
 int log_string(char *string, size_t len);
 

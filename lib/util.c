@@ -24,8 +24,8 @@ int log_string(char *string, size_t len) {
   return 4;
 }
 
-void hexdump(void *rawbuf, size_t size) {
-  u8 *buf = rawbuf;
+void hexdump(const void *rawbuf, size_t size) {
+  const u8 *buf = rawbuf;
   char line[0x31 + 4 + 0x10 + 1];
   int i = 0;
   int total = 0;
