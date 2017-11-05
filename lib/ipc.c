@@ -439,20 +439,18 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
   }
 
   if(from_domain) {
-    uint8_t *domain_header = (uint8_t*) (buffer + domain_header_location);
-    uint8_t command = domain_header[0];
-    uint8_t object_count = domain_header[1];
-    uint16_t raw_data_size = ((uint16_t*) domain_header)[1];
+    struct response_domain_header_t {
+      uint32_t num_objects;
+      uint32_t unknown1[2]; // supposedly an unaligned uint64_t
+      uint32_t unknown2;
+    };
+    struct response_domain_header_t *domain_header = (struct response_domain_header_t*) (buffer + domain_header_location);
 
-    if(command != 0) {
-      return LIBTRANSISTOR_ERR_UNEXPECTED_DOMAIN_HEADER_COMMAND;
-    }
-
-    if(object_count != rs->num_objects) {
+    if(domain_header->num_objects != rs->num_objects) {
       return LIBTRANSISTOR_ERR_UNEXPECTED_OBJECTS;
     }
 
-    uint32_t *domain_ids = (uint32_t*) (domain_header + 16 + raw_data_size);
+    uint32_t *domain_ids = (uint32_t*) (((uint8_t*) domain_header) + 16 + 16 + rs->raw_data_size);
     for(int i = 0; i < rs->num_objects; i++) {
       rs->objects[i].domain = object.domain;
       rs->objects[i].object_id = domain_ids[i];
