@@ -23,6 +23,19 @@ int main() {
   dbg_printf("created stray layer");
   dbg_printf("  layer id: 0x%x", surf.layer_id);
   dbg_printf("  binder handle: 0x%x", surf.igbp_binder.handle);
+
+  int status;
+  queue_buffer_output_t qbo;
+  
+  ASSERT_OK(fail_vi, surface_connect(&surf, 2, false, &status, &qbo));
+
+  dbg_printf("IGBP_CONNECT:");
+  dbg_printf("  status: %d", status);
+  dbg_printf("  qbo:");
+  dbg_printf("    width: %d", qbo.width);
+  dbg_printf("    height: %d", qbo.height);
+  dbg_printf("    transform_hint: %d", qbo.transform_hint);
+  dbg_printf("    num_pending_buffers: %d", qbo.num_pending_buffers);
   
  fail_vi:
   vi_finalize();
