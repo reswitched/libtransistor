@@ -4,6 +4,8 @@
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 
+int ipc_debug_flag = 1;
+
 ipc_buffer_t null_buffer = {
   .addr = 0,
   .size = 0,
@@ -497,9 +499,27 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
   u32 *tls = get_tls();
   memset(tls, 0, 0x1f8);
   r = ipc_marshal(tls, rq, object); if(r) { return r; }
+  if(ipc_debug_flag) {
+    char buf[0x1f8];
+    memcpy(buf, tls, sizeof(buf));
+    ipc_debug_flag = 0;
+    dbg_printf("out request:");
+    hexdump(buf, 0x50);
+    memcpy(tls, buf, sizeof(buf));
+    ipc_debug_flag = 1;
+  }
   r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session); if(r) {
     hexdump(tls, 0x50);
     return r;
+  }
+  if(ipc_debug_flag) {
+    char buf[0x1f8];
+    memcpy(buf, tls, sizeof(buf));
+    ipc_debug_flag = 0;
+    dbg_printf("in response:");
+    hexdump(buf, 0x50);
+    memcpy(tls, buf, sizeof(buf));
+    ipc_debug_flag = 1;
   }
   r = ipc_unmarshal(tls, rs, object); if(r) { return r; }
 

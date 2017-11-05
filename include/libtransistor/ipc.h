@@ -90,3 +90,6 @@ result_t ipc_close(ipc_object_t object);
   Closes the whole `domain`
 */
 result_t ipc_close_domain(ipc_domain_t domain);
+
+
+extern int ipc_debug_flag;
