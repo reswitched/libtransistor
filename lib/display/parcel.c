@@ -76,7 +76,7 @@ size_t parcel_write_remaining(parcel_t *parcel) {
 
 void *parcel_write_inplace(parcel_t *parcel, size_t length) {
   void *ptr = parcel->contents.payload + parcel->write_head;
-  parcel->write_head+= length;
+  parcel->write_head+= (length + 3) & ~3;
   return ptr;
 }
 
