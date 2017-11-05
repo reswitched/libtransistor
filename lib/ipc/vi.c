@@ -5,6 +5,7 @@
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/vi.h>
+#include<libtransistor/display/parcel.h>
 
 #include<string.h>
 #include<malloc.h>
@@ -77,6 +78,114 @@ result_t vi_init() {
   ipc_close_domain(vi_domain);
  fail_no_service:
   return r;
+}
+
+result_t vi_open_display(const char *name, display_t *out) {
+  uint8_t raw[0x40];
+  memset(raw, 0, sizeof(raw));
+  strncpy((char*) raw, name, sizeof(raw)-1);
+
+  ipc_request_t rq = ipc_default_request;
+  rq.request_id = 1010; // OpenDisplay
+  rq.raw_data_size = sizeof(raw);
+  rq.raw_data = (uint32_t*) raw;
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(out->id);
+  rs.raw_data = (uint32_t*) &(out->id);
+
+  return ipc_send(iads_object, &rq, &rs);
+}
+
+result_t vi_create_stray_layer(uint32_t unknown, display_t *display, native_window_t *nw) {
+  uint8_t parcel_buf[0x210];
+  ipc_buffer_t parcel_ipc_buf;
+  parcel_ipc_buf.addr = parcel_buf;
+  parcel_ipc_buf.size = sizeof(parcel_buf);
+  parcel_ipc_buf.type = 6;
+
+  ipc_buffer_t *buffers[] = {&parcel_ipc_buf};
+  
+  struct {
+    uint32_t unknown;
+    uint32_t padding;
+    uint64_t display;
+  } rq_args;
+
+  rq_args.unknown = unknown;
+  rq_args.display = display->id;
+  
+  ipc_request_t rq = ipc_default_request;
+  rq.request_id = 2030;
+  rq.num_buffers = 1;
+  rq.buffers = buffers;
+  rq.raw_data_size = sizeof(rq_args);
+  rq.raw_data = (uint32_t*) &rq_args;
+
+  struct {
+    uint64_t layer_id;
+    uint64_t native_window_size;
+  } rs_vals;
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(rs_vals);
+  rs.raw_data = (uint32_t*) &rs_vals;
+
+  result_t r = ipc_send(iads_object, &rq, &rs);
+  if(r) {
+    return r;
+  }
+
+  nw->layer_id = rs_vals.layer_id;
+
+  parcel_t parcel;
+  r = parcel_load(&parcel, parcel_buf);
+  if(r) {
+    return r;
+  }
+
+  r = parcel_read_binder(&parcel, &(nw->binder));
+  if(r) {
+    return r;
+  }
+
+  return 0;
+}
+
+result_t vi_transact_parcel(int32_t handle, uint32_t transaction, uint32_t flags, void *rq_parcel, size_t rq_parcel_size, void *rs_parcel, size_t rs_parcel_size) {
+
+  ipc_buffer_t rq_buffer;
+  rq_buffer.addr = rq_parcel;
+  rq_buffer.size = rq_parcel_size;
+  rq_buffer.type = 5;
+
+  ipc_buffer_t rs_buffer;
+  rs_buffer.addr = rs_parcel;
+  rs_buffer.size = rs_parcel_size;
+  rs_buffer.type = 6;
+  
+  ipc_buffer_t *buffers[] = {&rq_buffer, &rs_buffer};
+
+  struct {
+    int32_t handle;
+    uint32_t transaction;
+    uint32_t flags;
+  } raw;
+
+  raw.handle = handle;
+  raw.transaction = transaction;
+  raw.flags = flags;
+  
+  ipc_request_t rq = ipc_default_request;
+  rq.request_id = 0;
+  rq.num_buffers = 2;
+  rq.buffers = buffers;
+  rq.raw_data_size = sizeof(raw);
+  rq.raw_data = (uint32_t*) &raw;
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+
+  return ipc_send(ihosbd_object, &rq, &rs);
 }
 
 void vi_finalize() {
