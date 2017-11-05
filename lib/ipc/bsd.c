@@ -76,7 +76,7 @@ result_t bsd_init() {
   rs.raw_data_size = sizeof(response);
   rs.raw_data = response;
   
-  r = ipc_send(bsd_object, &rq, &rs); // not working under mephisto
+  r = ipc_send(bsd_object, &rq, &rs);
   
   if(r) {
     svcCloseHandle(transfer_mem);
