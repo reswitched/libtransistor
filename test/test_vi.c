@@ -17,12 +17,12 @@ int main() {
   display_t display;
   ASSERT_OK(fail_vi, vi_open_display("Default", &display));
 
-  native_window_t nw;
-  ASSERT_OK(fail_vi, vi_create_stray_layer(1, &display, &nw));
+  surface_t surf;
+  ASSERT_OK(fail_vi, vi_create_stray_layer(1, &display, &surf));
 
   dbg_printf("created stray layer");
-  dbg_printf("  layer id: 0x%x", nw.layer_id);
-  dbg_printf("  binder handle: 0x%x", nw.binder.handle);
+  dbg_printf("  layer id: 0x%x", surf.layer_id);
+  dbg_printf("  binder handle: 0x%x", surf.igbp_binder.handle);
   
  fail_vi:
   vi_finalize();

@@ -6,6 +6,7 @@
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/vi.h>
 #include<libtransistor/display/parcel.h>
+#include<libtransistor/display/surface.h>
 
 #include<string.h>
 #include<malloc.h>
@@ -97,7 +98,7 @@ result_t vi_open_display(const char *name, display_t *out) {
   return ipc_send(iads_object, &rq, &rs);
 }
 
-result_t vi_create_stray_layer(uint32_t unknown, display_t *display, native_window_t *nw) {
+result_t vi_create_stray_layer(uint32_t unknown, display_t *display, surface_t *surface) {
   uint8_t parcel_buf[0x210];
   ipc_buffer_t parcel_ipc_buf;
   parcel_ipc_buf.addr = parcel_buf;
@@ -124,7 +125,7 @@ result_t vi_create_stray_layer(uint32_t unknown, display_t *display, native_wind
 
   struct {
     uint64_t layer_id;
-    uint64_t native_window_size;
+    uint64_t surface_size;
   } rs_vals;
 
   ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -136,7 +137,7 @@ result_t vi_create_stray_layer(uint32_t unknown, display_t *display, native_wind
     return r;
   }
 
-  nw->layer_id = rs_vals.layer_id;
+  surface->layer_id = rs_vals.layer_id;
 
   parcel_t parcel;
   r = parcel_load(&parcel, parcel_buf);
@@ -144,7 +145,7 @@ result_t vi_create_stray_layer(uint32_t unknown, display_t *display, native_wind
     return r;
   }
 
-  r = parcel_read_binder(&parcel, &(nw->binder));
+  r = parcel_read_binder(&parcel, &(surface->igbp_binder));
   if(r) {
     return r;
   }

@@ -5,5 +5,5 @@
 
 typedef struct {
   uint64_t layer_id;
-  binder_t binder;
-} native_window_t;
+  binder_t igbp_binder; // IGraphicBufferProducer
+} surface_t;
