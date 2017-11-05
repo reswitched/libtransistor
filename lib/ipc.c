@@ -4,6 +4,8 @@
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 
+#include<string.h>
+
 int ipc_debug_flag = 1;
 
 ipc_buffer_t null_buffer = {
@@ -147,11 +149,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
   }
   
   int raw_data_words = rq->raw_data_size / sizeof(uint32_t);
-  int raw_data_section_size = raw_data_words
-    + 4 // SFCI + command ID
-    + 4 // padding
-    + (to_domain ? 4 + rq->num_objects : 0); // domain header and in objects
-
+  
   int num_move_handles = rq->num_move_handles;
   if(!to_domain) { // not sure if this is actually legit or not
     num_move_handles+= rq->num_objects;
@@ -159,8 +157,10 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
   
   int handle_descriptor_enabled = rq->num_copy_handles || num_move_handles || rq->send_pid;
 
+  int size_field_offset = h;
+  
   // header field 2
-  buffer[h++] = raw_data_section_size
+  buffer[h++] = 0 // size. to be filled in later
     | (c_descriptor_flags << 10)
     | (handle_descriptor_enabled << 31);
 
@@ -298,9 +298,9 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
     }
   }
 
-  h+= 0x10 - pre_padding;
+  h+= 4 - pre_padding;
 
-  int u16_length_count;
+  int u16_length_count = 0;
   uint16_t *u16_length_list = (uint16_t*) (buffer + h);
   
   // c descriptor u16 length list
@@ -314,6 +314,8 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
     }
   }
   h+= (u16_length_count + 1) >> 1;
+
+  buffer[size_field_offset]|= h - raw_data_start; // raw data section size
   
   // c descriptors
   for(int i = 0; i < num_c_descriptors; i++) {
