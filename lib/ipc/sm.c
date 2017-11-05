@@ -38,7 +38,6 @@ result_t sm_get_service(ipc_object_t *out_object, char *name) {
   }
   
   u64 service_name = str2u64(name);
-  int i;
   
   if(strlen(name) > 8) {
     return LIBTRANSISTOR_ERR_SM_SERVICE_NAME_TOO_LONG;
