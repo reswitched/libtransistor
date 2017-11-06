@@ -15,11 +15,16 @@ result_t nv_result;
 int nv_errno;
 
 static ipc_object_t nv_object;
+static bool nv_initialized = false;
 
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
 static transfer_memory_h transfer_mem;
 
 result_t nv_init() {
+  if(nv_initialized) {
+    return RESULT_OK;
+  }
+  
   result_t r;
   r = sm_get_service(&nv_object, "nvdrv:a");
   if(r) {
@@ -62,6 +67,8 @@ result_t nv_init() {
     goto fail;
   }
 
+  nv_initialized = true;
+  
   return 0;
   
  fail:

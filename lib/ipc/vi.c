@@ -20,6 +20,7 @@ static ipc_object_t iads_object; // nn::visrv::sf::IApplicationDisplayService
 static ipc_object_t imds_object; // nn::visrv::sf::IManagerDisplayService
 static ipc_object_t isds_object; // nn::visrv::sf::ISystemDisplayService
 static ipc_object_t ihosbd_object; // nn::visrv::sf::IHOSBinderDriver
+static bool vi_initialized = false;
 
 static result_t get_object(ipc_object_t iface, int command, ipc_object_t *out) {
   ipc_request_t rq = ipc_default_request;
@@ -33,6 +34,10 @@ static result_t get_object(ipc_object_t iface, int command, ipc_object_t *out) {
 }
 
 result_t vi_init() {
+  if(vi_initialized) {
+    return RESULT_OK;
+  }
+  
   result_t r;
   r = sm_get_service(&imrs_object, "vi:m");
   if(r) {
@@ -65,6 +70,8 @@ result_t vi_init() {
   if((r = get_object(iads_object, 101, &isds_object)) != 0) { goto fail_ihosbd; }
   if((r = get_object(iads_object, 102, &imds_object)) != 0) { goto fail_isds; }
 
+  vi_initialized = true;
+  
   return 0;
   
  fail_isds:
