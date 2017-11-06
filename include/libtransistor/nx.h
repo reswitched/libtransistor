@@ -18,6 +18,7 @@ extern "C" {
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/ipc/nv.h>
 #include<libtransistor/ipc/vi.h>
+#include<libtransistor/gpu/gpu.h>
   
 #ifdef __cplusplus
 }
