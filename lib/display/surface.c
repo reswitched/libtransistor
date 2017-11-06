@@ -1,9 +1,12 @@
 #include<libtransistor/err.h>
 #include<libtransistor/types.h>
+#include<libtransistor/util.h>
 #include<libtransistor/display/binder.h>
 #include<libtransistor/display/graphic_buffer.h>
 #include<libtransistor/display/fence.h>
 #include<libtransistor/display/surface.h>
+
+#include<string.h>
 
 #define INTERFACE_TOKEN "android.gui.IGraphicBufferProducer"
 
@@ -37,12 +40,100 @@ static result_t queue_buffer_output_unflatten(parcel_t *parcel, queue_buffer_out
   return RESULT_OK;
 }
 
+static result_t graphic_buffer_flatten(parcel_t *parcel, graphic_buffer_t *gb) {
+  result_t r;
+  
+  uint8_t *out = parcel_write_inplace(parcel, 0x16c);
+
+  uint32_t gpu_buffer_id;
+  if((r = gpu_buffer_get_id(gb->gpu_buffer, &gpu_buffer_id)) != RESULT_OK) {
+    return r;
+  }
+
+  // not really sure why I need this?
+  gpu_buffer_t gpu_buffer_copy;
+  if((r = gpu_buffer_initialize_from_id(&gpu_buffer_copy, gpu_buffer_id)) != RESULT_OK) {
+    return r;
+  }
+  
+  uint32_t template[] = {
+    0x47424652, gb->width,  gb->height, gb->stride,
+    gb->format, gb->usage,  0x0000002a, gb->index,
+    0x00000000, 0x00000051,  0xffffffff, gpu_buffer_id,
+    0x00000000, 0xdaffcaff,  0x0000002a, 0x00000000,
+    0x00000b00, 0x00000001,  0x00000001, 0x00000500,
+    0x003c0000, 0x00000001,  0x00000000, 0x00000500,
+    0x000002d0, 0x00532120,  0x00000001, 0x00000003,
+    0x00001400, gpu_buffer_copy.nvmap_handle,  gb->unknown, 0x000000fe,
+    0x00000004, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x003c0000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x00000000,  0x00000000, 0x00000000,
+    0x00000000, 0x0, 0x0 // these last two words are some kind of address but I don't think it really matters
+  };
+
+  memcpy(out, template, 0x16c);
+  return RESULT_OK;
+}
+
+static result_t fence_unflatten(parcel_t *parcel, fence_t *fence) {
+  int num_fds = parcel_read_u32(parcel);
+  if(num_fds == 0) {
+    fence->fd = -1;
+  } else if(num_fds == 1) {
+    fence->fd = parcel_read_u32(parcel);
+  } else {
+    return LIBTRANSISTOR_ERR_DISPLAY_FENCE_TOO_MANY_FDS;
+  }
+  return RESULT_OK;
+}
+
 result_t surface_request_buffer(surface_t *surf, int slot, int *status, graphic_buffer_t *gb) {
   return LIBTRANSISTOR_ERR_UNIMPLEMENTED;
 }
 
 result_t surface_dequeue_buffer(surface_t *surf, uint32_t width, uint32_t height, pixel_format_t pixel_format, uint32_t usage, bool get_frame_timestamps, int *status, int *slot, fence_t *fence, frame_event_history_delta_t *out_timestamps) {
-  return LIBTRANSISTOR_ERR_UNIMPLEMENTED;
+  if(get_frame_timestamps) {
+    return LIBTRANSISTOR_ERR_UNIMPLEMENTED;    
+  }
+
+  result_t r;
+
+  parcel_t parcel;
+  parcel_initialize(&parcel);
+
+  parcel_write_interface_token(&parcel, INTERFACE_TOKEN);
+  parcel_write_u32(&parcel, pixel_format);
+  parcel_write_u32(&parcel, width);
+  parcel_write_u32(&parcel, height);
+  parcel_write_u32(&parcel, get_frame_timestamps ? 1 : 0);
+  parcel_write_u32(&parcel, usage);
+
+  parcel_t response;
+  if((r = binder_transact_parcel(&(surf->igbp_binder), DEQUEUE_BUFFER, 0, &parcel, &response)) != RESULT_OK) {
+    return r;
+  }
+
+  *slot = parcel_read_u32(&response);
+  if((r = fence_unflatten(&response, fence)) != RESULT_OK) {
+    return r;
+  }
+  *status = parcel_read_u32(&response);
+
+  dbg_printf("response parcel:");
+  hexdump(&(response.contents), 0x50);
+  
+  return RESULT_OK;
 }
 
 result_t surface_queue_buffer(surface_t *surf, int slot, queue_buffer_input_t *qbi, queue_buffer_output_t *qbo) {
@@ -89,5 +180,27 @@ result_t surface_connect(surface_t *surf, int api, bool producer_controlled_by_a
 }
 
 result_t surface_set_preallocated_buffer(surface_t *surf, int slot, graphic_buffer_t *gb) {
-  return LIBTRANSISTOR_ERR_UNIMPLEMENTED;
+  result_t r;
+
+  parcel_t parcel;
+  parcel_initialize(&parcel);
+  parcel_write_interface_token(&parcel, INTERFACE_TOKEN);
+  parcel_write_u32(&parcel, slot);
+  parcel_write_u32(&parcel, 1); // unknown
+
+  parcel_write_u32(&parcel, 0x16c); // flattened GraphicBuffer length
+  parcel_write_u32(&parcel, 0); // ???
+
+  r = graphic_buffer_flatten(&parcel, gb);
+  if(r) {
+    return r;
+  }
+
+  parcel_t response;
+  r = binder_transact_parcel(&(surf->igbp_binder), SET_PREALLOCATED_BUFFER, 0, &parcel, &response);
+  if(r) {
+    return r;
+  }
+  
+  return RESULT_OK;
 }
