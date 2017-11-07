@@ -55,6 +55,21 @@ static result_t graphic_buffer_flatten(parcel_t *parcel, graphic_buffer_t *gb) {
   if((r = gpu_buffer_initialize_from_id(&gpu_buffer_copy, gpu_buffer_id)) != RESULT_OK) {
     return r;
   }
+
+  /*
+    RFBG, width, height, stride,
+    format, usage, 0x2a [mId >> 32?], [some kind of native handle thing?] [v38 points here] [mId & 0xFFFFFFFF] index
+    0x0 [numFds?], 0x51 [numInts?], -1 {592}, gpu_buffer_id {593},
+    0x0, 0xdaffcaff {582}, -1 [0x2a?] {583}, v39 [0x0] {584},
+    v5 [0xb00] {585}, v4 [0x1] {586}, v4 [0x1] {587}, 0 [0x500] {588}
+    v31 [0x3c0000] {589}, v22 [0x1] {590}, uninit?,
+
+    memcpied from &v53, length 88 * v22
+
+    zeroes? {581 clears from v38+12 to the end of this block}
+
+    0x0 {594}, 0x0 {594}
+   */
   
   uint32_t template[] = {
     0x47424652, gb->width,  gb->height, gb->stride,
@@ -99,7 +114,34 @@ static result_t fence_unflatten(parcel_t *parcel, fence_t *fence) {
 }
 
 result_t surface_request_buffer(surface_t *surf, int slot, int *status, graphic_buffer_t *gb) {
-  return LIBTRANSISTOR_ERR_UNIMPLEMENTED;
+  result_t r;
+
+  parcel_t parcel;
+  parcel_initialize(&parcel);
+
+  parcel_write_interface_token(&parcel, INTERFACE_TOKEN);
+  parcel_write_u32(&parcel, slot);
+
+  parcel_t response;
+  if((r = binder_transact_parcel(&(surf->igbp_binder), REQUEST_BUFFER, 0, &parcel, &response)) != RESULT_OK) {
+    return r;
+  }
+
+  bool non_null = parcel_read_u32(&response) != 0;
+  if(non_null) {
+    int length = parcel_read_u32(&response);
+    if(length != 0x16c) {
+      return LIBTRANSISTOR_ERR_DISPLAY_GRAPHIC_BUFFER_LENGTH_MISMATCH;
+    }
+    int unknown = parcel_read_u32(&response);
+    void *gb_flat = parcel_read_inplace(&response, 0x16c);
+  }
+  *status = parcel_read_u32(&response);
+  
+  dbg_printf("response parcel:");
+  hexdump(&(response.contents), 0x50);
+  
+  return RESULT_OK;
 }
 
 result_t surface_dequeue_buffer(surface_t *surf, uint32_t width, uint32_t height, pixel_format_t pixel_format, uint32_t usage, bool get_frame_timestamps, int *status, int *slot, fence_t *fence, frame_event_history_delta_t *out_timestamps) {
@@ -129,9 +171,6 @@ result_t surface_dequeue_buffer(surface_t *surf, uint32_t width, uint32_t height
     return r;
   }
   *status = parcel_read_u32(&response);
-
-  dbg_printf("response parcel:");
-  hexdump(&(response.contents), 0x50);
   
   return RESULT_OK;
 }
