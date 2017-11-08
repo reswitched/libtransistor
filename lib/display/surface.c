@@ -40,6 +40,49 @@ static result_t queue_buffer_output_unflatten(parcel_t *parcel, queue_buffer_out
   return RESULT_OK;
 }
 
+static result_t queue_buffer_input_flatten(parcel_t *parcel, queue_buffer_input_t *qbi) {
+  // timestamp
+  // is_auto_timestamp
+  // dataspace
+  // crop
+  // scalingmode
+  // transform
+  // stickytransform
+  // getframetimestamps
+  // fence
+  // surface damage
+
+  /*uint32_t template[] = {
+    0x1, 0x1,
+    1, // isAutoTimestamp
+    1, // dataspace,
+    1, 1, 1280, 720, // crop
+    2, // scalingMode
+    1, // transform
+    1, // stickyTransform
+    1, // getFrameTimestamps
+    1, // num fence IDs
+    qbi->fence.fd, // fence ID
+    1, 1, 1, 1280, 720, 1, 1280, 720 // surface damage
+    };*/
+
+  uint32_t template[] = {
+    0x54, 0x0,
+    (uint32_t) qbi->timestamp, 0x0,
+    0x1, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x2,
+    0x0, 0x0, 0x1, 0x1,
+    0x42,
+    0x13f4,
+    0xffffffff, 0x0,
+    0xffffffff, 0x0, 0xffffffff, 0x0
+  };
+  
+  memcpy(parcel_write_inplace(parcel, sizeof(template)), template, sizeof(template));
+  
+  return RESULT_OK;
+}
+
 static result_t graphic_buffer_flatten(parcel_t *parcel, graphic_buffer_t *gb) {
   result_t r;
   
@@ -175,8 +218,33 @@ result_t surface_dequeue_buffer(surface_t *surf, uint32_t width, uint32_t height
   return RESULT_OK;
 }
 
-result_t surface_queue_buffer(surface_t *surf, int slot, queue_buffer_input_t *qbi, queue_buffer_output_t *qbo) {
-  return LIBTRANSISTOR_ERR_UNIMPLEMENTED;
+result_t surface_queue_buffer(surface_t *surf, int slot, queue_buffer_input_t *qbi, queue_buffer_output_t *qbo, int *status) {
+  result_t r;
+  
+  parcel_t parcel;
+  parcel_initialize(&parcel);
+
+  parcel_write_interface_token(&parcel, INTERFACE_TOKEN);
+  parcel_write_u32(&parcel, slot);
+  if((r = queue_buffer_input_flatten(&parcel, qbi)) != RESULT_OK) {
+    return r;
+  }
+
+  parcel_t response;
+  if((r = binder_transact_parcel(&(surf->igbp_binder), QUEUE_BUFFER, 0, &parcel, &response)) != RESULT_OK) {
+    return r;
+  }
+
+  if((r = queue_buffer_output_unflatten(&response, qbo)) != RESULT_OK) {
+    return r;
+  }
+
+  *status = parcel_read_u32(&response);
+
+  dbg_printf("IGBP_QUEUE_BUFFER response parcel:");
+  hexdump(&(response.contents), 0x50);
+  
+  return RESULT_OK;
 }
 
 result_t surface_cancel_buffer(surface_t *surf, int slot, fence_t *fence) {

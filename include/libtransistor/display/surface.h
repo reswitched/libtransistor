@@ -33,16 +33,15 @@ enum {
 } dataspace_t;
 
 typedef struct {
-  /*
-  int64_t timestamp;
+  int64_t timestamp;/*
   int32_t is_auto_timestamp;
   dataspace_t dataspace;
   rect_t crop;
   int32_t scaling_mode;
   uint32_t transform;
-  uint32_t sticky_transform;
+  uint32_t sticky_transform;*/
   fence_t fence;
-  region_t surface_damage;
+  /*region_t surface_damage;
   bool get_frame_timestamps;
   */
 } queue_buffer_input_t;
@@ -59,7 +58,7 @@ typedef struct {
 
 result_t surface_request_buffer(surface_t *surf, int slot, int *status, graphic_buffer_t *gb);
 result_t surface_dequeue_buffer(surface_t *surf, uint32_t width, uint32_t height, pixel_format_t pixel_format, uint32_t usage, bool get_frame_timestamps, int *status, int *slot, fence_t *fence, frame_event_history_delta_t *out_timestamps);
-result_t surface_queue_buffer(surface_t *surf, int slot, queue_buffer_input_t *qbi, queue_buffer_output_t *qbo);
+result_t surface_queue_buffer(surface_t *surf, int slot, queue_buffer_input_t *qbi, queue_buffer_output_t *qbo, int *status);
 result_t surface_cancel_buffer(surface_t *surf, int slot, fence_t *fence);
 result_t surface_query(surface_t *surf, int what, int *status, int *value);
 result_t surface_connect(surface_t *surf, int api, bool producer_controlled_by_app, int *status, queue_buffer_output_t *qbo);
