@@ -41,44 +41,46 @@ static result_t queue_buffer_output_unflatten(parcel_t *parcel, queue_buffer_out
 }
 
 static result_t queue_buffer_input_flatten(parcel_t *parcel, queue_buffer_input_t *qbi) {
-  // timestamp
-  // is_auto_timestamp
-  // dataspace
-  // crop
-  // scalingmode
-  // transform
-  // stickytransform
-  // getframetimestamps
-  // fence
-  // surface damage
+  struct {
+    uint64_t timestamp; // +0, +0   // v7 // timestamp?
+    uint32_t is_auto_timestamp; // +8, +8   // v8 (!= 0) (isAutoTimestamp?) see decompL332, sourceL746
+    rect_t crop; // +12 v115, +20 v116
+    uint32_t scaling_mode; // +28, +28 // v13 // scaling_mode
+    uint32_t transform; // +32, +32 // v12 // transform
+    uint32_t uk7; // +36, +36 // v91
+    uint32_t uk8; // +40, +40 // v9, v11 (!= 0), async?
+    uint32_t uk9; // +44, +44 // v14
+    fence_t fence;
+    /*struct {
+      uint32_t uk10; // +48, +48 // NOT v10, v10 is a pointer to some Fence object!
+      // don't really know how this is packed
+      // maybe more?
+      } fence; // +48*/
+  } template;
 
+  template.timestamp = qbi->timestamp;
+  template.is_auto_timestamp = qbi->is_auto_timestamp;
+  template.crop = qbi->crop;
+  template.scaling_mode = qbi->scaling_mode;
+  template.transform = qbi->transform;
+  template.uk7 = 0x1;
+  template.uk8 = 0x0;
+  template.uk9 = 0x0;
+  template.fence = qbi->fence;
+  
   /*uint32_t template[] = {
-    0x1, 0x1,
-    1, // isAutoTimestamp
-    1, // dataspace,
-    1, 1, 1280, 720, // crop
-    2, // scalingMode
-    1, // transform
-    1, // stickyTransform
-    1, // getFrameTimestamps
-    1, // num fence IDs
-    qbi->fence.fd, // fence ID
-    1, 1, 1, 1280, 720, 1, 1280, 720 // surface damage
+    0x54, 0x0,
+    0x1,
+    0x0, 0x0, 1280, 720,
+    0x1, 0x1, 0x1, 0x0, 0x0,
+    // fence?
+    0x24, 0x0, 0x1, 0x0102, 0x13f4, 0xffffffff, 0x0, 0xffffffff, 0x0, 0xffffffff, 0x0
     };*/
 
-  uint32_t template[] = {
-    0x54, 0x0,
-    (uint32_t) qbi->timestamp, 0x0,
-    0x1, 0x0, 0x0,
-    0x0, 0x0, 0x0, 0x2,
-    0x0, 0x0, 0x1, 0x1,
-    0x42,
-    0x13f4,
-    0xffffffff, 0x0,
-    0xffffffff, 0x0, 0xffffffff, 0x0
-  };
+  dbg_printf("flattened qbi:");
+  hexdump(&template, sizeof(template));
   
-  memcpy(parcel_write_inplace(parcel, sizeof(template)), template, sizeof(template));
+  memcpy(parcel_write_inplace(parcel, sizeof(template)), &template, sizeof(template));
   
   return RESULT_OK;
 }
@@ -98,7 +100,7 @@ static result_t graphic_buffer_flatten(parcel_t *parcel, graphic_buffer_t *gb) {
   if((r = gpu_buffer_initialize_from_id(&gpu_buffer_copy, gpu_buffer_id)) != RESULT_OK) {
     return r;
   }
-
+  
   /*
     RFBG, width, height, stride,
     format, usage, 0x2a [mId >> 32?], [some kind of native handle thing?] [v38 points here] [mId & 0xFFFFFFFF] index
@@ -145,14 +147,7 @@ static result_t graphic_buffer_flatten(parcel_t *parcel, graphic_buffer_t *gb) {
 }
 
 static result_t fence_unflatten(parcel_t *parcel, fence_t *fence) {
-  int num_fds = parcel_read_u32(parcel);
-  if(num_fds == 0) {
-    fence->fd = -1;
-  } else if(num_fds == 1) {
-    fence->fd = parcel_read_u32(parcel);
-  } else {
-    return LIBTRANSISTOR_ERR_DISPLAY_FENCE_TOO_MANY_FDS;
-  }
+  memcpy(fence, parcel_read_inplace(parcel, sizeof(*fence)), sizeof(*fence));
   return RESULT_OK;
 }
 
@@ -214,6 +209,9 @@ result_t surface_dequeue_buffer(surface_t *surf, uint32_t width, uint32_t height
     return r;
   }
   *status = parcel_read_u32(&response);
+
+  dbg_printf("IGBP_DEQUEUE_BUFFER response parcel:");
+  hexdump(&(response.contents), 0x50);
   
   return RESULT_OK;
 }

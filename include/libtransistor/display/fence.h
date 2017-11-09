@@ -3,5 +3,5 @@
 #include<libtransistor/types.h>
 
 typedef struct {
-  int fd;
+  uint32_t unknown[11];
 } fence_t;

@@ -4,6 +4,7 @@
 #include<libtransistor/display/binder.h>
 #include<libtransistor/display/graphic_buffer.h>
 #include<libtransistor/display/fence.h>
+#include<libtransistor/display/rect.h>
 
 typedef struct {
   uint64_t layer_id;
@@ -33,17 +34,13 @@ enum {
 } dataspace_t;
 
 typedef struct {
-  int64_t timestamp;/*
-  int32_t is_auto_timestamp;
-  dataspace_t dataspace;
+  int64_t timestamp;
+  bool is_auto_timestamp;
   rect_t crop;
   int32_t scaling_mode;
   uint32_t transform;
-  uint32_t sticky_transform;*/
   fence_t fence;
-  /*region_t surface_damage;
-  bool get_frame_timestamps;
-  */
+  // and a few more unknown fields
 } queue_buffer_input_t;
 
 typedef struct {
