@@ -2,7 +2,7 @@ LD := ld.lld$(LLVM_POSTFIX)
 CC := clang$(LLVM_POSTFIX)
 AS := llvm-mc$(LLVM_POSTFIX)
 LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined -T link.T
-CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -I include/ -I newlib/newlib/libc/include/ -I newlib/newlib/libc/sys/switch/include/ -Wall
+CC_FLAGS := -g -fPIC -fno-stack-protector -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -I include/ -I newlib/newlib/libc/include/ -I newlib/newlib/libc/sys/switch/include/ -Wall
 AS_FLAGS := -arch=aarch64 -triple aarch64-none-switch
 PYTHON2 := python2
 MEPHISTO := ctu
@@ -54,11 +54,11 @@ build/test/%.nso: build/test/%.nso.so
 	mkdir -p $(@D)
 	$(PYTHON2) ./tools/elf2nxo.py $< $@ nso
 
-build/test/%.nro.so: build/test/%.o build/lib/libtransistor.nro.a newlib/aarch64-none-switch/newlib/libc.a 
+build/test/%.nro.so: build/test/%.o build/lib/libtransistor.nro.a newlib/aarch64-none-switch/newlib/libc.a
 	mkdir -p $(@D)
 	$(LD) $(LD_FLAGS) -o $@ $< --whole-archive build/lib/libtransistor.nro.a --no-whole-archive newlib/aarch64-none-switch/newlib/libc.a
 
-build/test/%.nso.so: build/test/%.o build/lib/libtransistor.nso.a newlib/aarch64-none-switch/newlib/libc.a 
+build/test/%.nso.so: build/test/%.o build/lib/libtransistor.nso.a newlib/aarch64-none-switch/newlib/libc.a
 	mkdir -p $(@D)
 	$(LD) $(LD_FLAGS) -o $@ $< --whole-archive build/lib/libtransistor.nso.a --no-whole-archive newlib/aarch64-none-switch/newlib/libc.a
 
