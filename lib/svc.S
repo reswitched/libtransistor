@@ -71,7 +71,7 @@ DEFINE_OUT00_SVC 0x02, SetMemoryPermission
 DEFINE_OUT00_SVC 0x03, SetMemoryAttribute
 DEFINE_OUT00_SVC 0x04, MapMemory
 DEFINE_OUT00_SVC 0x05, UnmapMemory
-DEFINE_OUT32_SVC 0x06, QueryMemory
+DEFINE_OUT32_ARG2_SVC 0x06, QueryMemory
 
 DEFINE_OUT00_SVC 0x07, ExitProcess
 
