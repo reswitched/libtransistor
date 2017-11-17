@@ -1,5 +1,7 @@
 #pragma once
 
+#define CURRENT_PROCESS 0xffff8001
+
 typedef struct PACKED {
   void *base_addr;
   u64 size;
