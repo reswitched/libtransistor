@@ -1,6 +1,7 @@
 #pragma once
 
 #define CURRENT_PROCESS 0xffff8001
+#define CURRENT_THREAD 0xffff8000
 
 typedef struct PACKED {
   void *base_addr;
