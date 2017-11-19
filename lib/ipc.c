@@ -6,7 +6,7 @@
 
 #include<string.h>
 
-int ipc_debug_flag = 1;
+int ipc_debug_flag = 0;
 
 ipc_buffer_t null_buffer = {
   .addr = 0,
