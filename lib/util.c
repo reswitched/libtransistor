@@ -20,7 +20,7 @@ void *find_empty_memory_block(size_t len) {
     if((r = svcQueryMemory(&memory_info, &page_info, (void*) addr)) != RESULT_OK) {
       return NULL;
     }
-  } while(memory_info.memory_type != 0 || memory_info.memory_attribute != 0 || memory_info.permission != 0 || memory_info.size < len);
+  } while(memory_info.memory_type != 0 || memory_info.memory_attribute != 0 || memory_info.permission != 0 || memory_info.base_addr + memory_info.size < addr + len);
   return (void*)addr;
 }
 
