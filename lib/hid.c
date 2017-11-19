@@ -55,7 +55,7 @@ result_t hid_init() {
   }
 
 
-  if ((shared_memory = find_empty_mem_block(sizeof(hid_shared_memory_t))) == NULL) {
+  if ((shared_memory = find_empty_memory_block(sizeof(hid_shared_memory_t))) == NULL) {
     goto fail_shared_memory_obtained;
   }
 

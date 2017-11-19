@@ -6,7 +6,7 @@
 
 #include<stdlib.h>
 
-void *find_empty_mem_block(size_t len) {
+void *find_empty_memory_block(size_t len) {
   // find a suitable address for mapping the shared memory
   // TODO: Make sure the block is big enough to fit len.
   uint64_t addr;
