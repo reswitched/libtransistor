@@ -1,3 +1,6 @@
 [submodule "newlib"]
 	path = newlib
 	url = https://github.com/reswitched/newlib.git
+[submodule "sdl"]
+	path = sdl
+	url = https://github.com/reswitched/sdl-libtransistor.git

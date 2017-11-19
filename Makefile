@@ -2,7 +2,7 @@ LD := ld.lld$(LLVM_POSTFIX)
 CC := clang$(LLVM_POSTFIX)
 AS := llvm-mc$(LLVM_POSTFIX)
 LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined -T link.T
-CC_FLAGS := -g -fPIC -fno-stack-protector -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -I include/ -I newlib/newlib/libc/include/ -I newlib/newlib/libc/sys/switch/include/ -Wall
+CC_FLAGS := -g -fPIC -fno-stack-protector -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -I include/ -isystem newlib/newlib/libc/include/ -isystem newlib/newlib/libc/sys/switch/include/ -Wall
 AS_FLAGS := -arch=aarch64 -triple aarch64-none-switch
 PYTHON2 := python2
 MEPHISTO := ctu
@@ -12,12 +12,14 @@ libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid
 
 libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/lib/util.o build/lib/ipc/sm.o build/lib/ipc/bsd.o build/lib/ipc/nv.o build/lib/ipc/hid.o build/lib/hid.o
 
-# for building newlib
+# for building newlib and sdl
 export AR_FOR_TARGET = llvm-ar$(LLVM_POSTFIX)
 export AS_FOR_TARGET = llvm-mc$(LLVM_POSTFIX) -arch=aarch64 -mattr=+neon
 export LD_FOR_TARGET = ld.lld$(LLVM_POSTFIX)
 export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
-export CC_FOR_TARGET = clang$(LLVM_POSTFIX) -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc -Wno-unused-command-line-argument
+export CFLAGS_FOR_LIBRARIES = -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc -Wno-unused-command-line-argument -fuse-ld=lld -I "$(CURDIR)/include" -D__SWITCH__=1
+export CC_FOR_TARGET = clang$(LLVM_POSTFIX) $(CFLAGS_FOR_LIBRARIES)
+export CFLAGS_FOR_SDL = $(CFLAGS_FOR_LIBRARIES) -I $(CURDIR)/newlib/newlib/libc/include/ -nostdlib -nostartfiles -nodefaultlibs -nostdlibinc
 
 .SUFFIXES: # disable built-in rules
 
@@ -80,6 +82,10 @@ newlib/aarch64-none-switch/newlib/libc.a: newlib/Makefile
 
 newlib/aarch64-none-switch/libgloss/libnosys/libnosys.a: newlib/aarch64-none-switch/newlib/libc.a
 newlib/aarch64-none-switch/libgloss/aarch64/librdimon.a: newlib/aarch64-none-switch/newlib/libc.a
+
+sdl/build/Makefile:
+	mkdir -p $(@D)
+	cd sdl/build; ../configure --host=aarch64-none-switch CC=$(CC) CFLAGS="$(CFLAGS_FOR_SDL)" --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads
 
 clean:
 	rm -rf build/lib/* build/test/*
