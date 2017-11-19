@@ -4,6 +4,26 @@
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/bsd.h>
 
+#include<stdlib.h>
+
+void *find_empty_mem_block(size_t len) {
+  // find a suitable address for mapping the shared memory
+  // TODO: Make sure the block is big enough to fit len.
+  uint64_t addr;
+  memory_info_t memory_info;
+  result_t r;
+  uint32_t page_info;
+  do {
+    addr = rand() << 32 | rand();
+    addr += 0x80000000;
+    addr &= 0x0000007FFFFFF000;
+    if((r = svcQueryMemory(&memory_info, &page_info, (void*) addr)) != RESULT_OK) {
+      return NULL;
+    }
+  } while(memory_info.memory_type != 0 || memory_info.memory_attribute != 0 || memory_info.permission != 0);
+  return (void*)addr;
+}
+
 char nybble2hex(u8 nybble) {
   if(nybble < 10) {
     return '0' + nybble;

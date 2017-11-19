@@ -5,7 +5,6 @@
 #include<libtransistor/ipc/hid.h>
 #include<libtransistor/hid.h>
 
-#include<stdlib.h>
 #include<string.h>
 #include<malloc.h>
 
@@ -55,27 +54,17 @@ result_t hid_init() {
     goto fail_ipc;
   }
 
-  // find a suitable address for mapping the shared memory
-  uint64_t addr;
-  memory_info_t memory_info;
-  uint32_t page_info;
-  do {
-    addr = rand() << 32 | rand();
-    addr+= 0x80000000;
-    addr&= 0x0000007FFFFFF000;
-    if((r = svcQueryMemory(&memory_info, &page_info, (void*) addr)) != RESULT_OK) {
-      goto fail_shared_memory_obtained;
-    }
-  } while(memory_info.memory_type != 0 || memory_info.memory_attribute != 0 || memory_info.permission != 0);
 
-  shared_memory = (hid_shared_memory_t*) addr;
-  
+  if ((shared_memory = find_empty_mem_block(sizeof(hid_shared_memory_t))) == NULL) {
+    goto fail_shared_memory_obtained;
+  }
+
   if((r = svcMapSharedMemory(shared_memory_handle, shared_memory, SHARED_MEMORY_SIZE, 1)) != RESULT_OK) {
     goto fail_shared_memory_obtained;
   }
-  
+
   return 0;
-  
+
  fail_shared_memory_obtained:
   svcCloseHandle(shared_memory_handle);
  fail_ipc:
