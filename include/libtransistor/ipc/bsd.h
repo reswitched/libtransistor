@@ -34,5 +34,5 @@ void bsd_freeaddrinfo(struct addrinfo *res);
 int bsd_close(int socket);
 void bsd_finalize();
 
-result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, int size);
-result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, int size, int limit);
+result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, size_t size);
+result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, size_t size, int limit);

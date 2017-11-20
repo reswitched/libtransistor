@@ -7,6 +7,7 @@
 
 #include<string.h>
 #include<malloc.h>
+#include<assert.h>
 
 static bool hid_initialized = false;
 static shared_memory_h shared_memory_handle;
@@ -14,35 +15,16 @@ static hid_shared_memory_t *shared_memory;
 
 #define SHARED_MEMORY_SIZE 0x40000
 
+static_assert(offsetof(hid_shared_memory_t, unknown7) == 0x5000, "malformed hid struct");
+static_assert(offsetof(hid_shared_memory_t, controllers) == 0x9A00, "malformed hid struct");
+static_assert(sizeof(hid_controller_state_entry_t) == 0x30, "malformed hid struct");
+static_assert(sizeof(hid_controller_state_t) == (0x20 + (0x30 * 17)), "malformed hid struct");
+static_assert(offsetof(hid_controller_t, main) == 0x1408, "malformed hid struct");
+static_assert(sizeof(hid_controller_t) == 0x5000, "malformed hid struct");
+
 result_t hid_init() {
   if(hid_initialized) {
     return RESULT_OK;
-  }
-
-  // these would be much better off if I could catch them at compile-time
-  if(offsetof(hid_shared_memory_t, unknown7) != 0x5000) {
-    dbg_printf("bad unknown5 offset: 0x%x", offsetof(hid_shared_memory_t, unknown5));
-    return LIBTRANSISTOR_ERR_HID_BAD_STRUCTURE;
-  }
-  if(offsetof(hid_shared_memory_t, controllers) != 0x9A00) {
-    dbg_printf("bad controllers offset: 0x%x", offsetof(hid_shared_memory_t, controllers));
-    return LIBTRANSISTOR_ERR_HID_BAD_STRUCTURE;
-  }
-  if(sizeof(hid_controller_state_entry_t) != 0x30) {
-    dbg_printf("bad state entry size");
-    return LIBTRANSISTOR_ERR_HID_BAD_STRUCTURE;
-  }
-  if(sizeof(hid_controller_state_t) != (0x20 + (0x30 * 17))) {
-    dbg_printf("bad state size");
-    return LIBTRANSISTOR_ERR_HID_BAD_STRUCTURE;
-  }
-  if(offsetof(hid_controller_t, main) != 0x1408) {
-    dbg_printf("bad main offset: 0x%x", offsetof(hid_controller_t, main));
-    return LIBTRANSISTOR_ERR_HID_BAD_STRUCTURE;
-  }
-  if(sizeof(hid_controller_t) != 0x5000) {
-    dbg_printf("bad controller size: 0x%x", sizeof(hid_controller_t));
-    return LIBTRANSISTOR_ERR_HID_BAD_STRUCTURE;
   }
   
   result_t r;

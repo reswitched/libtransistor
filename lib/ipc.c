@@ -64,13 +64,13 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
   bool to_domain = object.object_id >= 0;
   
   // group buffers by descriptor type
-  for(int i = 0; i < rq->num_buffers; i++) {
-    ipc_buffer_t *buffer = rq->buffers[i];
+  for(uint32_t i = 0; i < rq->num_buffers; i++) {
+    ipc_buffer_t *ipc_buffer = rq->buffers[i];
 
-    int direction = (buffer->type & 0b0011) >> 0; // in or out (ax or bc)
-    int family    = (buffer->type & 0b1100) >> 2; // ab or xc
+    int direction = (ipc_buffer->type & 0b0011) >> 0; // in or out (ax or bc)
+    int family    = (ipc_buffer->type & 0b1100) >> 2; // ab or xc
     
-    if(!(buffer->type & 0x20)) {
+    if(!(ipc_buffer->type & 0x20)) {
       ipc_buffer_t **list;
       int *count;
       
@@ -104,20 +104,20 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
       }
 
       // add the buffer to the list
-      list[(*count)++] = buffer;
+      list[(*count)++] = ipc_buffer;
     } else { // flag 0x20 set
       // this isn't entirely correct. the nintendo code is kinda complicated though
-      if(buffer->type == 0x21) { // IN (ax)
+      if(ipc_buffer->type == 0x21) { // IN (ax)
         if(num_a_descriptors >= 16 || num_x_descriptors >= 16) {
           return LIBTRANSISTOR_ERR_TOO_MANY_BUFFERS;
         }
-        a_descriptors[num_a_descriptors++] = buffer;
+        a_descriptors[num_a_descriptors++] = ipc_buffer;
         x_descriptors[num_x_descriptors++] = &null_buffer;
-      } else if(buffer->type == 0x22) { // OUT (bc)
+      } else if(ipc_buffer->type == 0x22) { // OUT (bc)
         if(num_b_descriptors >= 16 || num_c_descriptors >= 16) {
           return LIBTRANSISTOR_ERR_TOO_MANY_BUFFERS;
         }
-        b_descriptors[num_b_descriptors++] = buffer;
+        b_descriptors[num_b_descriptors++] = ipc_buffer;
         c_descriptors[num_c_descriptors++] = &null_buffer;
       } else {
         return LIBTRANSISTOR_ERR_UNSUPPORTED_BUFFER_TYPE;
@@ -148,7 +148,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
     return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
   }
   
-  int raw_data_words = rq->raw_data_size / sizeof(uint32_t);
+  int raw_data_words = (int) (rq->raw_data_size / sizeof(uint32_t));
   
   int num_move_handles = rq->num_move_handles;
   if(!to_domain) { // not sure if this is actually legit or not
@@ -206,11 +206,11 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
       return LIBTRANSISTOR_ERR_INVALID_BUFFER_SIZE;
     }
     
-    buffer[h++] = counter
-      | (((u64) buf->addr >> 36) & 0b111) << 6
-      | ((counter >> 9) & 0b111) << 9
-      | (((u64) buf->addr >> 32) & 0b1111) << 12
-      | (buf->size << 16);
+    buffer[h++] = (u32) (counter
+                         | (((u64) buf->addr >> 36) & 0b111) << 6
+                         | ((counter >> 9) & 0b111) << 9
+                         | (((u64) buf->addr >> 32) & 0b1111) << 12
+                         | (buf->size << 16));
 
     buffer[h++] = (u64) buf->addr & 0xFFFFFFFF;
   }
@@ -235,10 +235,10 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
       return LIBTRANSISTOR_ERR_INVALID_PROTECTION;
     }
     
-    buffer[h++] = (buf->type >> 6) // flags/permissions
-      | (((u64) buf->addr >> 36) & 0b111) << 2
-      | ((buf->size >> 32) & 0b1111) << 24
-      | (((u64) buf->addr >> 32) & 0b1111) << 28;
+    buffer[h++] = (u32) ((buf->type >> 6) // flags/permissions
+                         | (((u64) buf->addr >> 36) & 0b111) << 2
+                         | ((buf->size >> 32) & 0b1111) << 24
+                         | (((u64) buf->addr >> 32) & 0b1111) << 28);
   }
   
   // "w" descriptors would go here
@@ -310,7 +310,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
       if(buf->size >> 16) {
         return LIBTRANSISTOR_ERR_INVALID_BUFFER_SIZE;
       }
-      u16_length_list[u16_length_count++] = buf->size;
+      u16_length_list[u16_length_count++] = (uint16_t) buf->size;
     }
   }
   h+= (u16_length_count + 1) >> 1;
@@ -331,7 +331,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
     
     buffer[h++] = (u64) buf->addr & 0xFFFFFFFF;
     buffer[h++] = ((u64) buf->addr >> 32)
-      | (buf->size << 16);
+      | ((u32) buf->size << 16);
   }
 
   return RESULT_OK;
@@ -344,7 +344,7 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
 
   bool from_domain = object.object_id >= 0;
   
-  int raw_data_words = rs->raw_data_size / sizeof(uint32_t);
+  size_t raw_data_words = rs->raw_data_size / sizeof(uint32_t);
   
   int h = 0; // h for HEAD
 
@@ -356,23 +356,23 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
     return LIBTRANSISTOR_ERR_INVALID_IPC_RESPONSE_TYPE;
   }
   
-  int num_x_descriptors = (header0 >> 16) & 0xF;
-  int num_a_descriptors = (header0 >> 20) & 0xF;
-  int num_b_descriptors = (header0 >> 24) & 0xF;
-  int num_w_descriptors = (header0 >> 28) & 0xF;
+  uint32_t num_x_descriptors = (header0 >> 16) & 0xF;
+  uint32_t num_a_descriptors = (header0 >> 20) & 0xF;
+  uint32_t num_b_descriptors = (header0 >> 24) & 0xF;
+  uint32_t num_w_descriptors = (header0 >> 28) & 0xF;
 
-  int raw_data_section_size = header1 & 0b1111111111;
+  uint32_t raw_data_section_size = header1 & 0b1111111111;
   
-  int c_descriptor_flags = (header1 >> 10) & 0xF;
+  //int c_descriptor_flags = (header1 >> 10) & 0xF;
   bool has_handle_descriptor = header1 >> 31;
 
-  int num_copy_handles = 0;
-  int num_move_handles = 0;
-  handle_t *copy_handles;
-  handle_t *move_handles;
+  uint32_t num_copy_handles = 0;
+  uint32_t num_move_handles = 0;
+  handle_t *copy_handles = NULL;
+  handle_t *move_handles = NULL;
 
   bool has_pid = false;
-  int pid;
+  uint64_t pid;
   
   if(has_handle_descriptor) {
     int handle_descriptor = buffer[h++];
@@ -394,7 +394,6 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
   h+= num_w_descriptors * 3;
 
   // align head to 4 words
-  int raw_data_start = h;
   h = (h + 3) & ~3;
 
   int domain_header_location = h;
@@ -451,22 +450,22 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
     }
 
     uint32_t *domain_ids = (uint32_t*) (((uint8_t*) domain_header) + 16 + 16 + rs->raw_data_size);
-    for(int i = 0; i < rs->num_objects; i++) {
+    for(uint32_t i = 0; i < rs->num_objects; i++) {
       rs->objects[i].domain = object.domain;
       rs->objects[i].object_id = domain_ids[i];
     }
   }
   
-  for(int i = 0; i < rs->num_copy_handles; i++) { rs->copy_handles[i] = copy_handles[i]; }
+  for(uint32_t i = 0; i < rs->num_copy_handles; i++) { rs->copy_handles[i] = copy_handles[i]; }
   int mhi = 0; // move handle index
   if(!from_domain) {
-    for(int i = 0; i < rs->num_objects; i++) {
+    for(uint32_t i = 0; i < rs->num_objects; i++) {
       rs->objects[i].session = move_handles[mhi++];
       rs->objects[i].object_id = -1;
     }
   }
-  for(int i = 0; i < rs->num_move_handles; i++) { rs->move_handles[i] = move_handles[mhi++]; }
-  for(int i = 0; i < raw_data_words; i++) {
+  for(uint32_t i = 0; i < rs->num_move_handles; i++) { rs->move_handles[i] = move_handles[mhi++]; }
+  for(uint32_t i = 0; i < raw_data_words; i++) {
     rs->raw_data[i] = raw_data[i];
   }
   

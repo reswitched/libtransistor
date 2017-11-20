@@ -44,7 +44,7 @@ char log_buffer[0x20000];
 int log_string(char *string, size_t len) {
   svcOutputDebugString(string, len);
   size_t start = log_length;
-  for(int i = 0; i < len; i++) {
+  for(size_t i = 0; i < len; i++) {
     if(string[i] == 0) { break; }
     log_buffer[log_length++] = string[i];
   }
@@ -63,11 +63,11 @@ void hexdump(const void *rawbuf, size_t size) {
   const u8 *buf = rawbuf;
   char line[0x31 + 4 + 0x10 + 1];
   int i = 0;
-  int total = 0;
+  size_t total = 0;
   while(total < size) {
     i = 0;
 
-    int linestart = total;
+    size_t linestart = total;
 
     // hexdump section
     while(total < linestart + 0x10) {
@@ -123,7 +123,11 @@ void hexnum(int num) {
 }
 
 #define STB_SPRINTF_IMPLEMENTATION
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdouble-promotion"
+#pragma clang diagnostic ignored "-Wconditional-uninitialized"
 #include<libtransistor/stb_sprintf.h>
+#pragma clang diagnostic pop
 
 #include<stdarg.h>
 

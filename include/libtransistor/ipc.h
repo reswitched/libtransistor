@@ -26,7 +26,7 @@ typedef struct {
   ipc_buffer_t **buffers;
   u32 request_id;
   u32 *raw_data;
-  u64 raw_data_size; // in BYTES
+  size_t raw_data_size; // in BYTES
   bool send_pid;
   u8 num_copy_handles;
   u8 num_move_handles;
@@ -39,14 +39,14 @@ typedef struct {
 
 // fill this struct out with what you expect before passing it to ipc_unmarshal
 typedef struct {
-  int num_copy_handles;
-  int num_move_handles;
-  int num_objects;
+  uint32_t num_copy_handles;
+  uint32_t num_move_handles;
+  uint32_t num_objects;
   handle_t *copy_handles;
   handle_t *move_handles;
   ipc_object_t *objects;
   
-  int raw_data_size; // in BYTES
+  size_t raw_data_size; // in BYTES
   u32 *raw_data;
 
   bool has_pid;

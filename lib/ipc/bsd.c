@@ -675,7 +675,7 @@ void bsd_finalize() {
   ipc_close_domain(bsd_domain);
 }
 
-result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, int size) {
+result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, size_t size) {
   struct {
     uint32_t magic;
     int32_t ai_flags;
@@ -729,7 +729,7 @@ result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, int size) {
   buf+= ai->ai_addrlen;
   size-= ai->ai_addrlen == 0 ? 4 : ai->ai_addrlen;
 
-  int canonlen = ai->ai_canonname == NULL ? 0 : strlen(ai->ai_canonname);
+  size_t canonlen = ai->ai_canonname == NULL ? 0 : strlen(ai->ai_canonname);
   if(size < canonlen + 1) {
     return LIBTRANSISTOR_ERR_BSD_BUFFER_TOO_SMALL;
   }
@@ -750,7 +750,7 @@ result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, int size) {
   }
 }
 
-result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, int size, int limit) {
+result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, size_t size, int limit) {
   if(limit == 0) { // -1 means no limit
     return RESULT_OK;
   }
@@ -762,10 +762,13 @@ result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, int size, int li
     int32_t ai_socktype;
     int32_t ai_protocol;
     int32_t ai_addrlen;
-  } __attribute__((packed)) ai_packed_header = {};
+  } __attribute__((packed)) ai_packed_header = {0, 0, 0, 0, 0, 0};
 
   result_t r;
 
+  bool allocated_ai_addr = false;
+  bool allocated_ai_canonname = false;
+  
   if(size < sizeof(ai_packed_header)) {
     r = LIBTRANSISTOR_ERR_BSD_BUFFER_TOO_SMALL;
     goto bail;
@@ -785,8 +788,6 @@ result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, int size, int li
   ai->ai_socktype = ntohl(ai_packed_header.ai_socktype);
   ai->ai_protocol = ntohl(ai_packed_header.ai_protocol);
   ai->ai_addrlen = ntohl(ai_packed_header.ai_addrlen);
-
-  bool allocated_ai_addr = false;
   
   if(ai->ai_addrlen == 0) {
     ai->ai_addr = NULL;
@@ -824,9 +825,8 @@ result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, int size, int li
     size-= ai->ai_addrlen;
   }
 
-  int canonlen = strlen((char*) buf);
+  size_t canonlen = strlen((char*) buf);
   char *canonname;
-  bool allocated_ai_canonname = false;
   if(canonlen > 0) {
     if(ai->ai_canonname == NULL) {
       canonname = malloc(canonlen+1);
