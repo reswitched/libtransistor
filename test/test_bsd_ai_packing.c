@@ -50,7 +50,7 @@ int main() {
     0x00, 0x00
   };
   
-  for(int i = 0; i < sizeof(template); i++) {
+  for(size_t i = 0; i < sizeof(template); i++) {
     if(buf[i] != template[i]) {
       dbg_printf("packing mismatch at +0x%x", i);
       hexdump(buf, 0x50);
@@ -60,30 +60,29 @@ int main() {
 
   dbg_printf("bsd addrinfo packing test passed");
 
-  struct addrinfo *out;
-  r = bsd_ai_unpack(&out, template, sizeof(template));
+  struct addrinfo out;
+  memset(&out, 0, sizeof(out));
+  r = bsd_ai_unpack(&out, template, sizeof(template), 1);
   if(r) {
     dbg_printf("failed to unpack addrinfo: 0x%x", r);
     return 1;
   }
 
-  if(!(memcmp(out, &ai_udp, sizeof(struct addrinfo) - sizeof(ai_udp.ai_next)))) {
+  if(!(memcmp(&out, &ai_udp, sizeof(struct addrinfo) - sizeof(ai_udp.ai_next)))) {
     dbg_printf("ai_udp does not match");
     return 1;
   }
 
-  if(out->ai_next == NULL) {
+  if(out.ai_next == NULL) {
     dbg_printf("only unpacked one addrinfo struct");
     return 1;
   }
   
-  if(!(memcmp(out->ai_next, &ai_tcp, sizeof(struct addrinfo)))) {
+  if(!(memcmp(out.ai_next, &ai_tcp, sizeof(struct addrinfo)))) {
     dbg_printf("ai_tcp does not match");
     return 1;
   }
 
-  bsd_freeaddrinfo(out);
-  
   dbg_printf("bsd addrinfo unpacking test passed");
   return 0;
 }
