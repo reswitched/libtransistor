@@ -77,6 +77,7 @@ void hexdump(const void *rawbuf, size_t size) {
         line[i++] = nybble2hex(byte & 15);
         line[i++] = ' ';
       } else {
+        total++;
         line[i++] = ' ';
         line[i++] = ' ';
         line[i++] = ' ';
@@ -100,6 +101,7 @@ void hexdump(const void *rawbuf, size_t size) {
           line[i++] = '.';
         }
       } else {
+        total++;
         line[i++] = ' ';
       }
     }
