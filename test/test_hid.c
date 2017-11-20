@@ -37,8 +37,6 @@ int main() {
   sm_finalize();
   return 0;
   
- fail_hid:
-  hid_finalize();
  fail_sm:
   sm_finalize();
  fail:
