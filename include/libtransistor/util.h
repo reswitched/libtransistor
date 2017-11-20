@@ -1,5 +1,6 @@
 #pragma once
 
+void *find_empty_memory_block(size_t len);
 char nybble2hex(u8 nybble);
 void hexdump(const void *rawbuf, size_t size);
 void hexnum(int num);
