@@ -14,13 +14,13 @@ void *find_empty_memory_block(size_t len) {
   result_t r;
   uint32_t page_info;
   do {
-    addr = rand() << 32 | rand();
+    addr = (uint64_t) rand() << 32 | rand();
     addr += 0x80000000;
     addr &= 0x0000007FFFFFF000;
     if((r = svcQueryMemory(&memory_info, &page_info, (void*) addr)) != RESULT_OK) {
       return NULL;
     }
-  } while(memory_info.memory_type != 0 || memory_info.memory_attribute != 0 || memory_info.permission != 0 || memory_info.base_addr + memory_info.size < addr + len);
+  } while(memory_info.memory_type != 0 || memory_info.memory_attribute != 0 || memory_info.permission != 0 || (uint64_t) memory_info.base_addr + memory_info.size < addr + len);
   return (void*)addr;
 }
 

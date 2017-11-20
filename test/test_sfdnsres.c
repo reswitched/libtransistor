@@ -1,6 +1,7 @@
 #include<libtransistor/nx.h>
 
 #include<sys/socket.h>
+#include<string.h>
 
 void dumpsockaddrin(struct sockaddr_in *sin) {
   dbg_printf("sin_family: %d", sin->sin_family);
