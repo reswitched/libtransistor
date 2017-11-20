@@ -9,6 +9,12 @@
 extern result_t bsd_result;
 extern int      bsd_errno;
 
+struct addrinfo_fixed {
+  struct addrinfo ai;
+  struct sockaddr_in addr;
+  char canonname[256];
+};
+
 result_t bsd_init();
 int bsd_socket(int domain, int type, int protocol);
 int bsd_recv(int socket, void *message, size_t length, int flags);
@@ -23,9 +29,10 @@ int bsd_setsockopt(int socket, int level, int option_name, const void *option_va
 int bsd_shutdown(int socket, int how);
 int bsd_select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds, fd_set *restrict errorfds, struct timeval *restrict timeout);
 int bsd_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
+int bsd_getaddrinfo_fixed(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo_fixed *res, int num_addrinfos);
 void bsd_freeaddrinfo(struct addrinfo *res);
 int bsd_close(int socket);
 void bsd_finalize();
 
 result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, int size);
-result_t bsd_ai_unpack(struct addrinfo **ai, const uint8_t *buf, int size);
+result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, int size, int limit);

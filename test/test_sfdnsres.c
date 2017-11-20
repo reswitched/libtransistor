@@ -47,6 +47,7 @@ int main() {
   struct addrinfo *ai = NULL;
 
   struct addrinfo hints;
+  memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   
@@ -62,7 +63,33 @@ int main() {
   }
   
   dumpaddrinfo(ai);
+  
+  bsd_freeaddrinfo(ai);
 
+  struct addrinfo_fixed ai_fixed[2];
+  e = bsd_getaddrinfo_fixed("conntest.nintendowifi.net", "6767", &hints, ai_fixed, 2);
+  if(e) {
+    dbg_printf("failed to getaddrinfo: %d, 0x%x", e, bsd_result);
+    goto err;
+  }
+
+  ai = &ai_fixed[0].ai;
+  
+  if(ai->ai_addr != (struct sockaddr*) &ai_fixed[0].addr) {
+    dbg_printf("unexpected ai->ai_addr");
+    goto err;
+  }
+  if(ai->ai_canonname != NULL && ai->ai_canonname != ai_fixed[0].canonname) {
+    dbg_printf("unexpected ai->ai_canonname");
+    goto err;
+  }
+  if(ai->ai_next != NULL && ai->ai_next != &ai_fixed[1].ai) {
+    dbg_printf("unexpected ai->ai_next");
+    goto err;
+  }
+  
+  dumpaddrinfo(ai);
+  
   bsd_finalize();
   sm_finalize();
   return 0;

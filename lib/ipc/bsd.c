@@ -522,7 +522,7 @@ int bsd_select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds, fd
   return response[0];
 }
 
-int bsd_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res) {
+static int bsd_getaddrinfo_impl(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo *res, int limit) {
   result_t r;
 
   struct {
@@ -602,13 +602,39 @@ int bsd_getaddrinfo(const char *node, const char *service, const struct addrinfo
     return -1;
   }
 
-  r = bsd_ai_unpack(res, response_packed, response[2]);
+  r = bsd_ai_unpack(res, response_packed, response[2], limit);
   if(r) {
     bsd_result = r;
     return -1;
   }
   
   return response[0];
+}
+
+int bsd_getaddrinfo_fixed(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo_fixed *res, int num_addrinfos) {
+  for(int i = 0; i < num_addrinfos; i++) {
+    res[i].ai.ai_addr = (struct sockaddr*) &(res[i].addr);
+    res[i].ai.ai_canonname = res[i].canonname;
+    res[i].ai.ai_next = (i+1) == num_addrinfos ? NULL : &(res[i + 1].ai);
+  }
+  return bsd_getaddrinfo_impl(node, service, hints, &res->ai, num_addrinfos);
+}
+
+int bsd_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res) {
+  struct addrinfo *ai;
+  ai = malloc(sizeof(struct addrinfo));
+  if(ai == NULL) {
+    return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+  }
+  memset(ai, 0, sizeof(struct addrinfo));
+  
+  result_t r;
+  if((r = bsd_getaddrinfo_impl(node, service, hints, ai, -1)) != RESULT_OK) {
+    free(ai);
+    return r;
+  }
+  *res = ai;
+  return r;
 }
 
 // def tested via PS
@@ -724,7 +750,11 @@ result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, int size) {
   }
 }
 
-result_t bsd_ai_unpack(struct addrinfo **res, const uint8_t *buf, int size) {
+result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, int size, int limit) {
+  if(limit == 0) { // -1 means no limit
+    return RESULT_OK;
+  }
+  
   struct {
     uint32_t magic;
     int32_t ai_flags;
@@ -736,15 +766,6 @@ result_t bsd_ai_unpack(struct addrinfo **res, const uint8_t *buf, int size) {
 
   result_t r;
 
-  struct addrinfo *ai;
-  
-  ai = malloc(sizeof(struct addrinfo));
-  if(ai == NULL) {
-    return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-  }
-  
-  memset(ai, 0, sizeof(struct addrinfo));
-  
   if(size < sizeof(ai_packed_header)) {
     r = LIBTRANSISTOR_ERR_BSD_BUFFER_TOO_SMALL;
     goto bail;
@@ -764,17 +785,22 @@ result_t bsd_ai_unpack(struct addrinfo **res, const uint8_t *buf, int size) {
   ai->ai_socktype = ntohl(ai_packed_header.ai_socktype);
   ai->ai_protocol = ntohl(ai_packed_header.ai_protocol);
   ai->ai_addrlen = ntohl(ai_packed_header.ai_addrlen);
+
+  bool allocated_ai_addr = false;
   
   if(ai->ai_addrlen == 0) {
     ai->ai_addr = NULL;
     buf+= 4;
     size-= 4;
   } else {
-    ai->ai_addr = malloc(ai->ai_addrlen);
-    if(ai->ai_addr == NULL) {
-      dbg_printf("could not allocate ai_addr, len: %d", ai->ai_addrlen);
-      r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-      goto bail;
+    if(ai->ai_addr == NULL) { // if this is already set, it's set to an existing buffer that we should use
+      ai->ai_addr = malloc(ai->ai_addrlen);
+      if(ai->ai_addr == NULL) {
+        dbg_printf("could not allocate ai_addr, len: %d", ai->ai_addrlen);
+        r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+        goto bail;
+      }
+      allocated_ai_addr = true;
     }
     switch(ai->ai_family) {
     case AF_INET: {
@@ -800,11 +826,17 @@ result_t bsd_ai_unpack(struct addrinfo **res, const uint8_t *buf, int size) {
 
   int canonlen = strlen((char*) buf);
   char *canonname;
+  bool allocated_ai_canonname = false;
   if(canonlen > 0) {
-    canonname = malloc(canonlen+1);
-    if(canonname == NULL) {
-      r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-      goto bail;
+    if(ai->ai_canonname == NULL) {
+      canonname = malloc(canonlen+1);
+      if(canonname == NULL) {
+        r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+        goto bail;
+      }
+      allocated_ai_canonname = true;
+    } else {
+      canonname = ai->ai_canonname;
     }
     memcpy(canonname, buf, canonlen+1);
   } else {
@@ -816,23 +848,37 @@ result_t bsd_ai_unpack(struct addrinfo **res, const uint8_t *buf, int size) {
   size-= canonlen+1;
 
   if(*((uint32_t*) buf) == htonl(0xBEEFCAFE)) {
-    r = bsd_ai_unpack(&ai->ai_next, buf, size);
+    bool allocated_ai_next = false;
+    if(ai->ai_next == NULL) {
+      struct addrinfo *next;
+      next = malloc(sizeof(struct addrinfo));
+      if(next == NULL) {
+        return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+      }
+      memset(next, 0, sizeof(struct addrinfo));
+      ai->ai_next = next;
+      allocated_ai_next = true;
+    }
+    r = bsd_ai_unpack(ai->ai_next, buf, size, limit-1);
     if(r) {
+      if(allocated_ai_next) {
+        free(ai->ai_next);
+      }
       goto bail;
     }
+  } else {
+    ai->ai_next = NULL;
   }
   
-  *res = ai;
   return 0;
   
  bail:
-  if(ai->ai_addr != NULL) {
+  if(ai->ai_addr != NULL && allocated_ai_addr) {
     free(ai->ai_addr);
   }
-  if(ai->ai_canonname != NULL) {
+  if(ai->ai_canonname != NULL && allocated_ai_canonname) {
     free(ai->ai_canonname);
   }
-  free(ai);
   return r;
 }
 
