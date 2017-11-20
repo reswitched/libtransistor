@@ -1,16 +1,10 @@
-LD := ld.lld$(LLVM_POSTFIX)
-CC := clang$(LLVM_POSTFIX)
-AS := llvm-mc$(LLVM_POSTFIX)
-LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined -T link.T
-CC_FLAGS := -g -fPIC -fno-stack-protector -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -I include/ -isystem newlib/newlib/libc/include/ -isystem newlib/newlib/libc/sys/switch/include/ -Weverything -Wno-missing-prototypes -Wno-strict-prototypes -Wno-sign-conversion -Wno-missing-variable-declarations -Wno-unused-parameter -Wno-cast-align -Wno-padded -Wno-cast-qual -Wno-gnu-binary-literal
-AS_FLAGS := -arch=aarch64 -triple aarch64-none-switch
-PYTHON2 := python2
-MEPHISTO := ctu
-RUBY := ruby
+LIBTRANSISTOR_HOME=./
+
+include libtransistor.mk
 
 libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid
-
-libtransistor_OBJECTS := build/lib/svc.o build/lib/ipc.o build/lib/tls.o build/lib/util.o build/lib/ipc/sm.o build/lib/ipc/bsd.o build/lib/ipc/nv.o build/lib/ipc/hid.o build/lib/hid.o
+libtransistor_OBJECT_NAMES := svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o hid.o
+libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
 # for building newlib
 export AR_FOR_TARGET = llvm-ar$(LLVM_POSTFIX)
@@ -21,65 +15,54 @@ export CC_FOR_TARGET = clang$(LLVM_POSTFIX) -g -fPIC -ffreestanding -fexceptions
 
 .SUFFIXES: # disable built-in rules
 
-all: build/lib/libtransistor.nro.a build/lib/libtransistor.nso.a $(addprefix build/test/test_,$(addsuffix .nro,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nro.so,$(libtransistor_TESTS))) $(addprefix build/test/test_,$(addsuffix .nso.so,$(libtransistor_TESTS)))
+all: $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nso.a $(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nro,$(libtransistor_TESTS))) $(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nso,$(libtransistor_TESTS))) $(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nro.so,$(libtransistor_TESTS))) $(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nso.so,$(libtransistor_TESTS)))
 
 run_tests: run_helloworld_test run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test
 
-run_bsd_test: build/test/test_bsd.nro test_helpers/bsd.rb
-	$(RUBY) test_helpers/bsd.rb $(MEPHISTO)
+run_bsd_test: $(LIBTRANSISTOR_HOME)/build/test/test_bsd.nro $(LIBTRANSISTOR_HOME)/test_helpers/bsd.rb
+	$(RUBY) $(LIBTRANSISTOR_HOME)/test_helpers/bsd.rb $(MEPHISTO)
 
-run_sfdnsres_test: build/test/test_sfdnsres.nro
+run_sfdnsres_test: $(LIBTRANSISTOR_HOME)/build/test/test_sfdnsres.nro
 	$(MEPHISTO) --enable-sockets --load-nro $<
 
-run_%_test: build/test/test_%.nro
+run_%_test: $(LIBTRANSISTOR_HOME)/build/test/test_%.nro
 	$(MEPHISTO) --load-nro $<
 
-build/test/%.o: test/%.c
+$(LIBTRANSISTOR_HOME)/build/test/%.o: $(LIBTRANSISTOR_HOME)/test/%.c
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 
-build/lib/%.o: lib/%.c
+$(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.c
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 
-build/lib/%.o: lib/%.S
+$(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.S
 	mkdir -p $(@D)
 	$(AS) $(AS_FLAGS) $< -filetype=obj -o $@
 
-build/test/%.nro: build/test/%.nro.so
+$(LIBTRANSISTOR_HOME)/build/test/%.nro.so: $(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_NRO_LIB) $(LIBTRANSISTOR_COMMON_LIBS)
 	mkdir -p $(@D)
-	$(PYTHON2) ./tools/elf2nxo.py $< $@ nro
+	$(LD) $(LD_FLAGS) -o $@ $< $(LIBTRANSISTOR_NRO_LDFLAGS)
 
-build/test/%.nso: build/test/%.nso.so
+$(LIBTRANSISTOR_HOME)/build/test/%.nso.so: $(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_NSO_LIB) $(LIBTRANSISTOR_COMMON_LIBS)
 	mkdir -p $(@D)
-	$(PYTHON2) ./tools/elf2nxo.py $< $@ nso
+	$(LD) $(LD_FLAGS) -o $@ $< $(LIBTRANSISTOR_NSO_LDFLAGS)
 
-build/test/%.nro.so: build/test/%.o build/lib/libtransistor.nro.a newlib/aarch64-none-switch/newlib/libc.a
-	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< --whole-archive build/lib/libtransistor.nro.a --no-whole-archive newlib/aarch64-none-switch/newlib/libc.a
-
-build/test/%.nso.so: build/test/%.o build/lib/libtransistor.nso.a newlib/aarch64-none-switch/newlib/libc.a
-	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< --whole-archive build/lib/libtransistor.nso.a --no-whole-archive newlib/aarch64-none-switch/newlib/libc.a
-
-build/lib/libtransistor.nro.a: build/lib/crt0.nro.o $(libtransistor_OBJECTS)
+$(LIBTRANSISTOR_NRO_LIB): $(LIBTRANSISTOR_HOME)/build/lib/crt0.nro.o $(libtransistor_OBJECT_FILES)
 	mkdir -p $(@D)
 	rm -f $@
 	ar rcs $@ $+
 
-build/lib/libtransistor.nso.a: build/lib/crt0.nso.o $(libtransistor_OBJECTS)
+$(LIBTRANSISTOR_NSO_LIB): $(LIBTRANSISTOR_HOME)/build/lib/crt0.nso.o $(libtransistor_OBJECT_FILES)
 	mkdir -p $(@D)
 	rm -f $@
 	ar rcs $@ $+
 
-newlib/Makefile:
-	cd newlib; ./configure --target=aarch64-none-switch --without-rdimon
+$(LIBTRANSISTOR_HOME)/newlib/Makefile:
+	cd $(LIBTRANSISTOR_HOME)/newlib; ./configure --target=aarch64-none-switch --without-rdimon
 
-newlib/aarch64-none-switch/newlib/libc.a: newlib/Makefile
-	make -C newlib/
-
-newlib/aarch64-none-switch/libgloss/libnosys/libnosys.a: newlib/aarch64-none-switch/newlib/libc.a
-newlib/aarch64-none-switch/libgloss/aarch64/librdimon.a: newlib/aarch64-none-switch/newlib/libc.a
+$(LIBTRANSISTOR_HOME)/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/newlib/Makefile
+	make -C $(LIBTRANSISTOR_HOME)/newlib/
 
 clean:
-	rm -rf build/lib/* build/test/*
+	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
