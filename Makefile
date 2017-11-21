@@ -3,7 +3,7 @@ LIBTRANSISTOR_HOME=./
 include libtransistor.mk
 
 libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid
-libtransistor_OBJECT_NAMES := svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o hid.o
+libtransistor_OBJECT_NAMES := svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o hid.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
 # for building newlib
