@@ -50,7 +50,7 @@ result_t vi_init() {
   }
 
   {
-    uint32_t raw[] = {0};
+    uint32_t raw[] = {1};
     ipc_request_t rq = ipc_default_request;
     rq.request_id = 2;
     rq.raw_data_size = sizeof(raw);
@@ -103,6 +103,87 @@ result_t vi_open_display(const char *name, display_t *out) {
   rs.raw_data = (uint32_t*) &(out->id);
 
   return ipc_send(iads_object, &rq, &rs);
+}
+
+result_t vi_open_layer(const char *display_name, uint64_t layer_id, uint64_t aruid, surface_t *surface) {
+  uint8_t parcel_buf[0x210];
+  ipc_buffer_t parcel_ipc_buf;
+  parcel_ipc_buf.addr = parcel_buf;
+  parcel_ipc_buf.size = sizeof(parcel_buf);
+  parcel_ipc_buf.type = 6;
+
+  ipc_buffer_t *buffers[] = {&parcel_ipc_buf};
+  
+  struct {
+    char display_name[0x40];
+    uint64_t layer_id;
+    uint64_t aruid;
+  } rq_args;
+
+  memset(rq_args.display_name, 0, sizeof(rq_args.display_name));
+  strncpy(rq_args.display_name, display_name, sizeof(rq_args.display_name)-1);
+  rq_args.layer_id = layer_id;
+  rq_args.aruid = aruid;
+  
+  ipc_request_t rq = ipc_default_request;
+  rq.request_id = 2020;
+  rq.num_buffers = 1;
+  rq.buffers = buffers;
+  rq.raw_data_size = sizeof(rq_args);
+  rq.raw_data = (uint32_t*) &rq_args;
+  rq.send_pid = true;
+  
+  struct {
+    uint64_t surface_size;
+  } rs_vals;
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(rs_vals);
+  rs.raw_data = (uint32_t*) &rs_vals;
+
+  result_t r = ipc_send(iads_object, &rq, &rs);
+  if(r) {
+    return r;
+  }
+
+  surface->layer_id = layer_id;
+
+  parcel_t parcel;
+  r = parcel_load(&parcel, parcel_buf);
+  if(r) {
+    return r;
+  }
+
+  r = parcel_read_binder(&parcel, &(surface->igbp_binder));
+  if(r) {
+    return r;
+  }
+
+  return 0;
+}
+
+result_t vi_create_managed_layer(uint32_t unknown, display_t *display, uint64_t aruid, uint64_t *layer_id) {
+  struct {
+    uint32_t unknown;
+    uint32_t padding;
+    uint64_t display;
+    uint64_t aruid;
+  } rq_args;
+
+  rq_args.unknown = unknown;
+  rq_args.display = display->id;
+  rq_args.aruid = aruid;
+  
+  ipc_request_t rq = ipc_default_request;
+  rq.request_id = 2010;
+  rq.raw_data_size = sizeof(rq_args);
+  rq.raw_data = (uint32_t*) &rq_args;
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = sizeof(*layer_id);
+  rs.raw_data = (uint32_t*) layer_id;
+
+  return ipc_send(imds_object, &rq, &rs);
 }
 
 result_t vi_create_stray_layer(uint32_t unknown, display_t *display, surface_t *surface) {
@@ -194,6 +275,173 @@ result_t vi_transact_parcel(int32_t handle, uint32_t transaction, uint32_t flags
   ipc_response_fmt_t rs = ipc_default_response_fmt;
 
   return ipc_send(ihosbd_object, &rq, &rs);
+}
+
+static result_t ipc_simple_helper(ipc_object_t *object, uint32_t rqid, void* in, size_t in_size, void* out, size_t out_size) {
+  ipc_request_t rq = ipc_default_request;
+  rq.request_id = rqid;
+  rq.raw_data_size = in_size;
+  rq.raw_data = in;
+
+  ipc_response_fmt_t rs = ipc_default_response_fmt;
+  rs.raw_data_size = out_size;
+  rs.raw_data = out;
+
+  return ipc_send(*object, &rq, &rs);
+}
+
+// imds
+result_t vi_imds_set_layer_visibility(bool visible, surface_t *layer) {
+  struct {
+    uint32_t visible;
+    uint64_t layer_id;
+  } params;
+  params.visible = visible;
+  params.layer_id = layer->layer_id;
+  return ipc_simple_helper(&imds_object, 6002, &params, sizeof(params), NULL, 0);
+}
+
+result_t vi_imds_set_display_layer_stack(uint32_t stack, display_t *display) {
+  struct {
+    uint32_t stack;
+    uint64_t display_id;
+  } params;
+  params.stack = stack;
+  params.display_id = display->id;
+  return ipc_simple_helper(&imds_object, 4203, &params, sizeof(params), NULL, 0);  
+}
+
+result_t vi_imds_add_to_layer_stack(uint32_t stack, surface_t *layer) {
+  struct {
+    uint32_t stack;
+    uint64_t layer_id;
+  } params;
+  params.stack = stack;
+  params.layer_id = layer->layer_id;
+  return ipc_simple_helper(&imds_object, 6000, &params, sizeof(params), NULL, 0);  
+}
+
+result_t vi_imds_set_conductor_layer(bool conductor, surface_t *layer) {
+  struct {
+    uint32_t conductor;
+    uint64_t layer_id;
+  } params;
+  params.conductor = conductor;
+  params.layer_id = layer->layer_id;
+  return ipc_simple_helper(&imds_object, 8000, &params, sizeof(params), NULL, 0);  
+}
+
+result_t vi_imds_set_content_visibility(bool visible) {
+  uint32_t u = visible;
+  return ipc_simple_helper(&imds_object, 7000, &u, sizeof(u), NULL, 0);
+}
+
+// isds
+result_t vi_isds_get_z_order_count_min(surface_t *layer, int64_t *z_count_min) {
+  return ipc_simple_helper(&isds_object, 1200,
+                           &layer->layer_id, sizeof(layer->layer_id),
+                           z_count_min, sizeof(*z_count_min));
+}
+
+result_t vi_isds_get_z_order_count_max(surface_t *layer, int64_t *z_count_max) {
+  return ipc_simple_helper(&isds_object, 1202,
+                           &layer->layer_id, sizeof(layer->layer_id),
+                           z_count_max, sizeof(*z_count_max));
+}
+
+result_t vi_isds_get_display_logical_resolution(display_t *display, int32_t *width, int32_t *height) {
+  struct {
+    int32_t width;
+    int32_t height;
+  } out;
+  result_t r = ipc_simple_helper(&isds_object, 1203,
+                                 &display->id, sizeof(display->id),
+                                 &out, sizeof(out));
+  *width = out.width;
+  *height = out.height;
+  return r;
+}
+
+result_t vi_isds_set_layer_position(float x, float y, surface_t *layer) {
+  struct {
+    float x;
+    float y;
+    uint64_t layer_id;
+  } params;
+  params.x = x;
+  params.y = y;
+  params.layer_id = layer->layer_id;
+  return ipc_simple_helper(&isds_object, 2201,
+                           &params, sizeof(params),
+                           NULL, 0);
+}
+
+result_t vi_isds_set_layer_size(surface_t *layer, int64_t width, int64_t height) {
+  struct {
+    uint64_t layer_id;
+    int64_t width;
+    int64_t height;
+  } params;
+  params.layer_id = layer->layer_id;
+  params.width = width;
+  params.height = height;
+  return ipc_simple_helper(&isds_object, 2203,
+                           &params, sizeof(params),
+                           NULL, 0);  
+}
+
+result_t vi_isds_get_layer_z(surface_t *layer, int64_t *z) {
+  return ipc_simple_helper(&isds_object, 2204,
+                           &layer->layer_id, sizeof(layer->layer_id),
+                           z, sizeof(*z));
+}
+
+result_t vi_isds_set_layer_z(surface_t *layer, int64_t z) {
+  struct {
+    uint64_t layer_id;
+    int64_t z;
+  } params;
+  params.layer_id = layer->layer_id;
+  params.z = z;
+  return ipc_simple_helper(&isds_object, 2205,
+                           &params, sizeof(params),
+                           NULL, 0);
+}
+
+result_t vi_isds_set_layer_visibility(bool visible, surface_t *layer) {
+  struct {
+    uint32_t visible;
+    uint64_t layer_id;
+  } params;
+  params.visible = visible;
+  params.layer_id = layer->layer_id;
+  return ipc_simple_helper(&isds_object, 2207,
+                           &params, sizeof(params),
+                           NULL, 0);
+}
+
+result_t vi_iads_set_display_enabled(bool enabled, display_t *display) {
+  struct {
+    uint32_t enabled;
+    uint64_t display_id;
+  } params;
+  params.enabled = enabled;
+  params.display_id = display->id;
+  return ipc_simple_helper(&iads_object, 1101,
+                           &params, sizeof(params),
+                           NULL, 0);
+}
+
+result_t vi_iads_set_layer_scaling_mode(uint32_t scaling_mode, surface_t *layer) {
+  struct {
+    uint32_t scaling_mode;
+    uint64_t layer_id;
+  } params;
+  params.scaling_mode = scaling_mode;
+  params.layer_id = layer->layer_id;
+  return ipc_simple_helper(&iads_object, 2101,
+                           &params, sizeof(params),
+                           NULL, 0);
 }
 
 void vi_finalize() {

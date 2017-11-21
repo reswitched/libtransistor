@@ -2,8 +2,8 @@ LIBTRANSISTOR_HOME=./
 
 include libtransistor.mk
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump vi gpu display
-libtransistor_OBJECT_NAMES := svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o hid.o
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump vi gpu display am
+libtransistor_OBJECT_NAMES := svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o hid.o ipc/am.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
 # for building newlib
@@ -11,7 +11,7 @@ export AR_FOR_TARGET = llvm-ar$(LLVM_POSTFIX)
 export AS_FOR_TARGET = llvm-mc$(LLVM_POSTFIX) -arch=aarch64 -mattr=+neon
 export LD_FOR_TARGET = ld.lld$(LLVM_POSTFIX)
 export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
-export CC_FOR_TARGET = clang$(LLVM_POSTFIX) -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc -Wno-unused-command-line-argument
+export CC_FOR_TARGET = clang$(LLVM_POSTFIX) -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc -Wno-unused-command-line-argument -Werror-implicit-function-declaration
 
 .SUFFIXES: # disable built-in rules
 
