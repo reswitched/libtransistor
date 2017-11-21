@@ -35,7 +35,8 @@ NORELOC__nro_modhdr:
 
 .section .text, "e"
 start:
-	bl main
+        adrp x1, _start // aslr base
+	bl _libtransistor_start
 loop:
 .global _exit
 _exit:  

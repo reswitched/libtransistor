@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 #include<libtransistor/types.h>
+#include<libtransistor/context.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/tls.h>

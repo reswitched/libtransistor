@@ -39,9 +39,8 @@ NORELOC__nro_modhdr:
 start:
         sub sp, sp, 0x10
         stp x29, x30, [sp]
-        //ldr x1, __crt0_exit_frame
-        //stp x29, x30, [x1]
-        bl main
+        adrp x1, _start // aslr base
+        bl _libtransistor_start
         ldp x29, x30, [sp], 0x10
         ret
 
