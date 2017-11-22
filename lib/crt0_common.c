@@ -3,7 +3,7 @@
 
 #include<assert.h>
 
-int main(libtransistor_context_t *ctx);
+int main(int argc, char **argv);
 
 // from util.c
 extern size_t log_length;
@@ -101,22 +101,44 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   
   dbg_printf("aslr base: %p", aslr_base);
   dbg_printf("ctx: %p", ctx);
+
+  char **argv = NULL;
+  int argc = 0;
+  
   if(ctx != NULL) {
     dbg_printf("found context");
     dbg_printf("  version: %d", ctx->version);
     dbg_printf("  size: 0x%x", ctx->size);
-    if(ctx->version != LIBTRANSISTOR_CONTEXT_VERSION) {
+
+    if(ctx->version > LIBTRANSISTOR_CONTEXT_VERSION) {
+      dbg_printf("unrecognized context version");
       return -2;
     }
+    
+    if(ctx->version >= 1) {
+      dbg_printf("context version 1 fields...");
+      ctx->log_buffer = log_buffer;
+      ctx->log_length = &log_length;
+    }
+
+    if(ctx->version >= 2) {
+      dbg_printf("context version 2 fields...");
+      argv = ctx->argv;
+      argc = (int) ctx->argc;
+    }
+
+    if(ctx->version != LIBTRANSISTOR_CONTEXT_VERSION) {
+      dbg_printf("mismatched context version");
+      return -2;
+    }
+    
     if(ctx->size != sizeof(libtransistor_context_t)) {
+      dbg_printf("mismatched context size");
       return -3;
     }
-    dbg_printf("filling out context...");
-    ctx->log_buffer = log_buffer;
-    ctx->log_length = &log_length;
   } else {
     dbg_printf("no context");
   }
   
-  return main(ctx);
+  return main(argc, argv);
 }
