@@ -5,6 +5,7 @@
 #include<libtransistor/util.h>
 
 #include<string.h>
+#include<stdio.h>
 
 int ipc_debug_flag = 0;
 
