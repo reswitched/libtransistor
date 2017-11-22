@@ -14,6 +14,7 @@
 // return flags
 #define RETF_KEEP_LOADED	1	// do not unload NRO from memory
 #define RETF_RUN_MEMINFO	2	// show memory map after cleanup
+#define RETF_CLOSE_BROWSER	4	// close the browser after this NRO exits (PegaSwitch loader only)
 
 typedef struct {
   uint64_t magic;
@@ -46,3 +47,4 @@ extern libtransistor_context_t *libtransistor_context;
 
 void libtransistor_set_keep_loaded();
 void libtransistor_set_run_meminfo();
+void libtransistor_set_close_browser();
