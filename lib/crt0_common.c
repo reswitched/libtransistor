@@ -104,6 +104,9 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 
   char **argv = NULL;
   int argc = 0;
+
+  libtransistor_context_t empty_context;
+  memset(&empty_context, 0, sizeof(empty_context));
   
   if(ctx != NULL) {
     dbg_printf("found context");
@@ -136,9 +139,13 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
       dbg_printf("mismatched context size");
       return -3;
     }
+
+    libtransistor_context = ctx;
   } else {
     dbg_printf("no context");
+
+    libtransistor_context = &empty_context;
   }
-  
+
   return main(argc, argv);
 }
