@@ -1,7 +1,11 @@
 #include<libtransistor/context.h>
 #include<libtransistor/util.h>
+#include<libtransistor/svc.h>
+#include<libtransistor/ipc/bsd.h>
 
 #include<assert.h>
+#include<stdio.h>
+#include<string.h>
 
 int main(int argc, char **argv);
 
@@ -94,6 +98,29 @@ static bool relocate(uint8_t *aslr_base) {
   return false;
 }
 
+static FILE bsslog_stdout;
+static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len) {
+  dbg_printf("wut");
+  log_string(ptr, len);
+  return len;
+}
+
+static FILE socklog_stdout;
+static int socklog_write(struct _reent *reent, void *v, const char *ptr, int len) {
+  return bsd_send(libtransistor_context->std_socket, ptr, len, 0);
+}
+
+// dummy for linker fail
+void *__trunctfdf2() {
+  return NULL;
+}
+// dummy for linker fail
+long double __extenddftf2(double a) {
+  return (long double) a;
+}
+
+#define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
+
 int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   if(relocate(aslr_base)) {
     return -4;
@@ -110,25 +137,21 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   
   if(ctx != NULL) {
     dbg_printf("found context");
+    dbg_printf("  magic: 0x%x", ctx->magic);
     dbg_printf("  version: %d", ctx->version);
     dbg_printf("  size: 0x%x", ctx->size);
 
-    if(ctx->version > LIBTRANSISTOR_CONTEXT_VERSION) {
-      dbg_printf("unrecognized context version");
+    if(ctx->magic != LIBTRANSISTOR_CONTEXT_MAGIC) {
+      dbg_printf("invalid context magic");
       return -2;
     }
     
-    if(ctx->version >= 1) {
-      dbg_printf("context version 1 fields...");
-      ctx->log_buffer = log_buffer;
-      ctx->log_length = &log_length;
-    }
-
-    if(ctx->version >= 2) {
-      dbg_printf("context version 2 fields...");
-      argv = ctx->argv;
-      argc = (int) ctx->argc;
-    }
+    ctx->log_buffer = log_buffer;
+    ctx->log_length = &log_length;
+    ctx->return_flags = 0;
+    
+    argv = ctx->argv;
+    argc = (int) ctx->argc;
 
     if(ctx->version != LIBTRANSISTOR_CONTEXT_VERSION) {
       dbg_printf("mismatched context version");
@@ -141,11 +164,40 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
     }
 
     libtransistor_context = ctx;
+
+    if(ctx->has_bsd && ctx->std_socket > 0) {
+      bsd_init(); // borrow bsd object from loader
+      stdout = &socklog_stdout;
+      stderr = &socklog_stdout;
+    }
   } else {
     dbg_printf("no context");
 
     libtransistor_context = &empty_context;
+    if(svcSetHeapSize(&libtransistor_context->mem_base, DEFAULT_NOCONTEXT_HEAP_SIZE) != RESULT_OK) {
+      dbg_printf("failed to set heap size");
+      return -5;
+    }
+    libtransistor_context->mem_size = DEFAULT_NOCONTEXT_HEAP_SIZE;
   }
 
-  return main(argc, argv);
+  dbg_printf("init stdout");
+  dbg_printf("set up bsslog_stdout");
+  bsslog_stdout._write = bsslog_write;
+  bsslog_stdout._flags = __SWR | __SNBF;
+  bsslog_stdout._bf._base = (void*) 1;
+
+  socklog_stdout._write = socklog_write;
+  socklog_stdout._flags = __SWR | __SNBF;
+  socklog_stdout._bf._base = (void*) 1;
+
+  printf("_"); // init stdout
+  stdout = &bsslog_stdout;
+  stderr = &bsslog_stdout;
+  dbg_printf("set up stdout");
+  printf("blablabla\n");
+  
+  int ret = main(argc, argv);
+  bsd_finalize(); // we may have initialized it above and in that case it's not the program's responsibility to close it
+  return ret;
 }

@@ -16,6 +16,7 @@ struct addrinfo_fixed {
 };
 
 result_t bsd_init();
+ipc_object_t bsd_get_object();
 int bsd_socket(int domain, int type, int protocol);
 int bsd_recv(int socket, void *message, size_t length, int flags);
 int bsd_send(int socket, const void *data, size_t length, int flags);

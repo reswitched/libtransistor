@@ -3,6 +3,7 @@
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
+#include<libtransistor/context.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 
@@ -16,6 +17,7 @@
 result_t bsd_result;
 int      bsd_errno;
 
+static bool borrowing_bsd; // true if we're borrowing bsd object from our loader
 static ipc_domain_t bsd_domain;
 static ipc_object_t bsd_object;
 
@@ -24,23 +26,36 @@ static ipc_object_t iresolver_object;
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
 static transfer_memory_h transfer_mem;
 
+static bool bsd_initialized = false;
+
 result_t bsd_init() {
   result_t r;
-  r = sm_get_service(&bsd_object, "bsd:u");
-  if(r) {
-    r = sm_get_service(&bsd_object, "bsd:s");
-    if(r) { return r; }
-  }
 
-  dbg_printf("connected to bsd");
+  if(bsd_initialized) {
+    return RESULT_OK;
+  }
   
-  r = ipc_convert_to_domain(&bsd_object, &bsd_domain);
-  if(r) {
-    ipc_close_domain(bsd_domain);
-    return r;
-  }
+  if(libtransistor_context->has_bsd) {
+    borrowing_bsd = true;
+    bsd_object = libtransistor_context->bsd_object;
+    dbg_printf("borrowing bsd");
+  } else {
+    borrowing_bsd = false;
+    r = sm_get_service(&bsd_object, "bsd:u");
+    if(r) {
+      r = sm_get_service(&bsd_object, "bsd:s");
+      if(r) { return r; }
+    }
+    dbg_printf("connected to bsd");
+  
+    r = ipc_convert_to_domain(&bsd_object, &bsd_domain);
+    if(r) {
+      ipc_close_domain(bsd_domain);
+      return r;
+    }
 
-  dbg_printf("converted bsd to domain");
+    dbg_printf("converted bsd to domain");
+  }
   
   r = sm_get_service(&iresolver_object, "sfdnsres");
   if(r) {
@@ -49,51 +64,58 @@ result_t bsd_init() {
   }
 
   dbg_printf("connected to sfdnsres");
-  
-  r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
-  if(r) {
-    ipc_close_domain(bsd_domain);
-    ipc_close(iresolver_object);
-    return r;
+
+  if(!borrowing_bsd) {
+    r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
+    if(r) {
+      ipc_close_domain(bsd_domain);
+      ipc_close(iresolver_object);
+      return r;
+    }
+
+    uint64_t raw[] = {32*1024, 32*1024, 16*1024, 16*1024,
+                      0, // server copies pid to here
+                      TRANSFER_MEM_SIZE};
+    
+    ipc_request_t rq = ipc_default_request;
+    rq.type = 4;
+    rq.request_id = 0;
+    rq.raw_data = (uint32_t*) raw;
+    rq.raw_data_size = sizeof(raw);
+    rq.send_pid = true;
+    rq.num_copy_handles = 1;
+    rq.copy_handles = &transfer_mem;
+    
+    uint32_t response[1];
+    
+    ipc_response_fmt_t rs = ipc_default_response_fmt;
+    rs.raw_data_size = sizeof(response);
+    rs.raw_data = response;
+    
+    r = ipc_send(bsd_object, &rq, &rs);
+    
+    if(r) {
+      svcCloseHandle(transfer_mem);
+      ipc_close_domain(bsd_domain);
+      ipc_close(iresolver_object);
+      return r;
+    }
+    
+    if(response[0]) {
+      bsd_errno = response[0];
+      svcCloseHandle(transfer_mem);
+      ipc_close_domain(bsd_domain);
+      ipc_close(iresolver_object);
+      return LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+    }
   }
 
-  uint64_t raw[] = {32*1024, 32*1024, 16*1024, 16*1024,
-                    0, // server copies pid to here
-                    TRANSFER_MEM_SIZE};
-  
-  ipc_request_t rq = ipc_default_request;
-  rq.type = 4;
-  rq.request_id = 0;
-  rq.raw_data = (uint32_t*) raw;
-  rq.raw_data_size = sizeof(raw);
-  rq.send_pid = true;
-  rq.num_copy_handles = 1;
-  rq.copy_handles = &transfer_mem;
-
-  uint32_t response[1];
-  
-  ipc_response_fmt_t rs = ipc_default_response_fmt;
-  rs.raw_data_size = sizeof(response);
-  rs.raw_data = response;
-  
-  r = ipc_send(bsd_object, &rq, &rs);
-  
-  if(r) {
-    svcCloseHandle(transfer_mem);
-    ipc_close_domain(bsd_domain);
-    ipc_close(iresolver_object);
-    return r;
-  }
-
-  if(response[0]) {
-    bsd_errno = response[0];
-    svcCloseHandle(transfer_mem);
-    ipc_close_domain(bsd_domain);
-    ipc_close(iresolver_object);
-    return LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
-  }
-  
+  bsd_initialized = true;
   return 0;
+}
+
+ipc_object_t bsd_get_object() {
+  return bsd_object;
 }
 
 // def tested via PS
@@ -670,9 +692,16 @@ int bsd_close(int socket) {
 }
 
 void bsd_finalize() {
-  svcCloseHandle(transfer_mem);
-  ipc_close(bsd_object);
-  ipc_close_domain(bsd_domain);
+  if(bsd_initialized) {
+    ipc_close(iresolver_object);
+    if(!borrowing_bsd) {
+      svcCloseHandle(transfer_mem);
+      ipc_close(bsd_object);
+      ipc_close_domain(bsd_domain);
+    }
+    borrowing_bsd = false;
+    bsd_initialized = false;
+  }
 }
 
 result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, size_t size) {

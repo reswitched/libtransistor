@@ -11,7 +11,7 @@ export AR_FOR_TARGET = llvm-ar$(LLVM_POSTFIX)
 export AS_FOR_TARGET = llvm-mc$(LLVM_POSTFIX) -arch=aarch64 -mattr=+neon
 export LD_FOR_TARGET = ld.lld$(LLVM_POSTFIX)
 export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
-export CC_FOR_TARGET = clang$(LLVM_POSTFIX) -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc -Wno-unused-command-line-argument
+export CC_FOR_TARGET = clang$(LLVM_POSTFIX) -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc -Wno-unused-command-line-argument -isystem $(realpath $(LIBTRANSISTOR_HOME))/include/
 
 .SUFFIXES: # disable built-in rules
 
