@@ -26,6 +26,8 @@ _start:
 .section .data, "e"
 	.word 0, 8
 NORELOC__nro_modhdr:
+.global _mod_header
+_mod_header:
 	.ascii "MOD0"
 	.word NORELOC_DYNAMIC_START_ - NORELOC__nro_modhdr
 	.word NORELOC_BSS_START_ - NORELOC__nro_modhdr
@@ -41,3 +43,9 @@ loop:
 .global _exit
 _exit:  
 	b loop
+
+.global _get_module_header
+_get_module_header:
+        adrp x0, _mod_header
+        add x0, x0, #:lo12:_mod_header
+        ret
