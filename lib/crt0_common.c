@@ -186,7 +186,7 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   socklog_stdout._bf._base = (void*) 1;
 
   printf("_"); // init stdout
-  if(ctx->has_bsd && ctx->std_socket > 0) {
+  if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0) {
     dbg_printf("using socklog stdout");
     bsd_init(); // borrow bsd object from loader
     stdout = &socklog_stdout;
@@ -200,7 +200,7 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   
   int ret = main(argc, argv);
 
-  if(ctx->has_bsd && ctx->std_socket > 0 && !dont_finalize_bsd) {
+  if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0 && !dont_finalize_bsd) {
     bsd_finalize();
   }
   return ret;
