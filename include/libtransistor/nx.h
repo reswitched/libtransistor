@@ -18,6 +18,7 @@ extern "C" {
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/ipc/nv.h>
+#include<libtransistor/ipc/ro.h>
 #include<libtransistor/hid.h>
   
 #ifdef __cplusplus
