@@ -9,7 +9,7 @@
  */
 
 #define LIBTRANSISTOR_CONTEXT_MAGIC 0x007874635f656361
-#define LIBTRANSISTOR_CONTEXT_VERSION 1
+#define LIBTRANSISTOR_CONTEXT_VERSION 2
 
 // return flags
 #define RETF_KEEP_LOADED	1	// do not unload NRO from memory
@@ -36,9 +36,10 @@ typedef struct {
   
   bool has_ro; // in
   ipc_object_t ro_object; // in, ldr:ro object
+
+  uint32_t workstation_addr; // in
   
   uint64_t return_flags; // out
-  struct addrinfo_fixed workstation; // in
 } libtransistor_context_t;
 
 extern libtransistor_context_t *libtransistor_context;
