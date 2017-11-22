@@ -48,3 +48,4 @@ extern libtransistor_context_t *libtransistor_context;
 void libtransistor_set_keep_loaded();
 void libtransistor_set_run_meminfo();
 void libtransistor_set_close_browser();
+void libtransistor_dont_finalize_bsd();

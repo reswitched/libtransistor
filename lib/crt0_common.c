@@ -120,6 +120,8 @@ long double __extenddftf2(double a) {
 
 #define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
 
+static bool dont_finalize_bsd = false;
+
 int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   if(relocate(aslr_base)) {
     return -4;
@@ -163,12 +165,6 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
     }
 
     libtransistor_context = ctx;
-
-    if(ctx->has_bsd && ctx->std_socket > 0) {
-      bsd_init(); // borrow bsd object from loader
-      stdout = &socklog_stdout;
-      stderr = &socklog_stdout;
-    }
   } else {
     dbg_printf("no context");
 
@@ -181,7 +177,6 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   }
 
   dbg_printf("init stdout");
-  dbg_printf("set up bsslog_stdout");
   bsslog_stdout._write = bsslog_write;
   bsslog_stdout._flags = __SWR | __SNBF;
   bsslog_stdout._bf._base = (void*) 1;
@@ -191,11 +186,26 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   socklog_stdout._bf._base = (void*) 1;
 
   printf("_"); // init stdout
-  stdout = &bsslog_stdout;
-  stderr = &bsslog_stdout;
+  if(ctx->has_bsd && ctx->std_socket > 0) {
+    dbg_printf("using socklog stdout");
+    bsd_init(); // borrow bsd object from loader
+    stdout = &socklog_stdout;
+    stderr = &socklog_stdout;
+  } else {
+    dbg_printf("using bsslog stdout");
+    stdout = &bsslog_stdout;
+    stderr = &bsslog_stdout;
+  }
   dbg_printf("set up stdout");
   
   int ret = main(argc, argv);
-  bsd_finalize(); // we may have initialized it above and in that case it's not the program's responsibility to close it
+
+  if(ctx->has_bsd && ctx->std_socket > 0 && !dont_finalize_bsd) {
+    bsd_finalize();
+  }
   return ret;
+}
+
+void libtransistor_dont_finalize_bsd() {
+  dont_finalize_bsd = true;
 }
