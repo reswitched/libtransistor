@@ -100,7 +100,6 @@ static bool relocate(uint8_t *aslr_base) {
 
 static FILE bsslog_stdout;
 static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len) {
-  dbg_printf("wut");
   log_string(ptr, len);
   return len;
 }
@@ -195,7 +194,6 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   stdout = &bsslog_stdout;
   stderr = &bsslog_stdout;
   dbg_printf("set up stdout");
-  printf("blablabla\n");
   
   int ret = main(argc, argv);
   bsd_finalize(); // we may have initialized it above and in that case it's not the program's responsibility to close it
