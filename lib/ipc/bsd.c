@@ -38,7 +38,6 @@ result_t bsd_init() {
   if(libtransistor_context->has_bsd) {
     borrowing_bsd = true;
     bsd_object = libtransistor_context->bsd_object;
-    dbg_printf("borrowing bsd");
   } else {
     borrowing_bsd = false;
     r = sm_get_service(&bsd_object, "bsd:u");
@@ -46,15 +45,12 @@ result_t bsd_init() {
       r = sm_get_service(&bsd_object, "bsd:s");
       if(r) { return r; }
     }
-    dbg_printf("connected to bsd");
   
     r = ipc_convert_to_domain(&bsd_object, &bsd_domain);
     if(r) {
       ipc_close_domain(bsd_domain);
       return r;
     }
-
-    dbg_printf("converted bsd to domain");
   }
   
   r = sm_get_service(&iresolver_object, "sfdnsres");
@@ -62,8 +58,6 @@ result_t bsd_init() {
     ipc_close_domain(bsd_domain);
     return r;
   }
-
-  dbg_printf("connected to sfdnsres");
 
   if(!borrowing_bsd) {
     r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
@@ -826,7 +820,6 @@ result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, size_t size, int
     if(ai->ai_addr == NULL) { // if this is already set, it's set to an existing buffer that we should use
       ai->ai_addr = malloc(ai->ai_addrlen);
       if(ai->ai_addr == NULL) {
-        dbg_printf("could not allocate ai_addr, len: %d", ai->ai_addrlen);
         r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
         goto bail;
       }

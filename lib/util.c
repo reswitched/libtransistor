@@ -5,6 +5,7 @@
 #include<libtransistor/ipc/bsd.h>
 
 #include<stdlib.h>
+#include<stdio.h>
 
 void *find_empty_memory_block(size_t len) {
   // find a suitable address for mapping the shared memory
@@ -108,7 +109,7 @@ void hexdump(const void *rawbuf, size_t size) {
 
     line[i++] = 0;
 
-    log_string(line, sizeof(line));
+    printf("%s\n", line);
   }
 }
 
