@@ -46,7 +46,7 @@ Reading symbols from <path-to-libtransistor>/build/test/<binary>.nro.so...done.
 (gdb) 
 ```
 ## Debian Info
-On Debian Sid at least it's necessary to install the packages python-pyelftools nd python-lz4. Also for me it was necessary to install llvm using the official ppa by first adding this to the end of /etc/apt/sources.list
+On Debian Sid at least it's necessary to install the packages python-pyelftools nd python-lz4. Also it is necessary to install llvm using the official ppa by first adding this to the end of /etc/apt/sources.list
 ```
 deb http://apt.llvm.org/unstable/ llvm-toolchain main
 deb-src http://apt.llvm.org/unstable/ llvm-toolchain main
@@ -57,7 +57,9 @@ deb-src http://apt.llvm.org/unstable/ llvm-toolchain-4.0 main
 deb http://apt.llvm.org/unstable/ llvm-toolchain-5.0 main
 deb-src http://apt.llvm.org/unstable/ llvm-toolchain-5.0 main
 ```
-then run the following command:
+then run the following commands:
 ```
-apt-get install clang-6.0 lldb-6.0 lld-6.0
+wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+sudo apt-get update
+sudo apt-get install clang-6.0 lldb-6.0 lld-6.0
 ```
