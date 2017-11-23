@@ -2,31 +2,32 @@
 
 #include<sys/socket.h>
 #include<string.h>
+#include<stdio.h>
 
 void dumpsockaddrin(struct sockaddr_in *sin) {
-  dbg_printf("sin_family: %d", sin->sin_family);
-  dbg_printf("sin_port: %d", ntohs(sin->sin_port));
+  printf("sin_family: %d\n", sin->sin_family);
+  printf("sin_port: %d\n", ntohs(sin->sin_port));
   uint32_t addr = sin->sin_addr.s_addr;
   uint8_t *bytes = (uint8_t*) &addr;
-  dbg_printf("sin_addr: %d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
+  printf("sin_addr: %d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);
 }
 
 void dumpaddrinfo(struct addrinfo *ai) {
-  dbg_printf("ai_flags: %d", ai->ai_flags);
-  dbg_printf("ai_family: %d", ai->ai_family);
-  dbg_printf("ai_socktype: %d", ai->ai_socktype);
-  dbg_printf("ai_protocol: %d", ai->ai_protocol);
-  dbg_printf("ai_addrlen: %d", ai->ai_addrlen);
+  printf("ai_flags: %d\n", ai->ai_flags);
+  printf("ai_family: %d\n", ai->ai_family);
+  printf("ai_socktype: %d\n", ai->ai_socktype);
+  printf("ai_protocol: %d\n", ai->ai_protocol);
+  printf("ai_addrlen: %d\n", ai->ai_addrlen);
   if(ai->ai_family == AF_INET) {
     dumpsockaddrin((struct sockaddr_in*) ai->ai_addr);
   }
   if(ai->ai_canonname) {
-    dbg_printf("ai_canonname: \"%s\"", ai->ai_canonname);
+    printf("ai_canonname: \"%s\"\n", ai->ai_canonname);
   } else {
-    dbg_printf("ai_canonname: NULL");
+    printf("ai_canonname: NULL\n");
   }
   if(ai->ai_next) {
-    dbg_printf("ai_next:");
+    printf("ai_next:\n");
     dumpaddrinfo(ai->ai_next);
   }
 }
@@ -36,12 +37,12 @@ int main() {
   
   result_t r;
   if((r = sm_init()) != RESULT_OK) {
-    dbg_printf("failed to init sm: 0x%x", r);
+    printf("failed to init sm: 0x%x\n", r);
     return 1;
   }
 
   if((r = bsd_init()) != RESULT_OK) {
-    dbg_printf("failed to init bsd: 0x%x, %d", r, bsd_errno);
+    printf("failed to init bsd: 0x%x, %d\n", r, bsd_errno);
     goto err_only_sm;
   }
 
@@ -54,12 +55,12 @@ int main() {
   
   int e = bsd_getaddrinfo("conntest.nintendowifi.net", "6767", &hints, &ai);
   if(e) {
-    dbg_printf("failed to getaddrinfo: %d, 0x%x", e, bsd_result);
+    printf("failed to getaddrinfo: %d, 0x%x\n", e, bsd_result);
     goto err;
   }
 
   if(ai == NULL) {
-    dbg_printf("addrinfo is null?");
+    printf("addrinfo is null?\n");
     goto err;
   }
   
@@ -70,22 +71,22 @@ int main() {
   struct addrinfo_fixed ai_fixed[2];
   e = bsd_getaddrinfo_fixed("conntest.nintendowifi.net", "6767", &hints, ai_fixed, 2);
   if(e) {
-    dbg_printf("failed to getaddrinfo: %d, 0x%x", e, bsd_result);
+    printf("failed to getaddrinfo: %d, 0x%x\n", e, bsd_result);
     goto err;
   }
 
   ai = &ai_fixed[0].ai;
   
   if(ai->ai_addr != (struct sockaddr*) &ai_fixed[0].addr) {
-    dbg_printf("unexpected ai->ai_addr");
+    printf("unexpected ai->ai_addr\n");
     goto err;
   }
   if(ai->ai_canonname != NULL && ai->ai_canonname != ai_fixed[0].canonname) {
-    dbg_printf("unexpected ai->ai_canonname");
+    printf("unexpected ai->ai_canonname\n");
     goto err;
   }
   if(ai->ai_next != NULL && ai->ai_next != &ai_fixed[1].ai) {
-    dbg_printf("unexpected ai->ai_next");
+    printf("unexpected ai->ai_next\n");
     goto err;
   }
   

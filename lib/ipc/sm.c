@@ -23,7 +23,6 @@ static u64 str2u64(char *str) {
 }
 
 result_t sm_init() {
-  dbg_printf("initializing sm");
   sm_object.object_id = -1;
   return svcConnectToNamedPort(&(sm_object.session), "sm:");
 }

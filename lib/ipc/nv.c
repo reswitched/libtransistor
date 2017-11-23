@@ -26,15 +26,11 @@ result_t nv_init() {
     goto fail_no_service;
   }
 
-  dbg_printf("connected to nv: 0x%x, %d", nv_object.session, nv_object.object_id);
-  
   r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
   if(r) {
     goto fail_no_tmem;
   }
 
-  dbg_printf("made transfer memory 0x%x", transfer_mem);
-  
   uint32_t raw[] = {TRANSFER_MEM_SIZE};
   uint32_t handles[] = {0xFFFF8001, transfer_mem};
   

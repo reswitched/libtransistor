@@ -1,14 +1,16 @@
 #include<libtransistor/nx.h>
 
+#include<stdio.h>
+
 #define ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) {            \
-    dbg_printf("assertion failed at %s:%d: result 0x%x is not OK", __FILE__, __LINE__, r); \
+    printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
     goto label;                                                         \
   }
 
 void dump_controller_color(char *title, hid_controller_color_t color) {
-  dbg_printf("  %s:", title);
-  dbg_printf("    body: 0x%x", color.body);
-  dbg_printf("    buttons: 0x%x", color.buttons);
+  printf("  %s:\n", title);
+  printf("    body: 0x%x\n", color.body);
+  printf("    buttons: 0x%x\n", color.buttons);
 }
 
 int main() {
@@ -20,15 +22,15 @@ int main() {
 
   hid_controller_t *controllers = hid_get_shared_memory()->controllers;
 
-  dbg_printf("dumping controller states:");
+  printf("dumping controller states:\n");
   for(int i = 0; i < 10; i++) {
     hid_controller_t *c = controllers + i;
-    dbg_printf("controller #%d:", i);
-    dbg_printf("  status: 0x%x", c->status);
-    dbg_printf("  is_joycon_half: %d", c->is_joycon_half);
-    dbg_printf("  unknown1: 0x%x", c->unknown1);
+    printf("controller #%d:\n", i);
+    printf("  status: 0x%x\n", c->status);
+    printf("  is_joycon_half: %d\n", c->is_joycon_half);
+    printf("  unknown1: 0x%x\n", c->unknown1);
     dump_controller_color("single color", c->single_color);
-    dbg_printf("  unknown2: 0x%x", c->unknown2);
+    printf("  unknown2: 0x%x\n", c->unknown2);
     dump_controller_color("right color", c->right_color);
     dump_controller_color("left color", c->left_color);
   }

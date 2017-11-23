@@ -1,12 +1,13 @@
 #include<libtransistor/nx.h>
 
 #include<string.h>
+#include<stdio.h>
 
 int main(int argc, char **argv) {
-  dbg_printf("argc: %d", argc);
-  dbg_printf("argv: %p", argv);
+  printf("argc: %d\n", argc);
+  printf("argv: %p\n", argv);
   for(int i = 0; i < argc; i++) {
-    dbg_printf("  argv[%d] = %s", i, argv[i]);
+    printf("  argv[%d] = %s\n", i, argv[i]);
   }
   
   if(argc != 1) {
@@ -17,6 +18,6 @@ int main(int argc, char **argv) {
     return 1;
   }
   
-  dbg_printf("argument test passed");
+  printf("argument test passed\n");
   return 0;
 }
