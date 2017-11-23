@@ -1,6 +1,8 @@
 #include<libtransistor/nx.h>
 
+#include<stdio.h>
+
 int main() {
-  dbg_printf("Hello, world!");
+  printf("Hello, world!\n");
   return 0;
 }

@@ -25,6 +25,8 @@ _start:
 .section .data, "e"
 	.word 0, 8
 NORELOC__nro_modhdr:
+.global _mod_header
+_mod_header:
         .ascii "MOD0"
 	.word NORELOC_DYNAMIC_START_ - NORELOC__nro_modhdr
 	.word NORELOC_BSS_START_ - NORELOC__nro_modhdr
@@ -39,12 +41,17 @@ NORELOC__nro_modhdr:
 start:
         sub sp, sp, 0x10
         stp x29, x30, [sp]
-        //ldr x1, __crt0_exit_frame
-        //stp x29, x30, [x1]
-        bl main
+        adrp x1, _start // aslr base
+        bl _libtransistor_start
         ldp x29, x30, [sp], 0x10
         ret
 
+.global _get_module_header
+_get_module_header:
+        adrp x0, _mod_header
+        add x0, x0, #:lo12:_mod_header
+        ret
+        
 .global _exit
 _exit:
         //ldr x1, __crt0_exit_frame

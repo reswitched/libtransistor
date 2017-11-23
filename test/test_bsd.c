@@ -1,18 +1,19 @@
 #include<libtransistor/nx.h>
 
 #include<sys/socket.h>
+#include<stdio.h>
 
 int main() {
   svcSleepThread(100000000);
   
   result_t r;
   if((r = sm_init()) != RESULT_OK) {
-    dbg_printf("failed to init sm: 0x%x", r);
+    printf("failed to init sm: 0x%x\n", r);
     return 1;
   }
 
   if((r = bsd_init()) != RESULT_OK) {
-    dbg_printf("failed to init bsd: 0x%x, %d", r, bsd_errno);
+    printf("failed to init bsd: 0x%x, %d\n", r, bsd_errno);
     goto err_only_sm;
   }
 
@@ -39,20 +40,20 @@ int main() {
   // socket, connect, sendto, recv, close
   int cfd = bsd_socket(2, 1, 6); // AF_INET, SOCK_STREAM, PROTO_TCP
   if(cfd < 0) {
-    dbg_printf("failed to create socket: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to create socket: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
 
-  dbg_printf("made client socket %d", cfd);
+  printf("made client socket %d\n", cfd);
   
   if(bsd_connect(cfd, (struct sockaddr*) &server_addr, sizeof(server_addr)) < 0) {
-    dbg_printf("failed to connect socket: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to connect socket: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
 
   char hello[] = "Hello from libtransistor over a socket!";  
   if(bsd_sendto(cfd, hello, sizeof(hello), 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) < 0) {
-    dbg_printf("failed to sendto: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to sendto: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
 
@@ -60,17 +61,17 @@ int main() {
   char response[512];
   char expected_response[] = "testing recv...";
   if((num_bytes = bsd_recv(cfd, response, sizeof(response), 0)) < 0) {
-    dbg_printf("failed to recv: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to recv: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
   response[num_bytes] = 0;
   if(num_bytes != sizeof(expected_response)) {
-    dbg_printf("got back wrong response: %s", response);
+    printf("got back wrong response: %s\n", response);
     goto err;
   }
   for(int i = 0; i < num_bytes; i++) {
     if(response[i] != expected_response[i]) {
-      dbg_printf("got back wrong response: %s", response);
+      printf("got back wrong response: %s\n", response);
       goto err;
     }
   }
@@ -79,17 +80,17 @@ int main() {
   // socket, bind, listen, accept, send, recv, close
   int sfd = bsd_socket(2, 1, 6); // AF_INET, SOCK_STREAM, PROTO_TCP
   if(sfd < 0) {
-    dbg_printf("failed to create socket: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to create socket: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
   
   if(bsd_bind(sfd, (struct sockaddr*) &bind_addr, sizeof(bind_addr)) < 0) {
-    dbg_printf("failed to bind socket: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to bind socket: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
 
   if(bsd_listen(sfd, 20) != 0) {
-    dbg_printf("failed to listen on socket: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to listen on socket: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
 
@@ -97,7 +98,7 @@ int main() {
   // closing the client test's socket signals to the test helper
   // that we're listening.
   if(bsd_close(cfd) < 0) {
-    dbg_printf("failed to close: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to close: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
   
@@ -106,44 +107,44 @@ int main() {
   
   int rfd;
   if((rfd = bsd_accept(sfd, (struct sockaddr*) &remote_addr, &remote_addr_len)) < 0) {
-    dbg_printf("failed to accept: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to accept: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
   
   if(bsd_send(rfd, hello, sizeof(hello), 0) < 0) {
-    dbg_printf("failed to send: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to send: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
 
   if((num_bytes = bsd_recv(rfd, response, sizeof(response), 0)) < 0) {
-    dbg_printf("failed to recv: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to recv: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
   response[num_bytes] = 0;
   if(num_bytes != sizeof(expected_response)) {
-    dbg_printf("got back wrong response: %s", response);
+    printf("got back wrong response: %s\n", response);
     goto err;
   }
   for(int i = 0; i < num_bytes; i++) {
     if(response[i] != expected_response[i]) {
-      dbg_printf("got back wrong response: %s", response);
+      printf("got back wrong response: %s\n", response);
       goto err;
     }
   }
 
   if(bsd_close(rfd) < 0) {
-    dbg_printf("failed to close: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to close: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
   
   if(bsd_close(sfd) < 0) {
-    dbg_printf("failed to close: 0x%x, %d", bsd_result, bsd_errno);
+    printf("failed to close: 0x%x, %d\n", bsd_result, bsd_errno);
     goto err;
   }
   
   bsd_finalize();
   sm_finalize();
-  dbg_printf("bsd tests passed.");
+  printf("bsd tests passed.\n");
   return 0;
 
  err:

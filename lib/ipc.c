@@ -5,6 +5,7 @@
 #include<libtransistor/util.h>
 
 #include<string.h>
+#include<stdio.h>
 
 int ipc_debug_flag = 0;
 
@@ -220,7 +221,6 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
     ipc_buffer_t *buf = ((i < num_a_descriptors) ? a_descriptors : (b_descriptors - num_a_descriptors))[i];
 
     if((u64) buf->addr >> 39) {
-      dbg_printf("a descriptor addr too long: %p", buf->addr);
       return LIBTRANSISTOR_ERR_INVALID_BUFFER_ADDRESS;
     }
 
@@ -502,7 +502,7 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
     char buf[0x1f8];
     memcpy(buf, tls, sizeof(buf));
     ipc_debug_flag = 0;
-    dbg_printf("out request:");
+    printf("out request:\n");
     hexdump(buf, 0x50);
     memcpy(tls, buf, sizeof(buf));
     ipc_debug_flag = 1;
@@ -515,7 +515,7 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
     char buf[0x1f8];
     memcpy(buf, tls, sizeof(buf));
     ipc_debug_flag = 0;
-    dbg_printf("in response:");
+    printf("in response:\n");
     hexdump(buf, 0x50);
     memcpy(tls, buf, sizeof(buf));
     ipc_debug_flag = 1;

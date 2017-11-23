@@ -28,7 +28,6 @@ result_t sm_init() {
     return RESULT_OK;
   }
   
-  dbg_printf("initializing sm");
   sm_object.object_id = -1;
   result_t r = svcConnectToNamedPort(&(sm_object.session), "sm:");
   if(r != RESULT_OK) {

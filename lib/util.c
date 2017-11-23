@@ -5,6 +5,7 @@
 #include<libtransistor/ipc/bsd.h>
 
 #include<stdlib.h>
+#include<stdio.h>
 
 void *find_empty_memory_block(size_t len) {
   // find a suitable address for mapping the shared memory
@@ -41,8 +42,8 @@ void dbg_set_bsd_log(int fd) {
 size_t log_length = 0;
 char log_buffer[0x20000];
 
-int log_string(char *string, size_t len) {
-  svcOutputDebugString(string, len);
+int log_string(const char *string, size_t len) {
+  svcOutputDebugString((char*) string, len);
   size_t start = log_length;
   for(size_t i = 0; i < len; i++) {
     if(string[i] == 0) { break; }
@@ -108,7 +109,7 @@ void hexdump(const void *rawbuf, size_t size) {
 
     line[i++] = 0;
 
-    log_string(line, sizeof(line));
+    printf("%s\n", line);
   }
 }
 

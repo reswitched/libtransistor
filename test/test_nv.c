@@ -1,7 +1,8 @@
+#include<libtransistor/nx.h>
+
 #include<string.h>
 #include<malloc.h>
-
-#include<libtransistor/nx.h>
+#include<stdio.h>
 
 #include "test_nv_ioc_templates.h"
 
@@ -23,15 +24,15 @@ int test_template(const char *name, int fd, int rq, void *buffer, const void *te
   }
   int e;
   if((e = nv_ioctl(fd, rq, buffer, size)) != retcode) {
-    dbg_printf("failed %s: %d, 0x%x, %d", e, nv_result, nv_errno);
+    printf("failed %s: %d, 0x%x, %d\n", name, e, nv_result, nv_errno);
     return 1;
   }
   if(template != NULL) {
     if(memcmp(buffer, template, size) != 0) {
-      dbg_printf("failed %s: didn't match template");
-      dbg_printf("template:");
+      printf("failed %s: didn't match template\n", name);
+      printf("template:\n");
       hexdump(template, size);
-      dbg_printf("result:");
+      printf("result:\n");
       hexdump(buffer, size);
       return 1;
     }
@@ -47,21 +48,21 @@ int main() {
   
   result_t r;
   if((r = sm_init()) != RESULT_OK) {
-    dbg_printf("failed to init sm: 0x%x", r);
+    printf("failed to init sm: 0x%x\n", r);
     return 1;
   }
 
   if((r = nv_init()) != RESULT_OK) {
-    dbg_printf("failed to init nv: 0x%x, %d", r, nv_errno);
+    printf("failed to init nv: 0x%x, %d\n", r, nv_errno);
     goto err_only_sm;
   }
 
   int nvhcg = nv_open("/dev/nvhost-ctrl-gpu");
   if(nvhcg < 0) {
-    dbg_printf("failed to open /dev/nvhost-ctrl-gpu");
+    printf("failed to open /dev/nvhost-ctrl-gpu\n");
     goto err_nv;
   }
-  dbg_printf("opened /dev/nvhost-ctrl-gpu: 0x%x", nvhcg);
+  printf("opened /dev/nvhost-ctrl-gpu: 0x%x\n", nvhcg);
 
 
   
@@ -78,10 +79,10 @@ int main() {
   
   int nvhc = nv_open("/dev/nvhost-ctrl");
   if(nvhc < 0) {
-    dbg_printf("failed to open /dev/nvhost-ctrl");
+    printf("failed to open /dev/nvhost-ctrl\n");
     goto err_nvhost_ctrl_gpu;
   }
-  dbg_printf("opened /dev/nvhost-ctrl: 0x%d", nvhcg);
+  printf("opened /dev/nvhost-ctrl: 0x%d\n", nvhcg);
 
 
   
@@ -95,10 +96,10 @@ int main() {
 
   int nvhag = nv_open("/dev/nvhost-as-gpu");
   if(nvhag < 0) {
-    dbg_printf("failed to open /dev/nvhost-as-gpu");
+    printf("failed to open /dev/nvhost-as-gpu\n");
     goto err_nvhost_ctrl;
   }
-  dbg_printf("opened /dev/nvhost-as-gpu: 0x%d", nvhag);
+  printf("opened /dev/nvhost-as-gpu: 0x%d\n", nvhag);
 
   uint32_t nvhag_init_rq[] = {0x10000, 0x0, 0x0, 0x0};
   uint32_t nvhag_init_rs[] = {    0x0, 0x0, 0x0, 0x0};
@@ -111,10 +112,10 @@ int main() {
 
   int nvmap = nv_open("/dev/nvmap");
   if(nvmap < 0) {
-    dbg_printf("failed to open /dev/nvmap");
+    printf("failed to open /dev/nvmap\n");
     goto err_nvhost_as_gpu;
   }
-  dbg_printf("opened /dev/nvmap: 0x%d", nvmap);
+  printf("opened /dev/nvmap: 0x%d\n", nvmap);
 
   struct nvmap_create_args {
     uint32_t size;   // in
@@ -125,16 +126,16 @@ int main() {
   nvmc.handle = 0;
   int e = nv_ioctl(nvmap, 0xc0080101, &nvmc, sizeof(nvmc));
   if(e != 0) {
-    dbg_printf("failed NVMAP_CREATE: %d, 0x%x, %d", e, nv_result, nv_errno);
+    printf("failed NVMAP_CREATE: %d, 0x%x, %d\n", e, nv_result, nv_errno);
     goto err_nvmap;
   }
   if(nvmc.size != 0x1000) {
-    dbg_printf("nvmc size changed");
+    printf("nvmc size changed\n");
     goto err_nvmap;
   }
 
   int nvmap_handle = nvmc.handle;
-  dbg_printf("got nvmap handle: 0x%x", nvmap_handle);
+  printf("got nvmap handle: 0x%x\n", nvmap_handle);
 
   struct nvmap_alloc_args {
     uint32_t handle;
@@ -156,7 +157,7 @@ int main() {
     goto err_nvmap;
   }
 
-  dbg_printf("test NVAS_MAP_BUFFER_EX");
+  printf("test NVAS_MAP_BUFFER_EX\n");
   nvasmbe.flags = 0;
   nvasmbe.kind = 0;
   nvasmbe.nvmap_handle = nvmap_handle;
@@ -170,26 +171,26 @@ int main() {
   }
 
   
-  dbg_printf("everything passes");
+  printf("everything passes\n");
 
  err_nvmap:
   if(nv_close(nvmap) != 0) {
-    dbg_printf("failed to close /dev/nvmap");
+    printf("failed to close /dev/nvmap\n");
     goto err_nvmap;
   }
  err_nvhost_as_gpu:
   if(nv_close(nvhag) != 0) {
-    dbg_printf("failed to close /dev/nvhost-as-gpu");
+    printf("failed to close /dev/nvhost-as-gpu\n");
     goto err_nvhost_ctrl;
   }
  err_nvhost_ctrl:
   if(nv_close(nvhc) != 0) {
-    dbg_printf("failed to close /dev/nvhost-ctrl");
+    printf("failed to close /dev/nvhost-ctrl\n");
     goto err_nvhost_ctrl_gpu;
   }
  err_nvhost_ctrl_gpu:
   if(nv_close(nvhcg) != 0) {
-    dbg_printf("failed to close /dev/nvhost-ctrl-gpu");
+    printf("failed to close /dev/nvhost-ctrl-gpu\n");
     goto err_nv;
   }
  err_nv:
