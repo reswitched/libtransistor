@@ -46,16 +46,11 @@ Reading symbols from <path-to-libtransistor>/build/test/<binary>.nro.so...done.
 (gdb) 
 ```
 ## Debian Info
-On Debian Sid at least it's necessary to install the packages python-pyelftools nd python-lz4. Also it is necessary to install llvm using the official ppa by first adding this to the end of /etc/apt/sources.list
+On Debian Sid at least it's necessary to install the packages python-pyelftools nd python-lz4. Also it is necessary to install llvm using the official ppa (found here http://apt.llvm.org/) by first adding this to the end of /etc/apt/sources.list
 ```
 deb http://apt.llvm.org/unstable/ llvm-toolchain main
 deb-src http://apt.llvm.org/unstable/ llvm-toolchain main
-# 4.0 
-deb http://apt.llvm.org/unstable/ llvm-toolchain-4.0 main
-deb-src http://apt.llvm.org/unstable/ llvm-toolchain-4.0 main
-# 5.0 
-deb http://apt.llvm.org/unstable/ llvm-toolchain-5.0 main
-deb-src http://apt.llvm.org/unstable/ llvm-toolchain-5.0 main
+
 ```
 then run the following commands:
 ```
