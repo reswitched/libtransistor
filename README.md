@@ -11,7 +11,7 @@ First, clone the repo with
 git clone --recursive https://github.com/reswitched/libtransistor
 ```
 
-You will need Python 2 and the python packages listed in [`requirements.txt`](https://github.com/reswitched/libtransistor/blob/master/requirements.txt). You'll also need clang and lld (llvm linker). Note that on Debian Sid (and possibly other versions) it is necessary to install lld-6.0 specifically.
+You will need Python 2 and the python packages listed in [`requirements.txt`](https://github.com/reswitched/libtransistor/blob/master/requirements.txt). You'll also need clang and lld (llvm linker). 
 
 You *should* just be able to run `make`. If that doesn't work, submit an issue (or pull request). This will produce a number of `nro` and `nso` files in `build/test/`. These are binaries for the Nintendo Switch. NRO files are relocatable shared objects suitable for use with [ROhan](https://reswitched.tech/rohan). Both NRO and NSO binaries can be run under Mephisto, but NSO binaries don't get relocated properly at the moment and will crash pretty quickly.
 
@@ -44,4 +44,13 @@ add symbol table from file "<path-to-libtransistor>/build/test/<binary>.nro.so" 
 (y or n) y
 Reading symbols from <path-to-libtransistor>/build/test/<binary>.nro.so...done.
 (gdb) 
+```
+## Debian Info
+On Debian Sid at least it's necessary to install the packages clang-5.0, lld-6.0, python-pyelftools, and python-lz4. Also for me it was necessary to install llvm from source using the following steps:
+```
+$ git clone https://github.com/llvm-project/llvm-project-20170507 llvm-project
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS=lld -DCMAKE_INSTALL_PREFIX=/usr/local ../llvm-project/llvm
+$ make install
 ```
