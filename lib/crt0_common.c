@@ -7,6 +7,8 @@
 #include<stdio.h>
 #include<string.h>
 
+#include<ssp/ssp.h>
+
 int main(int argc, char **argv);
 
 // from util.c
@@ -203,6 +205,9 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0 && !dont_finalize_bsd) {
     bsd_finalize();
   }
+
+  __guard_setup();
+
   return ret;
 }
 
