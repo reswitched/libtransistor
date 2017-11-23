@@ -23,8 +23,6 @@ static ipc_object_t bsd_object;
 
 static ipc_object_t iresolver_object;
 
-static bool bsd_initialized = false;
-
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
 static transfer_memory_h transfer_mem;
 
@@ -108,14 +106,6 @@ result_t bsd_init() {
       ipc_close(iresolver_object);
       return LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
     }
-  }
-
-  if(response[0]) {
-    bsd_errno = response[0];
-    svcCloseHandle(transfer_mem);
-    ipc_close_domain(bsd_domain);
-    ipc_close(iresolver_object);
-    return LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
   }
 
   bsd_initialized = true;
