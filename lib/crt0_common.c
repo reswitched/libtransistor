@@ -129,6 +129,8 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
     return -4;
   }
   
+  __guard_setup();
+
   dbg_printf("aslr base: %p", aslr_base);
   dbg_printf("ctx: %p", ctx);
 
@@ -205,8 +207,6 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
   if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0 && !dont_finalize_bsd) {
     bsd_finalize();
   }
-
-  __guard_setup();
 
   return ret;
 }
