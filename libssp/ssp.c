@@ -58,12 +58,13 @@ static void fail(const char *msg1, const char *msg2)
 {
 	// Print error message directly to the tty. This avoids Bad Things
 	//   happening if stderr is redirected.
+	printf("%s", msg1);
 
 #ifdef __GNU_LIBRARY__
 	extern char *__progname;
-	printf("%s\n%s terminated\n", msg1, __progname);
+	printf("%s terminated", __progname);
 #else
-	printf("%s\n%s\n", msg1, msg2);
+	printf("%s", msg2);
 #endif
 
 	// Try very hard to exit.  Note that signals may be blocked preventing
