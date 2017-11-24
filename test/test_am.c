@@ -9,18 +9,18 @@
 	}
 
 int main() {
-  svcSleepThread(100000000);
+	svcSleepThread(100000000);
   
-  result_t r = RESULT_OK;
-  printf("init sm\n");
-  ASSERT_OK(fail, sm_init());
-  printf("init am\n");
-  ASSERT_OK(fail_sm, am_init());
-  printf("initialized am\n");
+	result_t r = RESULT_OK;
+	printf("init sm\n");
+	ASSERT_OK(fail, sm_init());
+	printf("init am\n");
+	ASSERT_OK(fail_sm, am_init());
+	printf("initialized am\n");
   
-  am_finalize();
- fail_sm:
-  sm_finalize();
- fail:
-  return r != RESULT_OK;
+	am_finalize();
+fail_sm:
+	sm_finalize();
+fail:
+	return r != RESULT_OK;
 }

@@ -5,17 +5,17 @@
 // bounds checking is the caller's responsibility
 // objects aren't currently supported very well
 typedef struct {
-  struct {
-    uint32_t data_size;
-    uint32_t data_offset;
-    uint32_t objects_size;
-    uint32_t objects_offset;
-    uint8_t payload[0x200];
-  } contents;
-  size_t read_head;
-  size_t write_head;
+	struct {
+		uint32_t data_size;
+		uint32_t data_offset;
+		uint32_t objects_size;
+		uint32_t objects_offset;
+		uint8_t payload[0x200];
+	} contents;
+	size_t read_head;
+	size_t write_head;
 
-  bool writing_finalized;
+	bool writing_finalized;
 } parcel_t;
 
 struct binder_t;

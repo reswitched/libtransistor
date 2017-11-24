@@ -3,10 +3,10 @@
 #include<libtransistor/types.h>
 
 typedef struct {
-  uint32_t nvmap_handle;
-  size_t size;
-  uint32_t alignment;
-  uint8_t kind;
+	uint32_t nvmap_handle;
+	size_t size;
+	uint32_t alignment;
+	uint8_t kind;
 } gpu_buffer_t;
 
 result_t gpu_initialize();
