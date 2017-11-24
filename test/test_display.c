@@ -16,9 +16,10 @@ int main() {
   
 	result_t r;
 	ASSERT_OK(fail, sm_init());
-	ASSERT_OK(fail_sm, gpu_initialize());
+	ASSERT_OK(fail_sm, am_init());
+	ASSERT_OK(fail_am, gpu_initialize());
 	ASSERT_OK(fail_gpu, vi_init());
-
+	
 	printf("init'd gpu and vi\n");
   
 	display_t display;
@@ -27,22 +28,39 @@ int main() {
 	//ASSERT_OK(fail_vi, vi_iads_set_display_enabled(true, &display));
   
 	surface_t surf;
-	ASSERT_OK(fail_vi, vi_create_stray_layer(1, &display, &surf));
+
+	uint64_t layer_id;
+	ASSERT_OK(fail_vi, am_isc_create_managed_display_layer(&layer_id));
+	printf("got managed display layer from am: %ld\n", layer_id);
+
+	aruid_t aruid;
+	ASSERT_OK(fail_vi, am_iwc_get_applet_resource_user_id(&aruid));
+	printf("got aruid: %ld\n", aruid);
+
+	ASSERT_OK(fail_vi, am_isc_approve_to_display());
+	printf("approved to display\n");
+	
+	ASSERT_OK(fail_vi, am_iwc_acquire_foreground_rights());
+	printf("got foreground rights\n");
+	
+	//ASSERT_OK(fail_vi, vi_create_stray_layer(1, &display, &surf));
+	
 	/*uint64_t my_layer_id;
 	  ASSERT_OK(fail_vi, vi_create_managed_layer(1, &display, 0, &my_layer_id));
-	  dbg_printf("managed layer id: %d", my_layer_id);
-	  ASSERT_OK(fail_vi, vi_open_layer("Default", my_layer_id, 0, &surf));
-	  dbg_printf("opened managed layer");*/
+	  dbg_printf("managed layer id: %d", my_layer_id);*/
+	
+	ASSERT_OK(fail_vi, vi_open_layer("Default", layer_id, aruid, &surf));
+	dbg_printf("opened managed layer");
 
 	int64_t z;
   
 	ASSERT_OK(fail_vi, vi_iads_set_layer_scaling_mode(2, &surf));
   
-	/*ASSERT_OK(fail_vi, vi_imds_set_layer_visibility(true, &surf));
-	  ASSERT_OK(fail_vi, vi_isds_set_layer_visibility(true, &surf));
+	ASSERT_OK(fail_vi, vi_imds_set_layer_visibility(true, &surf));
+	ASSERT_OK(fail_vi, vi_isds_set_layer_visibility(true, &surf));
 	  //ASSERT_OK(fail_vi, vi_isds_set_layer_size(&surf, 1280, 720));
   
-	  dbg_printf("trying to add to layer stack(s)...");
+	  /*dbg_printf("trying to add to layer stack(s)...");
 	  for(int i = 0; i < 11; i++) {
 	  dbg_printf("  stack %d: 0x%x", i, vi_imds_add_to_layer_stack(i, &surf));
 	  }
@@ -135,7 +153,7 @@ int main() {
 			  ASSERT_OK(fail_vi, vi_imds_set_layer_visibility(true, &fake));
 			  printf("  => enabled\n");
 			  }*/
-			printf("  pos: 0x%x\n", vi_isds_set_layer_position(0.0f, 0.0f, &fake));
+			//printf("  pos: 0x%x\n", vi_isds_set_layer_position(0.0f, 0.0f, &fake));
 		}
 	}
 
@@ -211,6 +229,8 @@ fail_vi:
 	vi_finalize();
 fail_gpu:
 	gpu_finalize();
+fail_am:
+	am_finalize();
 fail_sm:
 	sm_finalize();
 fail:
