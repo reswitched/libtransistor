@@ -44,7 +44,7 @@ add symbol table from file "<path-to-libtransistor>/build/test/<binary>.nro.so" 
 Reading symbols from <path-to-libtransistor>/build/test/<binary>.nro.so...done.
 (gdb) 
 ```
-## Debian/Ubuntu Info
+## Debian Info
 On Debian Sid at least it's necessary to install the packages python-pyelftools nd python-lz4. Also it is necessary to install llvm using the official ppa (found here http://apt.llvm.org/) by first adding this to the end of /etc/apt/sources.list
 ```
 deb http://apt.llvm.org/unstable/ llvm-toolchain main
