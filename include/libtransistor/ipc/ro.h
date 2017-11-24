@@ -13,4 +13,3 @@ result_t ro_load_nro(void **nro_base, void *nro_heap, uint64_t nro_size, void *n
 result_t ro_unload_nro(void *nro_base, void *nro_heap);
 result_t ro_load_nrr(void *nrr_heap, uint64_t nrr_size);
 result_t ro_unload_nrr(void *nrr_heap);
-

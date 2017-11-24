@@ -6,7 +6,7 @@
 
 /*
   represents resources, arguments, and values to be passed between this program and PegaSwitch or another NRO loader
- */
+*/
 
 #define LIBTRANSISTOR_CONTEXT_MAGIC 0x007874635f656361
 #define LIBTRANSISTOR_CONTEXT_VERSION 2
@@ -17,30 +17,30 @@
 #define RETF_CLOSE_BROWSER	4	// close the browser after this NRO exits (PegaSwitch loader only)
 
 typedef struct {
-  uint64_t magic;
-  uint64_t version;
-  size_t size; // size of this struct (additional verification)
+	uint64_t magic;
+	uint64_t version;
+	size_t size; // size of this struct (additional verification)
 
-  // version 1
-  char *log_buffer; // out
-  size_t *log_length; // out
+	// version 1
+	char *log_buffer; // out
+	size_t *log_length; // out
   
-  char **argv; // in
-  uint64_t argc; // in
+	char **argv; // in
+	uint64_t argc; // in
   
-  void *mem_base; // in, usable contiguous block of free memory
-  uint64_t mem_size; // in, ^ size
+	void *mem_base; // in, usable contiguous block of free memory
+	uint64_t mem_size; // in, ^ size
   
-  bool has_bsd; // in
-  ipc_object_t bsd_object; // in, bsd object
-  int std_socket; // in, stdout socket from loader
+	bool has_bsd; // in
+	ipc_object_t bsd_object; // in, bsd object
+	int std_socket; // in, stdout socket from loader
   
-  bool has_ro; // in
-  ipc_object_t ro_object; // in, ldr:ro object
+	bool has_ro; // in
+	ipc_object_t ro_object; // in, ldr:ro object
 
-  uint32_t workstation_addr; // in
+	uint32_t workstation_addr; // in
   
-  uint64_t return_flags; // out
+	uint64_t return_flags; // out
 } libtransistor_context_t;
 
 extern libtransistor_context_t *libtransistor_context;
