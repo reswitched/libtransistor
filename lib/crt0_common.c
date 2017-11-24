@@ -111,6 +111,11 @@ static int socklog_write(struct _reent *reent, void *v, const char *ptr, int len
 	return bsd_send(libtransistor_context->std_socket, ptr, len, 0);
 }
 
+static FILE socklog_stdin;
+static int socklog_read(struct _reent *reent, void *v, char *ptr, int len) {
+	return bsd_recv(libtransistor_context->std_socket, ptr, len, 0);
+}
+
 // dummy for linker fail
 void *__trunctfdf2() {
 	return NULL;
@@ -134,8 +139,9 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("ctx: %p", ctx);
 
-	char **argv = NULL;
-	int argc = 0;
+	char *argv_default[] = {"contextless", NULL};
+	char **argv = argv_default;
+	int argc = 1;
 
 	libtransistor_context_t empty_context;
 	memset(&empty_context, 0, sizeof(empty_context));
@@ -180,19 +186,27 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		libtransistor_context->mem_size = DEFAULT_NOCONTEXT_HEAP_SIZE;
 	}
 
-	dbg_printf("init stdout");
+	dbg_printf("init stdio");
 	bsslog_stdout._write = bsslog_write;
 	bsslog_stdout._flags = __SWR | __SNBF;
 	bsslog_stdout._bf._base = (void*) 1;
 
+	char stdin_buf[1024];
+	socklog_stdin._read = socklog_read;
+	socklog_stdin._flags = __SRD | __SNBF;
+	socklog_stdin._bf._base = stdin_buf;
+	socklog_stdin._bf._size = sizeof(stdin_buf);
+	
 	socklog_stdout._write = socklog_write;
 	socklog_stdout._flags = __SWR | __SNBF;
 	socklog_stdout._bf._base = (void*) 1;
 
 	printf("_"); // init stdout
+	getchar(); // init stdin
 	if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0) {
-		dbg_printf("using socklog stdout");
+		dbg_printf("using socklog stdio");
 		bsd_init(); // borrow bsd object from loader
+		stdin  = &socklog_stdin;
 		stdout = &socklog_stdout;
 		stderr = &socklog_stdout;
 	} else {
@@ -201,7 +215,7 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		stderr = &bsslog_stdout;
 	}
 	dbg_printf("set up stdout");
-  
+	
 	int ret = main(argc, argv);
 
 	if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0 && !dont_finalize_bsd) {
