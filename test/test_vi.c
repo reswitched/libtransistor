@@ -1,7 +1,9 @@
 #include<libtransistor/nx.h>
 
+#include<stdio.h>
+
 #define ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) {            \
-		dbg_printf("assertion failed at %s:%d: result 0x%x is not OK", __FILE__, __LINE__, r); \
+		printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
 		goto label; \
 	}
 
@@ -9,10 +11,10 @@ int main() {
 	svcSleepThread(100000000);
 
 	result_t r;
-	ASSERT_OK(fail, sm_init())
-		ASSERT_OK(fail_sm, vi_init())
+	ASSERT_OK(fail, sm_init());
+	ASSERT_OK(fail_sm, vi_init());
 
-		dbg_printf("initialized vi");
+	printf("initialized vi\n");
 
 	display_t display;
 	ASSERT_OK(fail_vi, vi_open_display("Default", &display));
@@ -20,22 +22,22 @@ int main() {
 	surface_t surf;
 	ASSERT_OK(fail_vi, vi_create_stray_layer(1, &display, &surf));
 
-	dbg_printf("created stray layer");
-	dbg_printf("  layer id: 0x%x", surf.layer_id);
-	dbg_printf("  binder handle: 0x%x", surf.igbp_binder.handle);
+	printf("created stray layer\n");
+	printf("  layer id: 0x%lx\n", surf.layer_id);
+	printf("  binder handle: 0x%x\n", surf.igbp_binder.handle);
 
 	int status;
 	queue_buffer_output_t qbo;
   
 	ASSERT_OK(fail_vi, surface_connect(&surf, 2, false, &status, &qbo));
 
-	dbg_printf("IGBP_CONNECT:");
-	dbg_printf("  status: %d", status);
-	dbg_printf("  qbo:");
-	dbg_printf("    width: %d", qbo.width);
-	dbg_printf("    height: %d", qbo.height);
-	dbg_printf("    transform_hint: %d", qbo.transform_hint);
-	dbg_printf("    num_pending_buffers: %d", qbo.num_pending_buffers);
+	printf("IGBP_CONNECT:\n");
+	printf("  status: %d\n", status);
+	printf("  qbo:\n");
+	printf("    width: %d\n", qbo.width);
+	printf("    height: %d\n", qbo.height);
+	printf("    transform_hint: %d\n", qbo.transform_hint);
+	printf("    num_pending_buffers: %d\n", qbo.num_pending_buffers);
   
 fail_vi:
 	vi_finalize();

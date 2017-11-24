@@ -2,31 +2,24 @@
 
 #include<string.h>
 #include<stdlib.h>
+#include<stdio.h>
 
 #define ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) {            \
-		dbg_printf("assertion failed at %s:%d: result 0x%x is not OK", __FILE__, __LINE__, r); \
+		printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
 		goto label; \
 	}
 
 static uint8_t __attribute__((aligned(0x1000))) gpu_buffer_memory[0x780000];
-static int bsdlog;
-static result_t setup_log();
 
 int main() {
 	svcSleepThread(100000000);
   
 	result_t r;
 	ASSERT_OK(fail, sm_init());
-	ASSERT_OK(fail_sm, bsd_init());
-
-	if((r = setup_log()) != RESULT_OK) {
-		goto fail_bsd;
-	}
-  
-	ASSERT_OK(fail_bsdlog, gpu_initialize());
+	ASSERT_OK(fail_sm, gpu_initialize());
 	ASSERT_OK(fail_gpu, vi_init());
 
-	dbg_printf("init'd gpu and vi");
+	printf("init'd gpu and vi\n");
   
 	display_t display;
 	ASSERT_OK(fail_vi, vi_open_display("Default", &display));
@@ -61,16 +54,16 @@ int main() {
 	queue_buffer_output_t qbo;
 	ASSERT_OK(fail_vi, surface_connect(&surf, 2, false, &status, &qbo));
 
-	dbg_printf("IGBP_CONNECT:");
-	dbg_printf("  status: %d", status);
-	dbg_printf("  qbo:");
-	dbg_printf("    width: %d", qbo.width);
-	dbg_printf("    height: %d", qbo.height);
-	dbg_printf("    transform_hint: %d", qbo.transform_hint);
-	dbg_printf("    num_pending_buffers: %d", qbo.num_pending_buffers);
+	printf("IGBP_CONNECT:\n");
+	printf("  status: %d\n", status);
+	printf("  qbo:\n");
+	printf("    width: %d\n", qbo.width);
+	printf("    height: %d\n", qbo.height);
+	printf("    transform_hint: %d\n", qbo.transform_hint);
+	printf("    num_pending_buffers: %d\n", qbo.num_pending_buffers);
 
 	if(status != 0) {
-		dbg_printf("IGBP_CONNECT failure");
+		printf("IGBP_CONNECT failure\n");
 		goto fail_vi;
 	}
 
@@ -115,34 +108,34 @@ int main() {
 	  6 - overlay notification stuff
 	*/
 
-	dbg_printf("set z result : 0x%x", vi_isds_set_layer_z(&surf, 4));
+	printf("set z result : 0x%x\n", vi_isds_set_layer_z(&surf, 4));
 	ASSERT_OK(fail_vi, vi_isds_get_layer_z(&surf, &z));
-	dbg_printf("z: %d", z);
+	printf("z: %ld\n", z);
   
 	//int64_t zc_min, zc_max;
 	//ASSERT_OK(fail_vi, vi_isds_get_z_order_count_min(&surf, &zc_min));
 	//ASSERT_OK(fail_vi, vi_isds_get_z_order_count_max(&surf, &zc_max));
-	//dbg_printf("z order min, max: %ld, %ld", zc_min, zc_max);
+	//printf("z order min, max: %ld, %ld\n", zc_min, zc_max);
   
-	dbg_printf("probing layers...");
+	printf("probing layers...\n");
 	for(int i = 0; i < surf.layer_id; i++) {
 		surface_t fake;
 		fake.layer_id = i;
 		r = vi_isds_get_layer_z(&fake, &z);
 		if(r) {
-			dbg_printf("%d: error 0x%x", i, r);
+			printf("%d: error 0x%x\n", i, r);
 		} else {
-			dbg_printf("%d: z %d", i, z);
+			printf("%d: z %ld\n", i, z);
 			/*if(i != 6) {
 			  ASSERT_OK(fail_vi, vi_isds_set_layer_visibility(false, &fake));
 			  ASSERT_OK(fail_vi, vi_imds_set_layer_visibility(false, &fake));
-			  dbg_printf("  => disabled");
+			  printf("  => disabled\n");
 			  } else {
 			  ASSERT_OK(fail_vi, vi_isds_set_layer_visibility(true, &fake));
 			  ASSERT_OK(fail_vi, vi_imds_set_layer_visibility(true, &fake));
-			  dbg_printf("  => enabled");
+			  printf("  => enabled\n");
 			  }*/
-			dbg_printf("  pos: 0x%x", vi_isds_set_layer_position(0.0f, 0.0f, &fake));
+			printf("  pos: 0x%x\n", vi_isds_set_layer_position(0.0f, 0.0f, &fake));
 		}
 	}
 
@@ -156,109 +149,70 @@ int main() {
 		fence_t fence;
 		ASSERT_OK(fail_vi, surface_dequeue_buffer(&surf, 1280, 720, 1, 0x300, false, &status, &slot, &fence, NULL));
 		if(status != 0) {
-			dbg_printf("IGBP_DEQUEUE_BUFFER failure: %d", status);
+			printf("IGBP_DEQUEUE_BUFFER failure: %d\n", status);
 			goto fail_vi;
 		}
     
-		dbg_printf("IGBP_DEQUEUE_BUFFER:");
-		dbg_printf("  status: %d", status);
-		dbg_printf("  slot: %d", slot);
-		dbg_printf("  fence:");
+		printf("IGBP_DEQUEUE_BUFFER:\n");
+		printf("  status: %d\n", status);
+		printf("  slot: %d\n", slot);
+		printf("  fence:\n");
 		hexdump(&fence, sizeof(fence));
-		dbg_printf("(hexdump end)");
+		printf("(hexdump end)\n");
     
 		if(!requested[slot]) {
 			graphic_buffer_t graphic_buffer_rq;
 			ASSERT_OK(fail_vi, surface_request_buffer(&surf, slot, &status, &graphic_buffer_rq));
 			if(status != 0) {
-				dbg_printf("IGBP_REQUEST_BUFFER failure: %d", status);
+				printf("IGBP_REQUEST_BUFFER failure: %d\n", status);
 				goto fail_vi;
 			}
-			dbg_printf("IGBP_REQUEST_BUFFER:");
-			dbg_printf("  status: %d", status);
+			printf("IGBP_REQUEST_BUFFER:\n");
+			printf("  status: %d\n", status);
 
 			memory_info_t meminfo;
 			uint32_t pageinfo;
 			ASSERT_OK(fail_vi, svcQueryMemory(&meminfo, &pageinfo, gpu_buffer_memory));
-			dbg_printf("gpu buffer dev refcount: %d", meminfo.device_ref_count);
-			dbg_printf("gpu buffer size: 0x%lx (should be 0x%lx)", meminfo.size, sizeof(gpu_buffer_memory));
+			printf("gpu buffer dev refcount: %d\n", meminfo.device_ref_count);
+			printf("gpu buffer size: 0x%lx (should be 0x%lx)\n", meminfo.size, sizeof(gpu_buffer_memory));
       
 			requested[slot] = true;
 		}
 
 		//memset(gpu_buffer_memory, 0xff, sizeof(gpu_buffer_memory));
-		dbg_printf("gpubm+0x1000");
+		printf("gpubm+0x1000\n");
 		hexdump(gpu_buffer_memory + 0x1000, 0x20);
     
 		fence_t tfence = {{0x1, 0x25, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 		qbi.fence = tfence;
 
 		ASSERT_OK(fail_vi, surface_queue_buffer(&surf, slot, &qbi, &qbo, &status));
-		dbg_printf("IGBP_QUEUE_BUFFER:");
-		dbg_printf("  status: %d", status);
-		dbg_printf("  qbo:");
-		dbg_printf("    width: %d", qbo.width);
-		dbg_printf("    height: %d", qbo.height);
-		dbg_printf("    transform_hint: %d", qbo.transform_hint);
-		dbg_printf("    num_pending_buffers: %d", qbo.num_pending_buffers);
+		printf("IGBP_QUEUE_BUFFER:\n");
+		printf("  status: %d\n", status);
+		printf("  qbo:\n");
+		printf("    width: %d\n", qbo.width);
+		printf("    height: %d\n", qbo.height);
+		printf("    transform_hint: %d\n", qbo.transform_hint);
+		printf("    num_pending_buffers: %d\n", qbo.num_pending_buffers);
 		if(status != 0) {
-			dbg_printf("IGBP_QUEUE_BUFFER failure: %d", status);
+			printf("IGBP_QUEUE_BUFFER failure: %d\n", status);
 			goto fail_vi;
 		}
 		qbi.timestamp+= 0x100;
 
-		dbg_printf("done with frame %d", i);
+		printf("done with frame %d\n", i);
     
-		dbg_printf("i sleep");
+		printf("i sleep\n");
 		svcSleepThread(1000000000);
-		dbg_printf("woke");
+		printf("woke\n");
 	}
   
 fail_vi:
 	vi_finalize();
 fail_gpu:
 	gpu_finalize();
-fail_bsdlog:
-	bsd_close(bsdlog);
-fail_bsd:
-	bsd_finalize();
 fail_sm:
 	sm_finalize();
 fail:
 	return r != RESULT_OK;
-}
-
-result_t setup_log() {
-	result_t r = RESULT_OK;
-  
-	struct addrinfo_fixed aif;
-	struct addrinfo hints;
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	if(bsd_getaddrinfo_fixed("conntest.nintendowifi.net", "7878", &hints, &aif, 1) != 0) {
-		dbg_printf("failed to resolve conntest.nintendowifi.net");
-		r = bsd_result;
-		goto fail_bsd;
-	}
-  
-	bsdlog = bsd_socket(aif.ai.ai_family, aif.ai.ai_socktype, aif.ai.ai_protocol);
-	if(bsdlog < 0) {
-		dbg_printf("failed to create socket: 0x%x, %d", bsd_result, bsd_errno);
-		r = bsd_result;
-		goto fail_bsd;
-	}
-	if(bsd_connect(bsdlog, (struct sockaddr*) aif.ai.ai_addr, aif.ai.ai_addrlen) != 0) {
-		dbg_printf("failed to connect log: 0x%x, %d", bsd_result, bsd_errno);
-		r = bsd_result;
-		goto fail_bsdlog;
-	}
-	dbg_set_bsd_log(bsdlog);
-	dbg_printf("connected log.");
-	return RESULT_OK;
-  
-fail_bsdlog:
-	bsd_close(bsdlog);
-fail_bsd:
-	return r;
 }
