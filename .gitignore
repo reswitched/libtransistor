@@ -1,3 +1,10 @@
 *~
 build/
 projects/*
+
+# Ignore binary files
+*.o
+*.a
+*.so
+*.nso
+*.nro

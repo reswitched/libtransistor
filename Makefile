@@ -1,8 +1,6 @@
-LIBTRANSISTOR_HOME=./
-
 include libtransistor.mk
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args vi gpu display am
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args vi gpu display am ssp stdin
 libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o hid.o context.o ipc/am.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
@@ -12,6 +10,7 @@ export AS_FOR_TARGET = llvm-mc$(LLVM_POSTFIX) -arch=aarch64 -mattr=+neon
 export LD_FOR_TARGET = ld.lld$(LLVM_POSTFIX)
 export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
 export CC_FOR_TARGET = clang$(LLVM_POSTFIX) -g -fPIC -ffreestanding -fexceptions -target aarch64-none-linux-gnu -O0 -mtune=cortex-a53 -ccc-gcc-name aarch64-switch-gcc -Wno-unused-command-line-argument -isystem $(realpath $(LIBTRANSISTOR_HOME))/include/
+export CC_FLAGS_FOR_TARGET = $(CC_FLAGS)
 
 .SUFFIXES: # disable built-in rules
 
@@ -23,6 +22,9 @@ run_bsd_test: $(LIBTRANSISTOR_HOME)/build/test/test_bsd.nro $(LIBTRANSISTOR_HOME
 	$(RUBY) $(LIBTRANSISTOR_HOME)/test_helpers/bsd.rb $(MEPHISTO)
 
 run_sfdnsres_test: $(LIBTRANSISTOR_HOME)/build/test/test_sfdnsres.nro
+	$(MEPHISTO) --enable-sockets --load-nro $<
+
+run_ssp_test: $(LIBTRANSISTOR_HOME)/build/test/test_ssp.nro
 	$(MEPHISTO) --enable-sockets --load-nro $<
 
 run_%_test: $(LIBTRANSISTOR_HOME)/build/test/test_%.nro
@@ -64,5 +66,15 @@ $(LIBTRANSISTOR_HOME)/newlib/Makefile:
 $(LIBTRANSISTOR_HOME)/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/newlib/Makefile
 	make -C $(LIBTRANSISTOR_HOME)/newlib/
 
+$(LIBTRANSISTOR_HOME)/libssp/libssp.a:
+	make -C $(LIBTRANSISTOR_HOME)/libssp
+
+.PHONY: clean
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
+	make -C libssp clean
+
+.PHONY: clean_newlib
+clean_newlib:
+	make -C newlib clean
+	rm -rf newlib/aarch64-none-switch
