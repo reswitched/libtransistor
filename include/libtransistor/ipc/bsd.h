@@ -10,9 +10,9 @@ extern result_t bsd_result;
 extern int      bsd_errno;
 
 struct addrinfo_fixed {
-  struct addrinfo ai;
-  struct sockaddr_in addr;
-  char canonname[256];
+	struct addrinfo ai;
+	struct sockaddr_in addr;
+	char canonname[256];
 };
 
 result_t bsd_init();

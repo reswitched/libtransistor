@@ -4,14 +4,14 @@
 #define CURRENT_THREAD 0xffff8000
 
 typedef struct PACKED {
-  void *base_addr;
-  u64 size;
-  u32 memory_type;
-  u32 memory_attribute;
-  u32 permission;
-  u32 device_ref_count;
-  u32 ipc_ref_count;
-  u32 padding;
+	void *base_addr;
+	u64 size;
+	u32 memory_type;
+	u32 memory_attribute;
+	u32 permission;
+	u32 device_ref_count;
+	u32 ipc_ref_count;
+	u32 padding;
 } memory_info_t;
 
 result_t svcSetHeapSize(void **outAddr, u32 size);
