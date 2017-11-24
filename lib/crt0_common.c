@@ -116,15 +116,6 @@ static int socklog_read(struct _reent *reent, void *v, char *ptr, int len) {
 	return bsd_recv(libtransistor_context->std_socket, ptr, len, 0);
 }
 
-// dummy for linker fail
-void *__trunctfdf2() {
-	return NULL;
-}
-// dummy for linker fail
-long double __extenddftf2(double a) {
-	return (long double) a;
-}
-
 #define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
 
 static bool dont_finalize_bsd = false;

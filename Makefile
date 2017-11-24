@@ -69,6 +69,13 @@ $(LIBTRANSISTOR_HOME)/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_
 $(LIBTRANSISTOR_HOME)/libssp/libssp.a:
 	make -C $(LIBTRANSISTOR_HOME)/libssp
 
+$(COMPILER_RT_BUILTINS_LIB): $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile
+	make -C $(LIBTRANSISTOR_HOME)/build/compiler-rt/
+
+$(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
+	mkdir -p $(@D)
+	cd $(@D); cmake -G "Unix Makefiles" $(LIBTRANSISTOR_HOME)/compiler-rt -DCOMPILER_RT_BUILD_BUILTINS=ON -DCOMPILER_RT_BUILD_SANITIZERS=OFF -DCOMPILER_RT_BUILD_XRAY=OFF -DCOMPILER_RT_BUILD_XRAY=OFF -DCOMPILER_RT_BUILD_PROFILE=OFF -DCMAKE_C_COMPILER=$(CC) -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_C_COMPILER_TARGET="aarch64-none-linux-gnu" -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON -DCMAKE_C_FLAGS="-g -fPIC -fno-stack-protector -ffreestanding -fexceptions -O0 -mtune=cortex-a53 -nostdlib" -DCMAKE_CXX_COMPILER=$(CCPP)
+
 .PHONY: clean
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
