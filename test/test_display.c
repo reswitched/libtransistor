@@ -1,6 +1,7 @@
 #include<libtransistor/nx.h>
 
 #include<string.h>
+#include<stdlib.h>
 
 #define ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) {            \
 		dbg_printf("assertion failed at %s:%d: result 0x%x is not OK", __FILE__, __LINE__, r); \
