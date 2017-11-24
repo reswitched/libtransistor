@@ -3,4 +3,4 @@
 	url = https://github.com/reswitched/newlib.git
 [submodule "compiler-rt"]
 	path = compiler-rt
-	url = git@github.com:llvm-mirror/compiler-rt.git
+	url = https://github.com/llvm-mirror/compiler-rt.git
