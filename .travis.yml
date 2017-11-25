@@ -1,3 +1,6 @@
+env:
+  global:
+    - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
 dist: trusty
 language: c
 sudo: required
@@ -12,6 +15,15 @@ addons:
       - llvm-5.0-dev
       - lld-5.0
       - liblz4-dev
+install:
+    # Download and install recent cmake
+    - |
+      if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
+        CMAKE_URL="http://www.cmake.org/files/v3.4/cmake-3.4.3-Linux-x86_64.tar.gz"
+        mkdir -p ${DEPS_DIR}/cmake
+        travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${DEPS_DIR}/cmake
+        export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+      fi
 before_script:
   - git clone https://github.com/reswitched/unicorn.git
   - cd unicorn
