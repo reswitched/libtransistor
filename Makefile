@@ -5,6 +5,10 @@ libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ip
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
 # for building newlib
+export LD = ld.lld$(LLVM_POSTFIX)
+export CC = clang$(LLVM_POSTFIX)
+export CXX = clang++$(LLVM_POSTFIX)
+export AS = llvm-mc$(LLVM_POSTFIX)
 export AR_FOR_TARGET = llvm-ar$(LLVM_POSTFIX)
 export AS_FOR_TARGET = llvm-mc$(LLVM_POSTFIX) -arch=aarch64 -mattr=+neon
 export LD_FOR_TARGET = ld.lld$(LLVM_POSTFIX)
@@ -74,7 +78,7 @@ $(COMPILER_RT_BUILTINS_LIB): $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile
 
 $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
 	mkdir -p $(@D)
-	cd $(@D); cmake -G "Unix Makefiles" $(LIBTRANSISTOR_HOME)/compiler-rt -DCOMPILER_RT_BUILD_BUILTINS=ON -DCOMPILER_RT_BUILD_SANITIZERS=OFF -DCOMPILER_RT_BUILD_XRAY=OFF -DCOMPILER_RT_BUILD_XRAY=OFF -DCOMPILER_RT_BUILD_PROFILE=OFF -DCMAKE_C_COMPILER=$(CC) -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_C_COMPILER_TARGET="aarch64-none-linux-gnu" -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON -DCMAKE_C_FLAGS="-g -fPIC -fno-stack-protector -ffreestanding -fexceptions -O0 -mtune=cortex-a53 -nostdlib" -DCMAKE_CXX_COMPILER=$(CCPP)
+	cd $(@D); cmake -G "Unix Makefiles" $(LIBTRANSISTOR_HOME)/compiler-rt -DCOMPILER_RT_BAREMETAL_BUILD=ON -DCOMPILER_RT_BUILD_BUILTINS=ON -DCOMPILER_RT_BUILD_SANITIZERS=OFF -DCOMPILER_RT_BUILD_XRAY=OFF -DCOMPILER_RT_BUILD_XRAY=OFF -DCOMPILER_RT_BUILD_PROFILE=OFF -DCMAKE_C_COMPILER=$(CC) -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_C_COMPILER_TARGET="aarch64-none-linux-gnu" -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON -DCMAKE_C_FLAGS="-g -fPIC -ffreestanding -fexceptions -O0 -mtune=cortex-a53 -nostdlib -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/include/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/include/" -DCMAKE_CXX_COMPILER=$(CXX) -DLLVM_CONFIG_PATH=llvm-config$(LLVM_POSTFIX)
 
 .PHONY: clean
 clean:
@@ -84,4 +88,4 @@ clean:
 .PHONY: clean_newlib
 clean_newlib:
 	make -C newlib clean
-	rm -rf newlib/aarch64-none-switch
+	rm -rf newlib/aarch64-none-switch newlib/Makefile
