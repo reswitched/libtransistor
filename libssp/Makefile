@@ -14,7 +14,7 @@ endif
 .SUFFIXES: # disable built-in rules
 
 %.o: %.c
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) -fno-stack-protector -c -o $@ $<
 	@echo [CC] $@
 
 all: libssp.a

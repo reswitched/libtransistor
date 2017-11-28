@@ -46,6 +46,11 @@ $(LIBTRANSISTOR_HOME)/build/test/%.o: $(LIBTRANSISTOR_HOME)/test/%.c
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 
+# Disable stack protector for crt0_common
+$(LIBTRANSISTOR_HOME)/build/lib/crt0_common.o: $(LIBTRANSISTOR_HOME)/lib/crt0_common.c
+	mkdir -p $(@D)
+	$(CC) $(CC_FLAGS) -fno-stack-protector -c -o $@ $<
+
 $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.c
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) -c -o $@ $<
