@@ -78,7 +78,7 @@ $(LIBTRANSISTOR_NSO_LIB): $(LIBTRANSISTOR_HOME)/build/lib/crt0.nso.o $(libtransi
 	$(AR) $(AR_FLAGS) $@ $+
 
 $(LIBTRANSISTOR_HOME)/newlib/Makefile:
-	cd $(LIBTRANSISTOR_HOME)/newlib; ./configure --target=aarch64-none-switch --without-rdimon
+	cd $(LIBTRANSISTOR_HOME)/newlib; ./configure --disable-multilib --target=aarch64-none-switch --without-rdimon
 
 $(LIBTRANSISTOR_HOME)/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/newlib/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/newlib/
