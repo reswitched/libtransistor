@@ -51,7 +51,7 @@ ipc_response_fmt_t ipc_default_response_fmt = {
 	.pid = NULL
 };
 
-result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
+result_t ipc_pack_request(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
 	int h = 0; // h is for HEAD
   
 	ipc_buffer_t *a_descriptors[16];
@@ -337,87 +337,95 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
 	return RESULT_OK;
 }
 
-result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object) {
-	if(rs->raw_data_size & 3) {
-		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
-	}
-
-	bool from_domain = object.object_id >= 0;
-  
-	size_t raw_data_words = rs->raw_data_size / sizeof(uint32_t);
-  
+result_t ipc_unpack(u32 *buffer, ipc_message_t *msg) {
 	int h = 0; // h for HEAD
 
 	u32 header0 = buffer[h++];
 	u32 header1 = buffer[h++];
-	int response_type = header0 & 0xFFFF;
+	msg->message_type = header0 & 0xFFFF;
 
-	if(response_type != 0) {
-		return LIBTRANSISTOR_ERR_INVALID_IPC_RESPONSE_TYPE;
-	}
-  
-	uint32_t num_x_descriptors = (header0 >> 16) & 0xF;
-	uint32_t num_a_descriptors = (header0 >> 20) & 0xF;
-	uint32_t num_b_descriptors = (header0 >> 24) & 0xF;
-	uint32_t num_w_descriptors = (header0 >> 28) & 0xF;
+	msg->num_x_descriptors = (header0 >> 16) & 0xF;
+	msg->num_a_descriptors = (header0 >> 20) & 0xF;
+	msg->num_b_descriptors = (header0 >> 24) & 0xF;
+	msg->num_w_descriptors = (header0 >> 28) & 0xF;
 
-	uint32_t raw_data_section_size = header1 & 0b1111111111;
+	msg->raw_data_section_size = header1 & 0b1111111111;
   
 	//int c_descriptor_flags = (header1 >> 10) & 0xF;
 	bool has_handle_descriptor = header1 >> 31;
 
-	uint32_t num_copy_handles = 0;
-	uint32_t num_move_handles = 0;
-	handle_t *copy_handles = NULL;
-	handle_t *move_handles = NULL;
+	msg->num_copy_handles = 0;
+	msg->num_move_handles = 0;
+	msg->copy_handles = NULL;
+	msg->move_handles = NULL;
 
-	bool has_pid = false;
-	uint64_t pid;
+	msg->has_pid = false;
+	msg->pid = 0;
   
 	if(has_handle_descriptor) {
 		int handle_descriptor = buffer[h++];
 		if(handle_descriptor & 1) {
-			has_pid = true;
-			pid = *(u64*)(buffer + h);
+			msg->has_pid = true;
+			msg->pid = *(u64*)(buffer + h);
 			h+= 2;
 		}
-		num_copy_handles = (handle_descriptor >> 1) & 0xF;
-		num_move_handles = (handle_descriptor >> 5) & 0xF;
-		copy_handles = buffer + h; h+= num_copy_handles;
-		move_handles = buffer + h; h+= num_move_handles;
+		msg->num_copy_handles = (handle_descriptor >> 1) & 0xF;
+		msg->num_move_handles = (handle_descriptor >> 5) & 0xF;
+		msg->copy_handles = buffer + h; h+= msg->num_copy_handles;
+		msg->move_handles = buffer + h; h+= msg->num_move_handles;
 	}
 
-	// skip descriptors
-	h+= num_x_descriptors * 2;
-	h+= num_a_descriptors * 3;
-	h+= num_b_descriptors * 3;
-	h+= num_w_descriptors * 3;
+	// descriptors
+	msg->x_descriptors = buffer + h;
+	h+= msg->num_x_descriptors * 2;
+	msg->a_descriptors = buffer + h;
+	h+= msg->num_a_descriptors * 3;
+	msg->b_descriptors = buffer + h;
+	h+= msg->num_b_descriptors * 3;
+	msg->w_descriptors = buffer + h;
+	h+= msg->num_w_descriptors * 3;
 
 	// align head to 4 words
 	h = (h + 3) & ~3;
 
-	int domain_header_location = h;
+	msg->data_section = buffer + h;
 
-	if(from_domain) {
-		h+= 4;
+	return RESULT_OK;
+}
+
+result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_object_t object) {
+	if(rs->raw_data_size & 3) {
+		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
 	}
-  
-	if(buffer[h++] != *((uint32_t*) "SFCO")) {
+
+	bool from_domain = object.object_id >= 0;  
+	size_t raw_data_words = rs->raw_data_size / sizeof(uint32_t);
+
+	if(msg->message_type != 0) {
+		return LIBTRANSISTOR_ERR_INVALID_IPC_RESPONSE_TYPE;
+	}
+	
+	int h = 0;
+	if(from_domain) {
+		h+= 4; // skip domain header for now
+	}
+	
+	if(msg->data_section[h++] != *((uint32_t*) "SFCO")) {
 		return LIBTRANSISTOR_ERR_INVALID_IPC_RESPONSE_MAGIC;
 	}
 	h++;
 
 	// if this isn't ok, none of our other expectations will make
 	// sense, so this is the most meaningful result to return.
-	result_t response_code = buffer[h++];
+	result_t response_code = msg->data_section[h++];
 	if(response_code != RESULT_OK) {
 		return response_code;
 	}
 	h++;
 
-	u32 *raw_data = buffer + h;
+	u32 *raw_data = msg->data_section + h;
   
-	if((raw_data_section_size
+	if((msg->raw_data_section_size
 	    - 4 // SFCI, command id
 	    - 4 // padding
 	    - (from_domain ? 4 + rs->num_objects : 0) // domain header + out objects
@@ -425,15 +433,15 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
 		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
 	}
   
-	if(has_pid != rs->has_pid) {
+	if(msg->has_pid != rs->has_pid) {
 		return LIBTRANSISTOR_ERR_UNEXPECTED_PID;
 	}
 
-	if(num_copy_handles != rs->num_copy_handles) {
+	if(msg->num_copy_handles != rs->num_copy_handles) {
 		return LIBTRANSISTOR_ERR_UNEXPECTED_COPY_HANDLES;
 	}
 
-	if(num_move_handles != rs->num_move_handles + (from_domain ? 0 : rs->num_objects)) {
+	if(msg->num_move_handles != rs->num_move_handles + (from_domain ? 0 : rs->num_objects)) {
 		return LIBTRANSISTOR_ERR_UNEXPECTED_MOVE_HANDLES;
 	}
 
@@ -443,7 +451,7 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
 			uint32_t unknown1[2]; // supposedly an unaligned uint64_t
 			uint32_t unknown2;
 		};
-		struct response_domain_header_t *domain_header = (struct response_domain_header_t*) (buffer + domain_header_location);
+		struct response_domain_header_t *domain_header = (struct response_domain_header_t*) msg->data_section;
 
 		if(domain_header->num_objects != rs->num_objects) {
 			return LIBTRANSISTOR_ERR_UNEXPECTED_OBJECTS;
@@ -456,15 +464,15 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
 		}
 	}
   
-	for(uint32_t i = 0; i < rs->num_copy_handles; i++) { rs->copy_handles[i] = copy_handles[i]; }
+	for(uint32_t i = 0; i < rs->num_copy_handles; i++) { rs->copy_handles[i] = msg->copy_handles[i]; }
 	int mhi = 0; // move handle index
 	if(!from_domain) {
 		for(uint32_t i = 0; i < rs->num_objects; i++) {
-			rs->objects[i].session = move_handles[mhi++];
+			rs->objects[i].session = msg->move_handles[mhi++];
 			rs->objects[i].object_id = -1;
 		}
 	}
-	for(uint32_t i = 0; i < rs->num_move_handles; i++) { rs->move_handles[i] = move_handles[mhi++]; }
+	for(uint32_t i = 0; i < rs->num_move_handles; i++) { rs->move_handles[i] = msg->move_handles[mhi++]; }
 	for(uint32_t i = 0; i < raw_data_words; i++) {
 		rs->raw_data[i] = raw_data[i];
 	}
@@ -497,7 +505,7 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
 	result_t r;
 	u32 *tls = get_tls();
 	memset(tls, 0, 0x1f8);
-	r = ipc_marshal(tls, rq, object); if(r) { return r; }
+	r = ipc_pack_request(tls, rq, object); if(r) { return r; }
 	if(ipc_debug_flag) {
 		char buf[0x1f8];
 		memcpy(buf, tls, sizeof(buf));
@@ -520,7 +528,9 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
 		memcpy(tls, buf, sizeof(buf));
 		ipc_debug_flag = 1;
 	}
-	r = ipc_unmarshal(tls, rs, object); if(r) { return r; }
+	ipc_message_t msg;
+	r = ipc_unpack(tls, &msg); if(r) { return r; }
+	r = ipc_unflatten_response(&msg, rs, object); if(r) { return r; }
 
 	return RESULT_OK;
 }
@@ -536,7 +546,7 @@ result_t ipc_close(ipc_object_t object) {
 	u32 *tls = get_tls();
   
 	result_t r;
-	r = ipc_marshal(tls, &rq, object); if(r) { return r; }
+	r = ipc_pack_request(tls, &rq, object); if(r) { return r; }
 	r = svcSendSyncRequest(object.domain->session); if (r) { return r; }
 
 	// remote end doesn't seem to actually write a response

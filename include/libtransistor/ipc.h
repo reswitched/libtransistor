@@ -20,6 +20,9 @@ typedef struct {
 	u32 type;
 } ipc_buffer_t;
 
+/*
+  describes an outgoing request
+ */
 typedef struct {
 	u32 type;
 	u32 num_buffers;
@@ -37,7 +40,10 @@ typedef struct {
 	bool close_object;
 } ipc_request_t;
 
-// fill this struct out with what you expect before passing it to ipc_unmarshal
+/*
+  describes the format expectations of an incoming response.
+  fill this struct out with what you expect before passing it to ipc_unmarshal
+ */
 typedef struct {
 	uint32_t num_copy_handles;
 	uint32_t num_move_handles;
@@ -59,15 +65,43 @@ extern ipc_response_fmt_t ipc_default_response_fmt;
 extern ipc_object_t       ipc_null_object;
 
 /*
-  Packs the IPC message described by `rq` and `object` into `buffer`.
-*/
-result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object);
+  describes an IPC message. used as an intermediate during unpacking
+ */
+typedef struct {
+	u16 message_type;
+	u32 raw_data_section_size;
+	u32 num_x_descriptors;
+	u32 num_a_descriptors;
+	u32 num_b_descriptors;
+	u32 num_w_descriptors;
+	u32 *x_descriptors;
+	u32 *a_descriptors;
+	u32 *b_descriptors;
+	u32 *w_descriptors;
+	u32 num_copy_handles;
+	u32 num_move_handles;
+	handle_t *copy_handles;
+	handle_t *move_handles;
+	bool has_pid;
+	u64 pid;
+	u32 *data_section; // may point to domain header, may point to SFCI/SFCO
+} ipc_message_t;
 
 /*
-  Unpacks the IPC message described by `rs` from `buffer`. `object` should
+  Packs the IPC message described by `rq` and `object` into `buffer`.
+*/
+result_t ipc_pack_request(u32 *buffer, ipc_request_t *rq, ipc_object_t object);
+
+/*
+  Unpacks the IPC message from `buffer`
+ */
+result_t ipc_unpack(u32 *buffer, ipc_message_t *msg);
+
+/*
+  Unflattens the IPC message described by `rs` from `msg`. `object` should
   be the object the request was sent to.
 */
-result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object);
+result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_object_t object);
 
 /*
   Send a request described by `rq` to `object` and then unpack the response
