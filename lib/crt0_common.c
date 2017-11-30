@@ -116,9 +116,9 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	if(relocate(aslr_base)) {
 		return -4;
 	}
-  
+
 	__guard_setup();
-	
+
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("ctx: %p", ctx);
 
@@ -178,10 +178,16 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		dbg_printf("using socklog stdio");
 		bsd_init(); // borrow bsd object from loader
 		int fd = socket_from_bsd(libtransistor_context->std_socket);
-		dup2(fd, STDIN_FILENO);
-		dup2(fd, STDOUT_FILENO);
-		dup2(fd, STDERR_FILENO);
-		close(fd);
+		if (fd < 0) {
+			dbg_printf("Error creating socket: %d", errno);
+		} else {
+			if (dup2(fd, STDIN_FILENO) < 0)
+				dbg_printf("Error setting up stdin: %d", errno);
+			if (dup2(fd, STDOUT_FILENO) < 0)
+				dbg_printf("Error setting up stdout: %d", errno);
+			if (dup2(fd, STDERR_FILENO) < 0)
+				dbg_printf("Error setting up stderr: %d", errno);
+		}
 	} else {
 		// TODO: Create a fake FD for bsslog
 		dbg_printf("using bsslog stdout");
