@@ -77,11 +77,12 @@ $(LIBTRANSISTOR_NSO_LIB): $(LIBTRANSISTOR_HOME)/build/lib/crt0.nso.o $(libtransi
 	rm -f $@
 	$(AR) $(AR_FLAGS) $@ $+
 
-$(LIBTRANSISTOR_HOME)/newlib/Makefile:
-	cd $(LIBTRANSISTOR_HOME)/newlib; ./configure --disable-multilib --target=aarch64-none-switch --without-rdimon
+$(LIBTRANSISTOR_HOME)/build/newlib/Makefile:
+	mkdir -p $(@D)
+	cd $(@D); $(LIBTRANSISTOR_HOME)/newlib/configure --disable-multilib --target=aarch64-none-switch --without-rdimon
 
-$(LIBTRANSISTOR_HOME)/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/newlib/Makefile
-	$(MAKE) -C $(LIBTRANSISTOR_HOME)/newlib/
+$(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/build/newlib/Makefile
+	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/newlib/
 
 $(LIBTRANSISTOR_HOME)/libssp/libssp.a:
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/libssp
@@ -111,7 +112,7 @@ clean:
 	$(MAKE) -C libssp clean
 
 clean_newlib:
-	rm -rf newlib/aarch64-none-switch newlib/Makefile
+	rm -rf build/newlib
 
 clean_compiler-rt:
 	rm -rf build/compiler-rt
