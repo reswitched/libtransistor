@@ -55,3 +55,58 @@ result_t sm_get_service(ipc_object_t *out_object, const char *name) {
 
 	return ipc_send(sm_object, &rq, &rs);
 }
+
+result_t sm_register_service(port_h *port, const char *name, uint32_t max_sessions) {
+	if(!sm_object.session) {
+		return LIBTRANSISTOR_ERR_SM_NOT_INITIALIZED;
+	}
+  
+	u64 service_name = str2u64(name);
+  
+	if(strlen(name) > 8) {
+		return LIBTRANSISTOR_ERR_SM_SERVICE_NAME_TOO_LONG;
+	}
+
+	// this is probably wrong
+	struct {
+		char service_name[8];
+		uint32_t max_sessions;
+		uint32_t unknown;
+	} params;
+
+	memcpy(params.service_name, &service_name, sizeof(service_name));
+	params.max_sessions = max_sessions;
+	params.unknown = 0x20;
+	
+	ipc_request_t rq = ipc_default_request;
+	rq.request_id = 2;
+	rq.raw_data = (u32*) &params;
+	rq.raw_data_size = sizeof(params);
+
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	rs.num_move_handles = 1;
+	rs.move_handles = port;
+
+	return ipc_send(sm_object, &rq, &rs);
+}
+
+result_t sm_unregister_service(const char *name) {
+	if(!sm_object.session) {
+		return LIBTRANSISTOR_ERR_SM_NOT_INITIALIZED;
+	}
+  
+	u64 service_name = str2u64(name);
+  
+	if(strlen(name) > 8) {
+		return LIBTRANSISTOR_ERR_SM_SERVICE_NAME_TOO_LONG;
+	}
+
+	ipc_request_t rq = ipc_default_request;
+	rq.request_id = 3;
+	rq.raw_data = (u32*) &service_name;
+	rq.raw_data_size = sizeof(service_name);
+
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+
+	return ipc_send(sm_object, &rq, &rs);
+}
