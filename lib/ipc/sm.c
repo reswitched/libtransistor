@@ -9,7 +9,7 @@
 
 static ipc_object_t sm_object;
 
-static u64 str2u64(char *str) {
+static u64 str2u64(const char *str) {
 	char buf[8];
 	int i = 0;
 	for(; i < 8; i++) {
@@ -31,7 +31,7 @@ void sm_finalize() {
 	ipc_close(sm_object);
 }
 
-result_t sm_get_service(ipc_object_t *out_object, char *name) {
+result_t sm_get_service(ipc_object_t *out_object, const char *name) {
 	if(!sm_object.session) {
 		return LIBTRANSISTOR_ERR_SM_NOT_INITIALIZED;
 	}
