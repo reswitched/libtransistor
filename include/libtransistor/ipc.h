@@ -2,6 +2,8 @@
 
 #include<libtransistor/types.h>
 
+struct ipc_server_object_t;
+
 typedef struct {
 	session_h session;
 } ipc_domain_t;
@@ -41,6 +43,43 @@ typedef struct {
 } ipc_request_t;
 
 /*
+  describes the format expectations of an incoming request
+ */
+typedef struct {
+	u32 num_buffers;
+	ipc_buffer_t **buffers;
+	u32 *raw_data;
+	size_t raw_data_size; // in BYTES
+	bool send_pid;
+	u64 *pid;
+	u8 num_copy_handles;
+	u8 num_move_handles;
+	u8 num_objects;
+	handle_t *copy_handles;
+	handle_t *move_handles;
+	ipc_object_t *objects;
+} ipc_request_fmt_t;
+
+/*
+  describes an outgoing response
+ */
+typedef struct {
+	u32 type;
+	u32 num_buffers;
+	ipc_buffer_t **buffers;
+	result_t result_code;
+	u32 *raw_data;
+	size_t raw_data_size; // in BYTES
+	bool send_pid;
+	u8 num_copy_handles;
+	u8 num_move_handles;
+	u8 num_objects;
+	handle_t *copy_handles;
+	handle_t *move_handles;
+	ipc_object_t *objects;
+} ipc_response_t;
+
+/*
   describes the format expectations of an incoming response.
   fill this struct out with what you expect before passing it to ipc_unmarshal
  */
@@ -61,6 +100,8 @@ typedef struct {
 
 // see ipc.c for actual default values
 extern ipc_request_t      ipc_default_request;
+extern ipc_response_t     ipc_default_response;
+extern ipc_request_fmt_t  ipc_default_request_fmt;
 extern ipc_response_fmt_t ipc_default_response_fmt;
 extern ipc_object_t       ipc_null_object;
 
@@ -69,15 +110,17 @@ extern ipc_object_t       ipc_null_object;
  */
 typedef struct {
 	u16 message_type;
-	u32 raw_data_section_size;
+	u32 raw_data_section_size; // in words
 	u32 num_x_descriptors;
 	u32 num_a_descriptors;
 	u32 num_b_descriptors;
 	u32 num_w_descriptors;
+	u32 c_descriptor_flags;
 	u32 *x_descriptors;
 	u32 *a_descriptors;
 	u32 *b_descriptors;
 	u32 *w_descriptors;
+	u32 *c_descriptors;
 	u32 num_copy_handles;
 	u32 num_move_handles;
 	handle_t *copy_handles;
@@ -93,9 +136,19 @@ typedef struct {
 result_t ipc_pack_request(u32 *buffer, ipc_request_t *rq, ipc_object_t object);
 
 /*
+  Packs the IPC message described by `rs` and `object` into `buffer`.
+*/
+result_t ipc_pack_response(u32 *buffer, ipc_response_t *rs, struct ipc_server_object_t *object);
+
+/*
   Unpacks the IPC message from `buffer`
  */
 result_t ipc_unpack(u32 *buffer, ipc_message_t *msg);
+
+/*
+  Unflattens the IPC message described by `rq` from `msg`
+*/
+result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rs, void *raw_data, size_t raw_data_size);
 
 /*
   Unflattens the IPC message described by `rs` from `msg`. `object` should
@@ -114,6 +167,11 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
   on the newly initialized domain if this returns != RESULT_OK
 */
 result_t ipc_convert_to_domain(ipc_object_t *session, ipc_domain_t *domain);
+
+/*
+  Validates and unpacks a request
+ */
+result_t ipc_incoming_unmarshal(u32 *buffer, ipc_request_fmt_t *rq);
 
 /*
   Closes the `object`
