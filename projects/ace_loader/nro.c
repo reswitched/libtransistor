@@ -28,7 +28,7 @@ extern thread_h aceloader_main_thread_handle;
 
 uint64_t nro_start()
 {
-	uint64_t (*entry)(libtransistor_context_t*) = nro_base + 0x80;
+	uint64_t (*entry)(void *, thread_h, libtransistor_context_t*) = nro_base + 0x80;
 	uint64_t ret;
 
 	// generate memory block
@@ -73,7 +73,7 @@ uint64_t nro_start()
 	*(void**)(get_tls() + 0x1f8) = NULL;
 
 	// run NRO
-	ret = entry(&loader_context);
+	ret = entry(NULL, aceloader_main_thread_handle, &loader_context);
 
 	// Restore TLS
 	*tls_userspace_pointer = tls_backup;

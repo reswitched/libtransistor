@@ -37,7 +37,7 @@ _mod_header:
 
 .section .text, "e"
 start:
-        adrp x1, _start // aslr base
+        adrp x3, _start // aslr base
 	bl _libtransistor_start
 loop:
 	b loop

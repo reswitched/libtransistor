@@ -41,7 +41,7 @@ _mod_header:
 start:
         sub sp, sp, 0x10
         stp x29, x30, [sp]
-        adrp x1, _start // aslr base
+        adrp x3, _start // aslr base
         bl _libtransistor_start
         ldp x29, x30, [sp], 0x10
         ret

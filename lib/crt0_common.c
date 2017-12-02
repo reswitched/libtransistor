@@ -158,12 +158,17 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 
 static jmp_buf exit_jmpbuf;
 static int exit_value;
+static thread_h MAIN_HANDLE;
 
-int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
+int _libtransistor_start(void *exception_info_ptr, thread_h main_handle, libtransistor_context_t *ctx, void *aslr_base) {
 	if(relocate(aslr_base)) {
 		return -4;
 	}
 	
+	MAIN_HANDLE = main_handle;
+
+	dbg_printf("exception_ptr: %x", exception_info_ptr);
+	dbg_printf("main handle: %x", main_handle);
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("ctx: %p", ctx);
 
