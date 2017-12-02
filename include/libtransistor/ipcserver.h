@@ -9,6 +9,7 @@
 struct ipc_server_object_t;
 struct ipc_server_domain_t;
 struct ipc_server_session_t;
+struct ipc_server;
 
 typedef struct ipc_server_object_t {
 	void *userdata;
@@ -19,7 +20,7 @@ typedef struct ipc_server_object_t {
 	struct ipc_server_session_t *owning_session;
 	
 	// raw_data points to SFCI
-	result_t (*dispatch)(struct ipc_server_object_t *obj, ipc_message_t *msg, void *raw_data, size_t raw_data_size);
+	result_t (*dispatch)(struct ipc_server_object_t *obj, ipc_message_t *msg, uint32_t request_id);
 	result_t (*close)();
 } ipc_server_object_t;
 
@@ -43,6 +44,7 @@ typedef struct ipc_server_session_t {
 	ipc_server_object_t *object;
 	ipc_server_domain_t domain;
 	ipc_server_session_state_t state;
+	struct ipc_server_t *owning_server;
 	uint8_t message_buffer[0x100];
 } ipc_server_session_t;
 
@@ -52,7 +54,7 @@ typedef struct ipc_server_session_t {
  */
 typedef result_t (*ipc_server_object_factory_t)(ipc_server_object_t **obj);
 
-typedef struct {
+typedef struct ipc_server_t {
 	port_h port;
 	ipc_server_session_t sessions[MAX_SERVICE_SESSIONS];
 	ipc_server_object_factory_t object_factory;

@@ -57,7 +57,7 @@ typedef struct {
 	u8 num_objects;
 	handle_t *copy_handles;
 	handle_t *move_handles;
-	ipc_object_t *objects;
+	struct ipc_server_object_t **objects;
 } ipc_request_fmt_t;
 
 /*
@@ -76,7 +76,7 @@ typedef struct {
 	u8 num_objects;
 	handle_t *copy_handles;
 	handle_t *move_handles;
-	ipc_object_t *objects;
+	struct ipc_server_object_t **objects;
 } ipc_response_t;
 
 /*
@@ -106,7 +106,7 @@ extern ipc_response_fmt_t ipc_default_response_fmt;
 extern ipc_object_t       ipc_null_object;
 
 /*
-  describes an IPC message. used as an intermediate during unpacking
+  describes an incoming IPC message. used as an intermediate during unpacking
  */
 typedef struct {
 	u16 message_type;
@@ -148,7 +148,7 @@ result_t ipc_unpack(u32 *buffer, ipc_message_t *msg);
 /*
   Unflattens the IPC message described by `rq` from `msg`
 */
-result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rs, void *raw_data, size_t raw_data_size);
+result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rs, struct ipc_server_object_t *object);
 
 /*
   Unflattens the IPC message described by `rs` from `msg`. `object` should

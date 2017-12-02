@@ -1,4 +1,5 @@
 #include<libtransistor/ipc.h>
+#include<libtransistor/ipcserver.h>
 #include<libtransistor/tls.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
@@ -24,6 +25,7 @@ ipc_request_t ipc_default_request = {
 	.type = 4,
 	.num_buffers = 0,
 	.buffers = NULL,
+	.request_id = 0,
 	.raw_data = 0,
 	.raw_data_size = 0,
 	.send_pid = false,
@@ -34,6 +36,37 @@ ipc_request_t ipc_default_request = {
 	.move_handles = NULL,
 	.objects = NULL,
 	.close_object = false
+};
+
+ipc_response_t ipc_default_response = {
+	.type = 4,
+	.num_buffers = 0,
+	.buffers = NULL,
+	.result_code = 0,
+	.raw_data = 0,
+	.raw_data_size = 0,
+	.send_pid = false,
+	.num_copy_handles = 0,
+	.num_move_handles = 0,
+	.num_objects = 0,
+	.copy_handles = NULL,
+	.move_handles = NULL,
+	.objects = NULL,
+};
+
+ipc_request_fmt_t ipc_default_request_fmt = {
+	.num_copy_handles = 0,
+	.num_move_handles = 0,
+	.num_objects = 0,
+	.copy_handles = NULL,
+	.move_handles = NULL,
+	.objects = NULL,
+  
+	.raw_data_size = 0,
+	.raw_data = NULL,
+
+	.send_pid = false,
+	.pid = NULL
 };
 
 ipc_response_fmt_t ipc_default_response_fmt = {
@@ -389,6 +422,96 @@ result_t ipc_pack_request(u32 *marshal_buffer, ipc_request_t *rq, ipc_object_t o
 	return ipc_pack_message(marshal_buffer, &msg);
 }
 
+result_t ipc_pack_response(u32 *marshal_buffer, ipc_response_t *rs, ipc_server_object_t *object) {
+	ipc_pack_message_t msg;
+
+	bool from_domain = object->is_domain_object;
+	
+	msg.num_buffers = rs->num_buffers;
+	msg.buffers = rs->buffers;
+	
+	if(rs->type & ~0xFFFF) {
+		return LIBTRANSISTOR_ERR_INVALID_REQUEST_TYPE;
+	}
+	msg.message_type = rs->type;
+
+	if(rs->raw_data_size & 3) {
+		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
+	}
+	int raw_data_words = rs->raw_data_size / sizeof(uint32_t);
+
+	int num_move_handles = rs->num_move_handles;
+	if(!from_domain) {
+		num_move_handles+= rs->num_objects;
+	}
+
+	handle_t move_handles[16];
+	if(!from_domain) {
+		for(uint32_t i = 0; i < rs->num_objects; i++) {
+			ipc_server_object_t *tobject = rs->objects[i];
+			if(tobject->is_domain_object) {
+				return LIBTRANSISTOR_ERR_CANT_SEND_DOMAIN_OBJECT_FROM_SESSION;
+			}
+			move_handles[i] = tobject->owning_session->handle;
+		}
+		for(uint32_t i = 0; i < rs->num_move_handles; i++) {
+			move_handles[rs->num_objects + i] = rs->move_handles[i];
+		}
+	} else {
+		for(uint32_t i = 0; i < rs->num_move_handles; i++) {
+			move_handles[i] = rs->move_handles[i];
+		}
+	}
+
+	msg.num_move_handles = num_move_handles;
+	msg.move_handles = move_handles;
+
+	msg.num_copy_handles = rs->num_copy_handles;
+	msg.copy_handles = rs->copy_handles;
+
+	msg.send_pid = rs->send_pid;
+
+	uint32_t buffer[0x220 >> 2];
+	size_t h = 0;
+	
+	if(from_domain) {
+		if(rs->num_objects > 8) {
+			return LIBTRANSISTOR_ERR_TOO_MANY_OBJECTS;
+		}
+		buffer[h++] = rs->num_objects;
+		buffer[h++] = 0;
+		buffer[h++] = 0;
+		buffer[h++] = 0;
+		for(uint32_t i = 0; i < rs->num_objects; i++) {
+			ipc_server_object_t *tobject = rs->objects[i];
+			if(!tobject->is_domain_object) {
+				return LIBTRANSISTOR_ERR_CANT_SEND_SESSION_OBJECT_FROM_DOMAIN;
+			}
+			if(tobject->owning_domain != object->owning_domain) {
+				return LIBTRANSISTOR_ERR_CANT_SEND_OBJECT_ACROSS_DOMAINS;
+			}
+			buffer[h++] = tobject->domain_id;
+		}
+	}
+
+	buffer[h++] = *((uint32_t*) "SFCO");
+	buffer[h++] = 0;
+	buffer[h++] = rs->result_code;
+	buffer[h++] = 0;
+	
+	if(rs->raw_data_size > 0x200) {
+		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
+	}
+	for(int i = 0; i < raw_data_words; i++) {
+		buffer[h++] = rs->raw_data[i];
+	}
+	
+	msg.data_section_size = h;
+	msg.data_section = buffer;
+	
+	return ipc_pack_message(marshal_buffer, &msg);
+}
+
 result_t ipc_unpack(u32 *buffer, ipc_message_t *msg) {
 	int h = 0; // h for HEAD
 
@@ -442,6 +565,122 @@ result_t ipc_unpack(u32 *buffer, ipc_message_t *msg) {
 
 	msg->data_section = buffer + h;
 
+	return RESULT_OK;
+}
+
+result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct ipc_server_object_t *object) {	
+	if(rq->raw_data_size & 3) {
+		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
+	}
+
+	bool to_domain = object->is_domain_object;
+	size_t raw_data_words = rq->raw_data_size / sizeof(uint32_t);
+
+	struct {
+		uint8_t command;
+		uint8_t num_objects;
+		uint16_t payload_size;
+		uint32_t object_id;
+	} domain_header;
+	
+	int h = 0;
+	if(to_domain) {
+		uint32_t dhead = msg->data_section[h++];
+		domain_header.command = dhead & 0xFF; // used in dispatch, assumed to be correct
+		domain_header.num_objects = (dhead >> 8) & 0xFF;
+		domain_header.payload_size = (dhead >> 16) & 0xFFFF;
+		domain_header.object_id = msg->data_section[h++]; // used for dispatch, assumed to be correct
+		h+= 2;
+	}
+	
+	if(msg->data_section[h++] != *((uint32_t*) "SFCI")) {
+		return LIBTRANSISTOR_ERR_INVALID_IPC_REQUEST_MAGIC;
+	}
+	h++;
+	h++;
+	h++;
+	
+	u32 *raw_data = msg->data_section + h;
+  
+	if((msg->raw_data_section_size
+	    - 4 // SFCI, command id
+	    - 4 // padding
+	    - (to_domain ? 4 + rq->num_objects : 0) // domain header + in objects
+		   ) != raw_data_words) {
+		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
+	}
+  
+	if(msg->has_pid != rq->send_pid) {
+		return LIBTRANSISTOR_ERR_UNEXPECTED_PID;
+	}
+
+	if(msg->num_copy_handles != rq->num_copy_handles) {
+		return LIBTRANSISTOR_ERR_UNEXPECTED_COPY_HANDLES;
+	}
+
+	if(msg->num_move_handles != rq->num_move_handles + (to_domain ? 0 : rq->num_objects)) {
+		return LIBTRANSISTOR_ERR_UNEXPECTED_MOVE_HANDLES;
+	}
+
+	if(to_domain && domain_header.num_objects != rq->num_objects) {
+		return LIBTRANSISTOR_ERR_UNEXPECTED_OBJECTS;
+	}
+
+	if(to_domain && domain_header.payload_size - 4 != rq->raw_data_size) {
+		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
+	}
+	
+	ipc_server_object_t **in_objects = rq->objects;
+	if(rq->num_objects > 8) {
+		return LIBTRANSISTOR_ERR_TOO_MANY_OBJECTS;
+	}
+	
+	for(uint32_t i = 0; i < rq->num_copy_handles; i++) { rq->copy_handles[i] = msg->copy_handles[i]; }
+	int mhi = 0; // move handle index
+	if(!to_domain) {
+		for(uint32_t i = 0; i < rq->num_objects; i++) {
+			session_h handle = msg->move_handles[mhi++];
+
+			ipc_server_session_t *found = NULL;
+			
+			for(int i = 0; i < MAX_SERVICE_SESSIONS; i++) {
+				ipc_server_session_t *s = &(object->owning_session->owning_server->sessions[i]);
+				if(s->state != IPC_SESSION_STATE_INVALID && s->handle == handle) {
+					found = s;
+					break;
+				}
+			}
+
+			if(found == NULL) {
+				return LIBTRANSISTOR_ERR_IPCSERVER_NO_SUCH_OBJECT;
+			}
+
+			if(found->is_domain) {
+				return LIBTRANSISTOR_ERR_IPCSERVER_SESSION_OBJECT_WAS_DOMAIN;
+			}
+
+			if(found->object == NULL) {
+				return LIBTRANSISTOR_ERR_IPCSERVER_NO_SUCH_OBJECT;
+			}
+			
+			in_objects[i] = found->object;
+		}
+	}
+	for(uint32_t i = 0; i < rq->num_move_handles; i++) { rq->move_handles[i] = msg->move_handles[mhi++]; }
+	
+	for(uint32_t i = 0; i < raw_data_words; i++) {
+		rq->raw_data[i] = msg->data_section[h++];
+	}
+
+	if(to_domain) {
+		result_t r;
+		for(uint32_t i = 0; i < rq->num_objects; i++) {
+			if((r = ipc_server_domain_get_object(object->owning_domain, msg->data_section[h++], &in_objects[i])) != RESULT_OK) {
+				return r;
+			}
+		}
+	}
+	
 	return RESULT_OK;
 }
 

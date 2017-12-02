@@ -1,4 +1,4 @@
-#include<libtransistor/ipcservice.h>
+#include<libtransistor/ipcserver.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
@@ -11,18 +11,19 @@
 		goto label; \
 	}
 
-static result_t object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, void *raw_data, size_t raw_data_size) {
+static result_t object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
 	result_t r;
-	uint32_t rqid = ((uint32_t*) raw_data)[2];
+
+	dbg_printf("dispatched, id: %d\n", rqid);
 	
 	switch(rqid) {
 	case 0: {
-		uint32_t val;
+		uint64_t val;
 		ipc_request_fmt_t rq = ipc_default_request_fmt;
 		rq.raw_data_size = sizeof(val);
 		rq.raw_data = &val;
 		
-		ASSERT_OK(failure, ipc_unflatten_request(msg, &rq, raw_data, raw_data_size));
+		ASSERT_OK(failure, ipc_unflatten_request(msg, &rq, obj));
 
 		val+= 1;
 		

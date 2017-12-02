@@ -16,7 +16,7 @@ result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_fac
 	return RESULT_OK;
 }
 
-static result_t hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, void *raw_data, size_t raw_data_size);
+static result_t hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid);
 static result_t hipc_manager_close();
 
 result_t ipc_server_accept_session(ipc_server_t *srv) {
@@ -40,6 +40,7 @@ result_t ipc_server_accept_session(ipc_server_t *srv) {
 	sess->handle = handle;
 	sess->state = IPC_SESSION_STATE_INITIALIZING;
 	sess->is_domain = false;
+	sess->owning_server = srv;
 	sess->hipc_manager_object.userdata = NULL;
 	sess->hipc_manager_object.is_domain_object = false;
 	sess->hipc_manager_object.owning_domain = NULL;
@@ -158,8 +159,6 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout
 		dispatch = &sess->hipc_manager_object;
 	} else if(msg.message_type == 4) {
 		if(sess->is_domain) {
-			uint8_t command = raw_data[0] & 0xFF;
-			uint8_t num_objects = (raw_data[0] >> 8) & 0xFF;
 			uint16_t data_size = raw_data[0] >> 16;
 			
 			if((r = ipc_server_domain_get_object(&sess->domain, raw_data[1], &dispatch)) != RESULT_OK) {
@@ -178,8 +177,9 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout
 	}
 
 	sess->active_object = dispatch;
-	
-	if((r = dispatch->dispatch(dispatch, &msg, raw_data, raw_data_size)) != RESULT_OK) {
+
+	printf("dispatching, id: %d\n", raw_data[2]);
+	if((r = dispatch->dispatch(dispatch, &msg, raw_data[2])) != RESULT_OK) {
 		// TODO: failure
 		return r;
 	}
@@ -203,7 +203,7 @@ result_t ipc_server_session_close(ipc_server_session_t *sess) {
 	return RESULT_OK;
 }
 
-static result_t hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, void *raw_data, size_t raw_data_size) {
+static result_t hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
 	// TODO: implement this
 	return RESULT_OK;
 }
