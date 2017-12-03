@@ -38,6 +38,7 @@ typedef enum {
 
 typedef struct ipc_server_session_t {
 	session_h handle;
+	session_h client_handle;
 	bool is_domain;
 	ipc_server_object_t hipc_manager_object;
 	ipc_server_object_t *active_object;
@@ -61,12 +62,15 @@ typedef struct ipc_server_t {
 } ipc_server_t;
 
 result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_factory_t object_factory);
+result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, session_h client_side, ipc_server_object_t *object);
 result_t ipc_server_accept_session(ipc_server_t *srv);
 result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout);
 result_t ipc_server_destroy(ipc_server_t *srv);
 
+result_t ipc_server_object_register(ipc_server_object_t *owner, ipc_server_object_t *new);
 result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs);
 
+result_t ipc_server_domain_add_object(ipc_server_domain_t *domain, ipc_server_object_t *object);
 result_t ipc_server_domain_get_object(ipc_server_domain_t *domain, uint32_t object_id, ipc_server_object_t **object);
 
 result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout);

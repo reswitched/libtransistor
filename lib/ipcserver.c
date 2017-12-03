@@ -19,13 +19,7 @@ result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_fac
 static result_t hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid);
 static result_t hipc_manager_close();
 
-result_t ipc_server_accept_session(ipc_server_t *srv) {
-	result_t r;
-	session_h handle;
-	if((r = svcAcceptSession(&handle, srv->port)) != RESULT_OK) {
-		return r;
-	}
-
+result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, session_h client_side, ipc_server_object_t *object) {
 	int i = 0;
 	for(; i < MAX_SERVICE_SESSIONS; i++) {
 		if(srv->sessions[i].state == IPC_SESSION_STATE_INVALID) {
@@ -33,11 +27,16 @@ result_t ipc_server_accept_session(ipc_server_t *srv) {
 		}
 	}
 	if(i == MAX_SERVICE_SESSIONS) {
-		svcCloseHandle(handle);
+		printf("failed to allocate session\n");
+		svcCloseHandle(server_side);
+		if(client_side != 0) {
+			svcCloseHandle(client_side);
+		}
 		return LIBTRANSISTOR_ERR_IPCSERVER_TOO_MANY_SESSIONS;
 	}
 	ipc_server_session_t *sess = &(srv->sessions[i]);
-	sess->handle = handle;
+	sess->handle = server_side;
+	sess->client_handle = client_side;
 	sess->state = IPC_SESSION_STATE_INITIALIZING;
 	sess->is_domain = false;
 	sess->owning_server = srv;
@@ -52,17 +51,29 @@ result_t ipc_server_accept_session(ipc_server_t *srv) {
 		sess->domain.objects[i] = NULL;
 	}
 	sess->active_object = NULL;
-	if((r = srv->object_factory(&sess->object)) != RESULT_OK) {
-		sess->state = IPC_SESSION_STATE_INVALID;
-		svcCloseHandle(handle);
-		return r;
-	}
+	sess->object = object;
 	sess->object->is_domain_object = false;
 	sess->object->domain_id = 0;
 	sess->object->owning_domain = NULL;
 	sess->object->owning_session = sess;
 	sess->state = IPC_SESSION_STATE_LISTENING;
 	return RESULT_OK;
+}
+
+result_t ipc_server_accept_session(ipc_server_t *srv) {
+	result_t r;
+	session_h handle;
+	if((r = svcAcceptSession(&handle, srv->port)) != RESULT_OK) {
+		return r;
+	}
+
+	ipc_server_object_t *object;
+	if((r = srv->object_factory(&object)) != RESULT_OK) {
+		svcCloseHandle(handle);
+		return r;
+	}
+	
+	return ipc_server_create_session(srv, handle, 0, object);
 }
 
 result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
@@ -104,6 +115,21 @@ result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 result_t ipc_server_destroy(ipc_server_t *srv) {
 	// TODO: implement this
 	return RESULT_OK;
+}
+
+result_t ipc_server_object_register(ipc_server_object_t *parent, ipc_server_object_t *child) {
+	result_t r;
+	if(parent->is_domain_object) {
+		return ipc_server_domain_add_object(parent->owning_domain, child);
+	} else {
+		session_h server;
+		session_h client;
+		if((r = svcCreateSession(&client, &server, false, 0)) != RESULT_OK) {
+			return r;
+		}
+		printf("registering new object, server %d, client %d\n", server, client);
+		return ipc_server_create_session(parent->owning_session->owning_server, server, client, child);
+	}
 }
 
 result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs) {
@@ -185,6 +211,20 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout
 	}
 
 	return RESULT_OK;
+}
+
+result_t ipc_server_domain_add_object(ipc_server_domain_t *domain, ipc_server_object_t *object) {
+	for(int i = 0; i < MAX_DOMAIN_OBJECTS; i++) {
+		if(domain->objects[i] == NULL) {
+			domain->objects[i] = object;
+			object->is_domain_object = true;
+			object->domain_id = i;
+			object->owning_session = domain->owning_session;
+			object->owning_domain = domain;
+			return RESULT_OK;
+		}
+	}
+	return LIBTRANSISTOR_ERR_TOO_MANY_OBJECTS;
 }
 
 result_t ipc_server_domain_get_object(ipc_server_domain_t *domain, uint32_t object_id, ipc_server_object_t **object) {

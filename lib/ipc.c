@@ -452,7 +452,10 @@ result_t ipc_pack_response(u32 *marshal_buffer, ipc_response_t *rs, ipc_server_o
 			if(tobject->is_domain_object) {
 				return LIBTRANSISTOR_ERR_CANT_SEND_DOMAIN_OBJECT_FROM_SESSION;
 			}
-			move_handles[i] = tobject->owning_session->handle;
+			if(tobject->owning_session->client_handle == 0) {
+				return LIBTRANSISTOR_ERR_IPCSERVER_CANT_SEND_ROOT_OBJECT;
+			}
+			move_handles[i] = tobject->owning_session->client_handle;
 		}
 		for(uint32_t i = 0; i < rs->num_move_handles; i++) {
 			move_handles[rs->num_objects + i] = rs->move_handles[i];

@@ -11,33 +11,130 @@
 		goto label; \
 	}
 
-static result_t object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
-	result_t r;
-
-	dbg_printf("dispatched, id: %d\n", rqid);
+static result_t add_object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
+	result_t r = 0;
 	
+	printf("dispatched to add_obj(%ld): %d\n", *((uint64_t*) obj->userdata), rqid);
+
 	switch(rqid) {
-	case 0: {
+	case 0: { // ADD
 		uint64_t val;
+		
 		ipc_request_fmt_t rq = ipc_default_request_fmt;
 		rq.raw_data_size = sizeof(val);
-		rq.raw_data = &val;
+		rq.raw_data = (uint32_t*) &val;
 		
-		ASSERT_OK(failure, ipc_unflatten_request(msg, &rq, obj));
+		ASSERT_OK(hard_failure, ipc_unflatten_request(msg, &rq, obj));
+
+		val+= *((uint64_t*) obj->userdata);
+		
+		ipc_response_t rs = ipc_default_response;
+		rs.raw_data_size = sizeof(val);
+		rs.raw_data = (uint32_t*) &val;
+
+		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
+		
+		break; }
+	default:
+		r = LIBTRANSISTOR_ERR_IPCSERVER_NO_SUCH_COMMAND;
+		goto hard_failure;
+	}
+	return RESULT_OK;
+
+soft_failure: {
+		ipc_response_t rs = ipc_default_response;
+		rs.result_code = r;
+		
+		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
+	}
+hard_failure:
+	return r;
+}
+
+static result_t add_object_close(ipc_server_object_t *obj) {
+	free(obj->userdata);
+	free(obj);
+	return RESULT_OK;
+}
+
+static result_t object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
+	result_t r = 0;
+
+	printf("dispatched, id: %d\n", rqid);
+	
+	switch(rqid) {
+	case 0: { // ADD
+		uint64_t val;
+		
+		ipc_request_fmt_t rq = ipc_default_request_fmt;
+		rq.raw_data_size = sizeof(val);
+		rq.raw_data = (uint32_t*) &val;
+		
+		ASSERT_OK(hard_failure, ipc_unflatten_request(msg, &rq, obj));
 
 		val+= 1;
 		
 		ipc_response_t rs = ipc_default_response;
 		rs.raw_data_size = sizeof(val);
-		rs.raw_data = &val;
+		rs.raw_data = (uint32_t*) &val;
 
-		ASSERT_OK(failure, ipc_server_object_reply(obj, &rs));
+		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
+		
 		break; }
-	failure:
+	case 1: { // CREATE_ADDER
+		uint64_t val;
+		
+		ipc_request_fmt_t rq = ipc_default_request_fmt;
+		rq.raw_data_size = sizeof(val);
+		rq.raw_data = (uint32_t*) &val;
+		
+		ASSERT_OK(hard_failure, ipc_unflatten_request(msg, &rq, obj));
+		
+		ipc_server_object_t *add_obj = malloc(sizeof(*add_obj));
+		if(add_obj == NULL) {
+			r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+			goto soft_failure;
+		}
+		
+		add_obj->userdata = malloc(sizeof(val));
+		if(add_obj->userdata == NULL) {
+			free(add_obj);
+			r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+			goto soft_failure;
+		}
+		*(uint64_t*) add_obj->userdata = val;
+		
+		add_obj->dispatch = add_object_dispatch;
+		add_obj->close = add_object_close;
+		
+		ASSERT_OK(hard_failure, ipc_server_object_register(obj, add_obj));
+		
+		ipc_response_t rs = ipc_default_response;
+		rs.num_objects = 1;
+		rs.objects = &add_obj;
+
+		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
+
+		break; }
 	default:
-		return ipc_server_session_close(obj->owning_session);
+		r = LIBTRANSISTOR_ERR_IPCSERVER_NO_SUCH_COMMAND;
+		goto hard_failure;
 	}
 
+	return RESULT_OK;
+	
+soft_failure: {
+		ipc_response_t rs = ipc_default_response;
+		rs.result_code = r;
+		
+		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
+	}
+hard_failure:
+	return r;
+}
+
+static result_t object_close(ipc_server_object_t *obj) {
+	free(obj);
 	return RESULT_OK;
 }
 
@@ -48,6 +145,7 @@ static result_t object_factory(ipc_server_object_t **objptr) {
 	}
 	obj->userdata = NULL;
 	obj->dispatch = object_dispatch;
+	obj->close = object_close;
 	*objptr = obj;
 	return RESULT_OK;
 }
@@ -64,8 +162,10 @@ int main(int argc, char *argv[]) {
 	ipc_server_t server;
 	ASSERT_OK(fail_port, ipc_server_create(&server, port, object_factory));
 
-	ASSERT_OK(fail_server, ipc_server_process(&server, 3000000000));
-
+	while(1) {
+		ASSERT_OK(fail_server, ipc_server_process(&server, 3000000000));
+	}
+	
 fail_server:
 	ipc_server_destroy(&server);
 fail_port:
