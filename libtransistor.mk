@@ -4,7 +4,7 @@ else
     LIBTRANSISTOR_HOME := $(realpath $(LIBTRANSISTOR_HOME))
 endif
 
-SYS_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/include/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/include/
+SYS_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/pthread/include -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/include/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/include/
 INCLUDES := $(SYS_INCLUDES) -I$(LIBTRANSISTOR_HOME)/include/ -I $(LIBTRANSISTOR_HOME)/build/sdl2_install/include/
 WARNINGS := -Wall -Wextra -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-command-line-argument
 
@@ -23,7 +23,7 @@ PYTHON2 := python2
 MEPHISTO := ctu
 RUBY := ruby
 COMPILER_RT_BUILTINS_LIB := $(LIBTRANSISTOR_HOME)/build/compiler-rt/lib/linux/libclang_rt.builtins-aarch64.a
-LIBTRANSISTOR_COMMON_LIBS := $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a $(COMPILER_RT_BUILTINS_LIB) $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a
+LIBTRANSISTOR_COMMON_LIBS := $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a $(COMPILER_RT_BUILTINS_LIB) $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a $(LIBTRANSISTOR_HOME)/pthread/libpthread.a
 LIBTRANSISTOR_NRO_LIB := $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a
 LIBTRANSISTOR_NSO_LIB := $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nso.a
 LIBTRANSISTOR_NRO_LDFLAGS := --whole-archive $(LIBTRANSISTOR_NRO_LIB) --no-whole-archive $(LIBTRANSISTOR_COMMON_LIBS)

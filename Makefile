@@ -1,6 +1,6 @@
 include libtransistor.mk
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl audio_output init_fini_arrays
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl audio_output init_fini_arrays pthread
 libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o context.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o ipc/audio.o ipc/bpc.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
@@ -17,9 +17,12 @@ export AR_FOR_TARGET = $(AR)
 export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
 export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument
 
+# Everyone needs their cflags.
+export CFLAGS
+
 .SUFFIXES: # disable built-in rules
 
-.PHONY: clean, clean_newlib, clean_compiler-rt, distclean
+.PHONY: clean, clean_newlib, clean_compiler-rt, distclean 
 
 all: $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a \
 	$(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nso.a \
@@ -84,6 +87,11 @@ $(LIBTRANSISTOR_HOME)/build/newlib/Makefile:
 $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/build/newlib/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/newlib/
 
+$(LIBTRANSISTOR_HOME)/pthread/libpthread.a:
+	$(MAKE) -C $(LIBTRANSISTOR_HOME)/pthread
+
+.PHONY: $(LIBTRANSISTOR_HOME)/pthread/new/libpthread.a
+
 $(COMPILER_RT_BUILTINS_LIB): $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/compiler-rt/
 
@@ -114,6 +122,7 @@ $(LIBTRANSISTOR_HOME)/build/sdl2/Makefile:
 
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
+	$(MAKE) -C pthread clean
 
 clean_newlib:
 	rm -rf build/newlib
