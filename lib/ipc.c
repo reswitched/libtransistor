@@ -529,7 +529,7 @@ result_t ipc_unpack(u32 *buffer, ipc_message_t *msg) {
 
 	msg->raw_data_section_size = header1 & 0b1111111111;
   
-	//int c_descriptor_flags = (header1 >> 10) & 0xF;
+	msg->c_descriptor_flags = (header1 >> 10) & 0xF;
 	bool has_handle_descriptor = header1 >> 31;
 
 	msg->num_copy_handles = 0;
@@ -563,15 +563,30 @@ result_t ipc_unpack(u32 *buffer, ipc_message_t *msg) {
 	msg->w_descriptors = buffer + h;
 	h+= msg->num_w_descriptors * 3;
 
+	int before = h;
+	
 	// align head to 4 words
 	h = (h + 3) & ~3;
-
+	
+	msg->pre_padding = (h - before);
+	msg->post_padding = 4 - (h - before);
 	msg->data_section = buffer + h;
 
+	h = before + msg->raw_data_section_size;
+
+	msg->c_descriptors = buffer + h;
+	
 	return RESULT_OK;
 }
 
-result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct ipc_server_object_t *object) {	
+result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct ipc_server_object_t *object) {
+	int c_descriptor_u16_lengths_count = 0;
+	for(uint32_t i = 0; i < rq->num_buffers; i++) {
+		if(!(rq->buffers[i]->type & 0x10)) {
+			c_descriptor_u16_lengths_count++;
+		}
+	}
+	
 	if(rq->raw_data_size & 3) {
 		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
 	}
@@ -604,11 +619,12 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 	h++;
 	
 	u32 *raw_data = msg->data_section + h;
-  
+	
 	if((msg->raw_data_section_size
 	    - 4 // SFCI, command id
 	    - 4 // padding
 	    - (to_domain ? 4 + rq->num_objects : 0) // domain header + in objects
+	    - ((c_descriptor_u16_lengths_count + 1) >> 1)
 		   ) != raw_data_words) {
 		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
 	}
@@ -631,6 +647,175 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 
 	if(to_domain && domain_header.payload_size - 4 != rq->raw_data_size) {
 		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
+	}
+	
+	ipc_buffer_t a_descriptors[16];
+	ipc_buffer_t b_descriptors[16];
+	ipc_buffer_t c_descriptors[16];
+	ipc_buffer_t x_descriptors[16];
+  
+	 // unpack x descriptors
+	h = 0;
+	for(uint32_t i = 0; i < msg->num_x_descriptors; i++) {
+		uint32_t field = msg->x_descriptors[h++];
+		uint64_t addr = 0;
+		addr|= (((uint64_t) field >> 6) & 0b111) << 36;
+		addr|= (((uint64_t) field >> 12) & 0b1111) << 32;
+		addr|= msg->x_descriptors[h++]; // lower 32 bits
+		x_descriptors[i].addr = (void*) addr;
+		x_descriptors[i].size = field >> 16;
+	}
+
+	// unpack a & b descriptors
+	h = 0;
+	for(uint32_t i = 0; i < msg->num_a_descriptors + msg->num_b_descriptors; i++) {
+		ipc_buffer_t *buf = &((i < msg->num_a_descriptors) ? a_descriptors : (b_descriptors - msg->num_a_descriptors))[i];
+		uint64_t addr = 0;
+		
+		buf->size = 0;
+		buf->size|= msg->a_descriptors[h++];
+		addr|= msg->a_descriptors[h++];
+
+		uint32_t field = msg->a_descriptors[h++];
+		uint32_t prot = field & 0b11;
+		addr|= (((uint64_t) field >> 2) & 0b111) << 36;
+		buf->size|= (((uint64_t) field >> 24) & 0b1111) << 32;
+		addr|= (((uint64_t) field >> 28) & 0b1111) << 32;
+
+		buf->addr = (void*) addr;
+
+		uint32_t typemap[] = {0, 1, 0, 2};
+		buf->type = typemap[prot] << 6;
+	}
+
+	// unpack c descriptors
+	//uint16_t *u16_length_list = (uint16_t*) (msg->data_section + msg->raw_data_section_size + 4 + 4 + (to_domain ? 4 + rq->num_objects : 0));
+	h = 0;
+	uint32_t num_c_descriptors;
+	if(msg->c_descriptor_flags == 0) {
+		num_c_descriptors = 0;
+	} else if(msg->c_descriptor_flags == 1) {
+		return LIBTRANSISTOR_ERR_UNIMPLEMENTED;
+	} else if(msg->c_descriptor_flags == 2) {
+		num_c_descriptors = 1;
+	} else {
+		num_c_descriptors = msg->c_descriptor_flags - 2;
+	}
+	for(uint32_t i = 0; i < num_c_descriptors; i++) {
+		ipc_buffer_t *buf = &c_descriptors[i];
+		uint64_t addr = 0;
+		buf->size = 0;
+
+		addr|= msg->c_descriptors[h++];
+		uint32_t field = msg->c_descriptors[h++];
+		addr|= field & 0xFFFF;
+		buf->size|= field >> 16;
+
+		buf->addr = (void*) addr;
+	}
+
+	for(uint32_t i = 0; i < rq->num_buffers; i++) {
+		rq->buffers[i]->addr = 0;
+		rq->buffers[i]->size = 0;
+	}
+		
+	// assign descriptors to buffers
+	uint32_t a_descriptors_assigned = 0; // keep track of how many descriptors we've used already
+	uint32_t b_descriptors_assigned = 0;
+	uint32_t x_descriptors_assigned = 0;
+	uint32_t c_descriptors_assigned = 0;
+
+	for(uint32_t i = 0; i < rq->num_buffers; i++) {
+		ipc_buffer_t *ipc_buffer = rq->buffers[i]; // buffer to fill out
+
+		int direction = (ipc_buffer->type & 0b0011) >> 0; // in or out (ax or bc)
+		int family    = (ipc_buffer->type & 0b1100) >> 2; // ab or xc
+
+		ipc_buffer_t *desc;
+		
+		if(!(ipc_buffer->type & 0x20)) {
+			ipc_buffer_t *list; // unpacked descriptors
+			uint32_t *assigned; // how many descriptors we've used
+			uint32_t count; // how many descriptors the message came with
+			
+			if(direction == 0b01) { // IN (ax)
+				if(family == 0b01) { // A
+					list = a_descriptors;
+					assigned = &a_descriptors_assigned;
+					count = msg->num_a_descriptors;
+				} else if(family == 0b10) { // X
+					list = x_descriptors;
+					assigned = &x_descriptors_assigned;
+					count = msg->num_a_descriptors;
+				} else {
+					return LIBTRANSISTOR_ERR_UNSUPPORTED_BUFFER_TYPE;
+				}
+			} else if(direction == 0b10) { // OUT (bc)
+				if(family == 0b01) { // B
+					list = b_descriptors;
+					assigned = &b_descriptors_assigned;
+					count = msg->num_b_descriptors;
+				} else if(family == 0b10) { // C
+					list = c_descriptors;
+					assigned = &c_descriptors_assigned;
+					count = num_c_descriptors;
+				} else {
+					return LIBTRANSISTOR_ERR_UNSUPPORTED_BUFFER_TYPE;
+				}
+			} else {
+				return LIBTRANSISTOR_ERR_UNSUPPORTED_BUFFER_TYPE;
+			}
+
+			// make sure we don't run out of descriptors
+			if(*assigned >= count) {
+				return LIBTRANSISTOR_ERR_TOO_MANY_BUFFERS;
+			}
+
+			desc = &list[(*assigned)++];
+		} else { // flag 0x20 set
+			// this may not be entirely correct
+			ipc_buffer_t *d1, *d2;
+			if(ipc_buffer->type == 0x21) { // IN (ax)
+				if(a_descriptors_assigned >= msg->num_a_descriptors || x_descriptors_assigned >= msg->num_x_descriptors) {
+					return LIBTRANSISTOR_ERR_TOO_MANY_BUFFERS;
+				}
+				d1 = &a_descriptors[a_descriptors_assigned++];
+				d2 = &x_descriptors[x_descriptors_assigned++];
+			} else if(ipc_buffer->type == 0x22) { // OUT (bc)
+				if(b_descriptors_assigned >= msg->num_b_descriptors || c_descriptors_assigned >= num_c_descriptors) {
+					return LIBTRANSISTOR_ERR_TOO_MANY_BUFFERS;
+				}
+				d1 = &b_descriptors[b_descriptors_assigned++];
+				d2 = &c_descriptors[c_descriptors_assigned++];
+			} else {
+				return LIBTRANSISTOR_ERR_UNSUPPORTED_BUFFER_TYPE;
+			}
+
+			// use the non-NULL descriptor, if there is one
+			if(d1->addr != NULL) {
+				if(d2->addr != NULL) {
+					// not sure what to do in this case
+					return LIBTRANSISTOR_ERR_UNIMPLEMENTED;
+				}
+				desc = d1;
+			} else if(d2->addr != NULL) {
+				desc = d2;
+			} else {
+				desc = &null_buffer;
+			}
+		}
+
+		// copy addr and size
+		ipc_buffer->addr = desc->addr;
+		ipc_buffer->size = desc->size;
+		
+		// check the flags for A and B descriptors
+		if(ipc_buffer->type & 4) {
+			if((ipc_buffer->type & 0xC0) != (desc->type & 0xC0)) {
+				printf("protection check failed: 0x%x !~= 0x%x\n", ipc_buffer->type, desc->type);
+				return LIBTRANSISTOR_ERR_UNEXPECTED_BUFFER_PROTECTION;
+			}
+		}
 	}
 	
 	ipc_server_object_t **in_objects = rq->objects;
@@ -672,7 +857,7 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 	for(uint32_t i = 0; i < rq->num_move_handles; i++) { rq->move_handles[i] = msg->move_handles[mhi++]; }
 	
 	for(uint32_t i = 0; i < raw_data_words; i++) {
-		rq->raw_data[i] = msg->data_section[h++];
+		rq->raw_data[i] = raw_data[h++];
 	}
 
 	if(to_domain) {

@@ -2,6 +2,8 @@
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
+#include<libtransistor/util.h>
+#include<libtransistor/context.h>
 
 #include<stdio.h>
 #include<malloc.h>
@@ -116,6 +118,24 @@ static result_t object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, ui
 		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
 
 		break; }
+	case 2: { // BUFFER_TEST
+		ipc_buffer_t buffer;
+		buffer.type = 0x85;
+		
+		ipc_buffer_t *buffers[] = {&buffer};
+		
+		ipc_request_fmt_t rq = ipc_default_request_fmt;
+		rq.num_buffers = 1;
+		rq.buffers = buffers;
+
+		ASSERT_OK(hard_failure, ipc_unflatten_request(msg, &rq, obj));
+
+		printf("addr: %p\n", buffer.addr);
+		printf("size: %lx\n", buffer.size);
+		hexdump(buffer.addr, buffer.size);
+		
+		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &ipc_default_response));
+		break; }
 	default:
 		r = LIBTRANSISTOR_ERR_IPCSERVER_NO_SUCH_COMMAND;
 		goto hard_failure;
@@ -150,24 +170,60 @@ static result_t object_factory(ipc_server_object_t **objptr) {
 	return RESULT_OK;
 }
 
+port_h port;
+ipc_server_t server;
+
+void server_thread() {
+	result_t r;
+
+	printf("thread started\n");
+	
+	ASSERT_OK(fail_port, ipc_server_create(&server, port, object_factory));
+
+	printf("server created\n");
+	
+	while(1) {
+		printf("process\n");
+		ASSERT_OK(fail_server, ipc_server_process(&server, 3000000000));
+	}
+
+fail_server:
+	ipc_server_destroy(&server);
+fail_port:
+	sm_unregister_service("testsrv");
+	svcCloseHandle(port);
+
+	svcExitThread();
+}
+
+#define STACK_SIZE 0x80000
+
 int main(int argc, char *argv[]) {
 	svcSleepThread(100000000);
   
 	result_t r;
 	ASSERT_OK(fail, sm_init());
 
-	port_h port;
 	ASSERT_OK(fail_sm, sm_register_service(&port, "testsrv", 20));
 
-	ipc_server_t server;
-	ASSERT_OK(fail_port, ipc_server_create(&server, port, object_factory));
+	thread_h thread;
+	ASSERT_OK(fail_port, svcCreateThread(&thread, server_thread, 0, malloc(STACK_SIZE) + STACK_SIZE, 0x3f, -2));
+	libtransistor_set_keep_loaded();
+	ASSERT_OK(fail_thread, svcStartThread(thread));
 
-	while(1) {
-		ASSERT_OK(fail_server, ipc_server_process(&server, 3000000000));
+	svcCloseHandle(thread);
+	
+	sm_finalize();
+
+	if(libtransistor_context->magic == 0) { // mephisto
+		svcExitThread();
 	}
+	return 0;
 	
 fail_server:
 	ipc_server_destroy(&server);
+fail_thread:
+	svcCloseHandle(thread);
 fail_port:
 	sm_unregister_service("testsrv");
 	svcCloseHandle(port);

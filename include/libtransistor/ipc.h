@@ -127,6 +127,8 @@ typedef struct {
 	handle_t *move_handles;
 	bool has_pid;
 	u64 pid;
+	int pre_padding; // in words
+	int post_padding; // in words
 	u32 *data_section; // may point to domain header, may point to SFCI/SFCO
 } ipc_message_t;
 
