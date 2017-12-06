@@ -18,7 +18,7 @@ export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
 export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument
 
 # Everyone needs their cflags.
-export CFLAGS
+export CC_FLAGS
 
 .SUFFIXES: # disable built-in rules
 

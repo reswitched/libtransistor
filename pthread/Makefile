@@ -5,7 +5,7 @@ NAME=libpthread.a
 #CFLAGS+=-Wall -g -Werror -Wshadow
 #CFLAGS+=-Werror-implicit-function-declaration
 #CFLAGS+=-Wsign-compare
-CFLAGS+=-Isys/switch/ -I.
+CC_FLAGS+=-Isys/switch/ -I.
 
 LDADD = -Wl,-znodelete 
 SRCS=	rthread_attr.c \
@@ -42,7 +42,7 @@ OBJS = $(SRCS:.c=.o)
 all: $(NAME)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CC_FLAGS) -c -o $@ $<
 
 $(NAME): $(OBJS)
 	$(AR) rcs $(NAME) $(OBJS)

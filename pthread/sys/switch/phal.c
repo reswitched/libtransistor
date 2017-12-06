@@ -27,5 +27,6 @@ int phal_thread_sleep(int msec) {
 int phal_semaphore_create(phal_semaphore *sem) { return 0; }
 
 void **phal_get_tls() {
-	return &get_tls()->ctx;
+	return ((char*)get_tls()) + 0x1F8;
+	// TODO: &get_tls()->ctx;
 }
