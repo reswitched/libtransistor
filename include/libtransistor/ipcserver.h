@@ -20,8 +20,8 @@ typedef struct ipc_server_object_t {
 	struct ipc_server_session_t *owning_session;
 	
 	// raw_data points to SFCI
-	result_t (*dispatch)(struct ipc_server_object_t *obj, ipc_message_t *msg, uint32_t request_id);
-	result_t (*close)();
+	void (*dispatch)(struct ipc_server_object_t *obj, ipc_message_t *msg, uint32_t request_id);
+	void (*close)(struct ipc_server_object_t *obj);
 } ipc_server_object_t;
 
 typedef struct ipc_server_domain_t {
@@ -34,6 +34,7 @@ typedef enum {
 	IPC_SESSION_STATE_INITIALIZING,
 	IPC_SESSION_STATE_LISTENING,
 	IPC_SESSION_STATE_PROCESSING,
+	IPC_SESSION_STATE_ERRORED,
 } ipc_server_session_state_t;
 
 typedef struct ipc_server_session_t {
@@ -69,9 +70,11 @@ result_t ipc_server_destroy(ipc_server_t *srv);
 
 result_t ipc_server_object_register(ipc_server_object_t *owner, ipc_server_object_t *new);
 result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs);
+result_t ipc_server_object_close(ipc_server_object_t *obj);
 
 result_t ipc_server_domain_add_object(ipc_server_domain_t *domain, ipc_server_object_t *object);
 result_t ipc_server_domain_get_object(ipc_server_domain_t *domain, uint32_t object_id, ipc_server_object_t **object);
+result_t ipc_server_domain_destroy(ipc_server_domain_t *domain);
 
 result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout);
 result_t ipc_server_session_close(ipc_server_session_t *sess);

@@ -16,8 +16,8 @@ result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_fac
 	return RESULT_OK;
 }
 
-static result_t hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid);
-static result_t hipc_manager_close();
+static void hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid);
+static void hipc_manager_close(ipc_server_object_t *obj);
 
 result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, session_h client_side, ipc_server_object_t *object) {
 	int i = 0;
@@ -27,7 +27,6 @@ result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, ses
 		}
 	}
 	if(i == MAX_SERVICE_SESSIONS) {
-		printf("failed to allocate session\n");
 		svcCloseHandle(server_side);
 		if(client_side != 0) {
 			svcCloseHandle(client_side);
@@ -113,7 +112,12 @@ result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 }
 
 result_t ipc_server_destroy(ipc_server_t *srv) {
-	// TODO: implement this
+	svcCloseHandle(srv->port);
+	for(int i = 0; i < MAX_SERVICE_SESSIONS; i++) {
+		if(srv->sessions[i].state != IPC_SESSION_STATE_INVALID) {
+			ipc_server_session_close(&srv->sessions[i]);
+		}
+	}
 	return RESULT_OK;
 }
 
@@ -127,7 +131,6 @@ result_t ipc_server_object_register(ipc_server_object_t *parent, ipc_server_obje
 		if((r = svcCreateSession(&client, &server, false, 0)) != RESULT_OK) {
 			return r;
 		}
-		printf("registering new object, server %d, client %d\n", server, client);
 		return ipc_server_create_session(parent->owning_session->owning_server, server, client, child);
 	}
 }
@@ -147,9 +150,13 @@ result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs) {
 	if((r = ipc_pack_response(tls, rs, obj)) != RESULT_OK) {
 		return r;
 	}
-	if((r = svcReplyAndReceive(&handle_index, NULL, 0, obj->owning_session->handle, 0)) != RESULT_OK) {
+	r = svcReplyAndReceive(&handle_index, NULL, 0, obj->owning_session->handle, 0);
+	if(r != RESULT_OK) {
+		obj->owning_session->state = IPC_SESSION_STATE_ERRORED;
 		return r;
 	}
+
+	obj->owning_session->active_object = NULL;
 	obj->owning_session->state = IPC_SESSION_STATE_LISTENING;
 	return RESULT_OK;
 }
@@ -162,9 +169,11 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout
 	if(sess->state != IPC_SESSION_STATE_LISTENING) {
 		return LIBTRANSISTOR_ERR_IPCSERVER_INVALID_SESSION_STATE;
 	}
-	
-	if((r = svcReplyAndReceive(&handle_index, &handle, 1, 0, timeout)) != RESULT_OK) {
-		return r;
+
+	r = svcReplyAndReceive(&handle_index, &handle, 1, 0, timeout);
+
+	if(r != RESULT_OK) {
+		goto failure;
 	}
 
 	sess->state = IPC_SESSION_STATE_PROCESSING;
@@ -174,7 +183,7 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout
 	
 	ipc_message_t msg;
 	if((r = ipc_unpack((uint32_t*) sess->message_buffer, &msg)) != RESULT_OK) {
-		return r;
+		goto failure;
 	}
 
 	uint32_t *raw_data = msg.data_section;
@@ -188,8 +197,7 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout
 			uint16_t data_size = raw_data[0] >> 16;
 			
 			if((r = ipc_server_domain_get_object(&sess->domain, raw_data[1], &dispatch)) != RESULT_OK) {
-				// TODO: failure
-				return r;
+				goto failure;
 			}
 			// TODO: check that raw_data_size is big enough
 			raw_data+= 4;
@@ -198,19 +206,18 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout
 			dispatch = sess->object;
 		}
 	} else {
-		// TODO: failure
-		return 0xFFFFFFFF;
+		goto failure;
 	}
 
 	sess->active_object = dispatch;
 
-	printf("dispatching, id: %d\n", raw_data[2]);
-	if((r = dispatch->dispatch(dispatch, &msg, raw_data[2])) != RESULT_OK) {
-		// TODO: failure
-		return r;
-	}
+	dispatch->dispatch(dispatch, &msg, raw_data[2]); // dispatch must handle failure itself
 
 	return RESULT_OK;
+
+failure:
+	sess->state = IPC_SESSION_STATE_ERRORED;
+	return ipc_server_session_close(sess);
 }
 
 result_t ipc_server_domain_add_object(ipc_server_domain_t *domain, ipc_server_object_t *object) {
@@ -239,16 +246,35 @@ result_t ipc_server_domain_get_object(ipc_server_domain_t *domain, uint32_t obje
 }
 
 result_t ipc_server_session_close(ipc_server_session_t *sess) {
-	// TODO: implement this
+	if(sess->state == IPC_SESSION_STATE_INVALID) {
+		return LIBTRANSISTOR_ERR_IPCSERVER_INVALID_SESSION_STATE;
+	}
+
+	svcCloseHandle(sess->handle);
+	svcCloseHandle(sess->client_handle);
+	ipc_server_object_close(&sess->hipc_manager_object);
+	if(sess->object != NULL) {
+		ipc_server_object_close(sess->object);
+	}
+	for(int i = 0; i < MAX_DOMAIN_OBJECTS; i++) {
+		ipc_server_object_close(sess->domain.objects[i]);
+	}
+	
+	sess->state = IPC_SESSION_STATE_INVALID;
+		
 	return RESULT_OK;
 }
 
-static result_t hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
-	// TODO: implement this
+result_t ipc_server_object_close(ipc_server_object_t *obj) {
+	if(obj->close != NULL) {
+		obj->close(obj);
+	}
 	return RESULT_OK;
 }
 
-static result_t hipc_manager_close() {
+static void hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
 	// TODO: implement this
-	return RESULT_OK;
+}
+
+static void hipc_manager_close(ipc_server_object_t *obj) {
 }

@@ -13,7 +13,7 @@
 		goto label; \
 	}
 
-static result_t add_object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
+static void add_object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
 	result_t r = 0;
 	
 	printf("dispatched to add_obj(%ld): %d\n", *((uint64_t*) obj->userdata), rqid);
@@ -41,7 +41,7 @@ static result_t add_object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg
 		r = LIBTRANSISTOR_ERR_IPCSERVER_NO_SUCH_COMMAND;
 		goto hard_failure;
 	}
-	return RESULT_OK;
+	return;
 
 soft_failure: {
 		ipc_response_t rs = ipc_default_response;
@@ -50,16 +50,16 @@ soft_failure: {
 		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
 	}
 hard_failure:
-	return r;
+	ipc_server_session_close(obj->owning_session);
+	return;
 }
 
-static result_t add_object_close(ipc_server_object_t *obj) {
+static void add_object_close(ipc_server_object_t *obj) {
 	free(obj->userdata);
 	free(obj);
-	return RESULT_OK;
 }
 
-static result_t object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
+static void object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
 	result_t r = 0;
 
 	printf("dispatched, id: %d\n", rqid);
@@ -141,7 +141,7 @@ static result_t object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, ui
 		goto hard_failure;
 	}
 
-	return RESULT_OK;
+	return;
 	
 soft_failure: {
 		ipc_response_t rs = ipc_default_response;
@@ -150,12 +150,12 @@ soft_failure: {
 		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
 	}
 hard_failure:
-	return r;
+	ipc_server_session_close(obj->owning_session);
+	return;
 }
 
-static result_t object_close(ipc_server_object_t *obj) {
+static void object_close(ipc_server_object_t *obj) {
 	free(obj);
-	return RESULT_OK;
 }
 
 static result_t object_factory(ipc_server_object_t **objptr) {
