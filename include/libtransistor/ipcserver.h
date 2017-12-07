@@ -48,6 +48,7 @@ typedef struct ipc_server_session_t {
 	ipc_server_session_state_t state;
 	struct ipc_server_t *owning_server;
 	uint8_t message_buffer[0x100];
+	uint64_t last_touch_timestamp;
 } ipc_server_session_t;
 
 /*

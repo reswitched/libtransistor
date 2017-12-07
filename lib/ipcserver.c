@@ -19,6 +19,11 @@ result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_fac
 static void hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid);
 static void hipc_manager_close(ipc_server_object_t *obj);
 
+static uint64_t make_timestamp() {
+	static uint64_t timestamp = 0; // svcGetSystemTick might make a suitable substitute
+	return timestamp++;
+}
+
 result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, session_h client_side, ipc_server_object_t *object) {
 	int i = 0;
 	for(; i < MAX_SERVICE_SESSIONS; i++) {
@@ -55,6 +60,7 @@ result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, ses
 	sess->object->domain_id = 0;
 	sess->object->owning_domain = NULL;
 	sess->object->owning_session = sess;
+	sess->last_touch_timestamp = make_timestamp(); // get lowest priority
 	sess->state = IPC_SESSION_STATE_LISTENING;
 	return RESULT_OK;
 }
@@ -75,6 +81,13 @@ result_t ipc_server_accept_session(ipc_server_t *srv) {
 	return ipc_server_create_session(srv, handle, 0, object);
 }
 
+int session_touch_timestamp_compare(const void *va, const void *vb) {
+	const ipc_server_session_t *a = va;
+	const ipc_server_session_t *b = vb;
+
+	return (a->last_touch_timestamp > b->last_touch_timestamp) - (a->last_touch_timestamp < b->last_touch_timestamp);
+}
+
 result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 	while(1) {
 		handle_t handles[MAX_SERVICE_SESSIONS+1];
@@ -85,15 +98,24 @@ result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 		for(int i = 0; i < MAX_SERVICE_SESSIONS; i++) {
 			if(srv->sessions[i].state == IPC_SESSION_STATE_LISTENING) {
 				sessions[num_listening_sessions] = &(srv->sessions[i]);
-				handles[1 + num_listening_sessions] = srv->sessions[i].handle;
 				num_listening_sessions++;
 			}
+		}
+
+		qsort(sessions, num_listening_sessions, sizeof(sessions[0]), session_touch_timestamp_compare);
+		
+		for(int i = 0; i < num_listening_sessions; i++) {
+			handles[1 + i] = sessions[i]->handle;
 		}
 		
 		result_t r;
 		uint32_t handle_index;
 		r = svcWaitSynchronization(&handle_index, handles, num_listening_sessions + 1, timeout);
 		if(r == 0xEA01) { // timeout
+			// nothing was signalled, so touch all sessions
+			for(int i = 0; i < num_listening_sessions; i++) {
+				sessions[i]->last_touch_timestamp = make_timestamp();
+			}
 			return RESULT_OK;
 		}
 		if(r != RESULT_OK) {
@@ -106,6 +128,14 @@ result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 				return r;
 			}
 		} else { // session
+			// mark all sessions before or at the signalled one as touched.
+			// the important part is that we *don't* touch the sessions after it,
+			// meaning they will be sorted earlier on the next iteration of the loop
+			// and get first priority in case we missed them with this iteration.
+			// that way, no session can DoS the IPC server.
+			for(int i = 0; i <= handle_index-1; i++) {
+				sessions[i]->last_touch_timestamp = make_timestamp();
+			}
 			ipc_server_session_receive(sessions[handle_index-1], timeout); // timeout is 0, but I think it still makes sense to pass it
 		}
 	}
