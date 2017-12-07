@@ -580,13 +580,6 @@ result_t ipc_unpack(u32 *buffer, ipc_message_t *msg) {
 }
 
 result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct ipc_server_object_t *object) {
-	int c_descriptor_u16_lengths_count = 0;
-	for(uint32_t i = 0; i < rq->num_buffers; i++) {
-		if(!(rq->buffers[i]->type & 0x10)) {
-			c_descriptor_u16_lengths_count++;
-		}
-	}
-	
 	if(rq->raw_data_size & 3) {
 		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
 	}
@@ -619,16 +612,7 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 	h++;
 	
 	u32 *raw_data = msg->data_section + h;
-	
-	if((msg->raw_data_section_size
-	    - 4 // SFCI, command id
-	    - 4 // padding
-	    - (to_domain ? 4 + rq->num_objects : 0) // domain header + in objects
-	    - ((c_descriptor_u16_lengths_count + 1) >> 1)
-		   ) != raw_data_words) {
-		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
-	}
-  
+	  
 	if(msg->has_pid != rq->send_pid) {
 		return LIBTRANSISTOR_ERR_UNEXPECTED_PID;
 	}
@@ -720,6 +704,7 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 	}
 		
 	// assign descriptors to buffers
+	int c_descriptor_u16_lengths_count = 0;
 	uint32_t a_descriptors_assigned = 0; // keep track of how many descriptors we've used already
 	uint32_t b_descriptors_assigned = 0;
 	uint32_t x_descriptors_assigned = 0;
@@ -772,6 +757,13 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 			}
 
 			desc = &list[(*assigned)++];
+
+			// c descriptor u16 list
+			if(list == c_descriptors) {
+				if(!(ipc_buffer->type & 0x10)) {
+					c_descriptor_u16_lengths_count++;
+				}
+			}
 		} else { // flag 0x20 set
 			// this may not be entirely correct
 			ipc_buffer_t *d1, *d2;
@@ -787,6 +779,10 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 				}
 				d1 = &b_descriptors[b_descriptors_assigned++];
 				d2 = &c_descriptors[c_descriptors_assigned++];
+
+				if(!(ipc_buffer->type & 0x10)) {
+					c_descriptor_u16_lengths_count++;
+				}
 			} else {
 				return LIBTRANSISTOR_ERR_UNSUPPORTED_BUFFER_TYPE;
 			}
@@ -816,6 +812,15 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 				return LIBTRANSISTOR_ERR_UNEXPECTED_BUFFER_PROTECTION;
 			}
 		}
+	}
+
+	if((msg->raw_data_section_size
+	    - 4 // SFCI, command id
+	    - 4 // padding
+	    - (to_domain ? 4 + rq->num_objects : 0) // domain header + in objects
+	    - ((c_descriptor_u16_lengths_count + 1) >> 1)
+		   ) != raw_data_words) {
+		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
 	}
 	
 	ipc_server_object_t **in_objects = rq->objects;
