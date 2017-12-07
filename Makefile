@@ -90,7 +90,7 @@ $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANS
 $(LIBTRANSISTOR_HOME)/pthread/libpthread.a:
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/pthread
 
-.PHONY: $(LIBTRANSISTOR_HOME)/pthread/new/libpthread.a
+.PHONY: $(LIBTRANSISTOR_HOME)/pthread/libpthread.a
 
 $(COMPILER_RT_BUILTINS_LIB): $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/compiler-rt/
