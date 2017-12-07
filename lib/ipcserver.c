@@ -158,7 +158,7 @@ result_t ipc_server_object_register(ipc_server_object_t *parent, ipc_server_obje
 	} else {
 		session_h server;
 		session_h client;
-		if((r = svcCreateSession(&client, &server, false, 0)) != RESULT_OK) {
+		if((r = svcCreateSession(&server, &client, false, 0)) != RESULT_OK) {
 			return r;
 		}
 		return ipc_server_create_session(parent->owning_session->owning_server, server, client, child);

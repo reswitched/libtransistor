@@ -66,7 +66,7 @@ result_t svcGetInfo(u64 *info, u64 info_id, handle_t handle, u64 info_sub_id);
 // 0x34-0x3B?
 // dumpInfo
 // 0x3D-0x3F?
-result_t svcCreateSession(session_h *client, session_h *server, bool is_light, uint32_t unknown);
+result_t svcCreateSession(session_h *server, session_h *client, bool is_light, uint32_t unknown);
 // createSession
 result_t svcAcceptSession(session_h *out, port_h port);
 // replyAndReceiveLight
