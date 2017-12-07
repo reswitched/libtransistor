@@ -151,7 +151,7 @@ result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs) {
 		return r;
 	}
 	r = svcReplyAndReceive(&handle_index, NULL, 0, obj->owning_session->handle, 0);
-	if(r != RESULT_OK) {
+	if(r != 0xea01) { // we should timeout instantly, as we're not listening on any handles
 		obj->owning_session->state = IPC_SESSION_STATE_ERRORED;
 		return r;
 	}
