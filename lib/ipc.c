@@ -39,7 +39,7 @@ ipc_request_t ipc_default_request = {
 };
 
 ipc_response_t ipc_default_response = {
-	.type = 4,
+	.type = 0,
 	.num_buffers = 0,
 	.buffers = NULL,
 	.result_code = 0,
