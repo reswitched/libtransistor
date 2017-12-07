@@ -251,13 +251,17 @@ result_t ipc_server_session_close(ipc_server_session_t *sess) {
 	}
 
 	svcCloseHandle(sess->handle);
-	svcCloseHandle(sess->client_handle);
+	if(sess->client_handle != 0) {
+		svcCloseHandle(sess->client_handle);
+	}
 	ipc_server_object_close(&sess->hipc_manager_object);
 	if(sess->object != NULL) {
 		ipc_server_object_close(sess->object);
 	}
 	for(int i = 0; i < MAX_DOMAIN_OBJECTS; i++) {
-		ipc_server_object_close(sess->domain.objects[i]);
+		if(sess->domain.objects[i] != NULL) {
+			ipc_server_object_close(sess->domain.objects[i]);
+		}
 	}
 	
 	sess->state = IPC_SESSION_STATE_INVALID;
