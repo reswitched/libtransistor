@@ -1,5 +1,5 @@
 # libtransistor
-[![Build Status](https://travis-ci.org/reswitched/libtransistor.svg?branch=master)](https://travis-ci.org/reswitched/libtransistor)
+[![Build Status](https://travis-ci.org/reswitched/libtransistor.svg?branch=master)](https://travis-ci.org/reswitched/libtransistor) [![Chat on Discord](https://img.shields.io/badge/chat-Discord-brightgreen.svg)](https://discordapp.com/invite/ZdqEhed)
 
 Libtransistor is a userland library for the Nintendo Switch. Currently, binaries can only be run under [Mephisto](https://github.com/reswitched/Mephisto) or with pegaswitch with ACE on 3.0.0.
 
@@ -38,9 +38,10 @@ Remote debugging using localhost:24689
 warning: No executable has been specified and target does not support
 determining executable automatically.  Try using the "file" command.
 0x0000007100000080 in ?? ()
-(gdb) add-symbol-file <path-to-libtransistor>/build/test/<binary>.nro.so 0x7100000000
+(gdb) add-symbol-file <path-to-libtransistor>/build/test/<binary>.nro.so 0x7100000000 -s .bss 0x7100000000
 add symbol table from file "<path-to-libtransistor>/build/test/<binary>.nro.so" at
 	.text_addr = 0x7100000000
+	.bss_addr = 0x7100000000
 (y or n) y
 Reading symbols from <path-to-libtransistor>/build/test/<binary>.nro.so...done.
 (gdb) 
