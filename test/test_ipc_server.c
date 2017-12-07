@@ -13,11 +13,14 @@
 		goto label; \
 	}
 
+bool destroy_server_flag = false;
+
 static void add_object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
 	result_t r = 0;
 	
 	printf("dispatched to add_obj(%ld): %d\n", *((uint64_t*) obj->userdata), rqid);
-
+	printf("  (object session server handle: 0x%x, client handle: 0x%x\n", obj->owning_session->handle, obj->owning_session->client_handle);
+	
 	switch(rqid) {
 	case 0: { // ADD
 		uint64_t val;
@@ -110,6 +113,8 @@ static void object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32
 		add_obj->close = add_object_close;
 		
 		ASSERT_OK(hard_failure, ipc_server_object_register(obj, add_obj));
+
+		printf("created adder object (%ld), srv: 0x%x, cli: 0x%x\n", val, add_obj->owning_session->handle, add_obj->owning_session->client_handle);
 		
 		ipc_response_t rs = ipc_default_response;
 		rs.num_objects = 1;
@@ -147,6 +152,10 @@ static void object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32
 		rs.raw_data = (uint32_t*) &sum;
 		
 		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
+		break; }
+	case 3: { // DESTROY_SERVER
+		destroy_server_flag = true;
+		goto hard_failure;
 		break; }
 	default:
 		r = LIBTRANSISTOR_ERR_IPCSERVER_NO_SUCH_COMMAND;
@@ -194,8 +203,10 @@ void server_thread() {
 	ASSERT_OK(fail_port, ipc_server_create(&server, port, object_factory));
 
 	printf("server created\n");
+
+	destroy_server_flag = false;
 	
-	while(1) {
+	while(!destroy_server_flag) {
 		printf("process\n");
 		ASSERT_OK(fail_server, ipc_server_process(&server, 3000000000));
 	}
@@ -204,7 +215,6 @@ fail_server:
 	ipc_server_destroy(&server);
 fail_port:
 	sm_unregister_service("testsrv");
-	svcCloseHandle(port);
 
 	svcExitThread();
 }
@@ -227,29 +237,34 @@ int main(int argc, char *argv[]) {
 
 	thread_h thread;
 	ASSERT_OK(fail_port, svcCreateThread(&thread, server_thread, 0, malloc(STACK_SIZE) + STACK_SIZE, 0x3f, -2));
-	libtransistor_set_keep_loaded();
 	ASSERT_OK(fail_thread, svcStartThread(thread));
 
-	svcCloseHandle(thread);
-
 	ASSERT_OK(fail_sm, sm_get_service(&testsrv_object, "testsrv"));
-	ASSERT_OK(fail_client, run_simple_rawdata_test());
-	ASSERT_OK(fail_client, run_object_test());
-	ASSERT_OK(fail_client, run_buffer_test());
-	
-	goto fail_client;
-	sm_finalize();
+	ASSERT_OK(fail_server, run_simple_rawdata_test());
+	ASSERT_OK(fail_server, run_object_test());
+	ASSERT_OK(fail_server, run_buffer_test());
 
-	if(libtransistor_context->magic == 0) { // mephisto
-		svcExitThread();
-	}
-	return 0;
-
-	// other thread takes ownership of these resources
 fail_server:
-	ipc_server_destroy(&server);
+	{ // DESTROY_SERVER
+		ipc_request_t rq = ipc_default_request;
+		rq.request_id = 3;
+
+		r = ipc_send(testsrv_object, &rq, &ipc_default_response_fmt);
+		if(r != 0xf601) {
+			printf("DESTROY_SERVER didn't close session? 0x%x\n", r);
+			r = LIBTRANSISTOR_ERR_UNSPECIFIED;
+			goto fail_client;
+		}
+	}
+
+	printf("waiting for server thread to terminate\n");
+	uint32_t handle_index;
+	ASSERT_OK(fail_client, svcWaitSynchronization(&handle_index, &thread, 1, 1000000000));
+	goto fail_client;
+
 fail_thread:
 	svcCloseHandle(thread);
+	// server object takes ownership of the port
 fail_port:
 	sm_unregister_service("testsrv");
 	svcCloseHandle(port);
@@ -314,6 +329,8 @@ result_t run_object_test() {
 			ASSERT_OK(fail, ipc_send(testsrv_object, &rq, &rs));
 		}
 
+		printf("got back object (%ld), session: 0x%x", i, obj.session);
+		
 		for(uint64_t j = 7; j < 12; j++) {
 			ipc_request_t rq = ipc_default_request;
 			rq.request_id = 0;
