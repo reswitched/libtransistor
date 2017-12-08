@@ -42,7 +42,7 @@ typedef struct {
   
 	uint64_t return_flags; // out
 
-	thread_h main_thread;
+	thread_h main_thread; // in, handle to main thread.
 } libtransistor_context_t;
 
 extern libtransistor_context_t *libtransistor_context;
