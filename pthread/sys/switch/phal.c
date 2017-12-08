@@ -90,13 +90,6 @@ int phal_mutex_unlock(phal_mutex *mutex) {
 		svcArbitrateUnlock(mutex);
 }
 
-// See libtransistor's crt0_common
-extern thread_h MAIN_THREAD_HANDLE;
-int phal_thread_maintid(phal_tid *tid) {
-	*tid = MAIN_HANDLE;
-	return 0;
-}
-
 void **phal_get_tls() {
 	return (void**)(((char*)get_tls()) + 0x1F8);
 	// TODO: &get_tls()->ctx;

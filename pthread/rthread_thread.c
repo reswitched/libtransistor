@@ -212,14 +212,13 @@ _rthread_init(void)
 	memset(&sa, 0, sizeof(sa));
 	sigemptyset(&sa.sa_mask);
 	sa.sa_handler = sigthr_handler;
-	sigaction(SIGTHR, &sa, NULL);
-	sigaddset(&sa.sa_mask, SIGTHR);
-	sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL);
+	//sigaction(SIGTHR, &sa, NULL);
+	//sigaddset(&sa.sa_mask, SIGTHR);
+	//sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL);
 
 	_threads_ready = 1;
 
 	_rthread_debug(1, "rthread init\n");
-#endif
 }
 
 static void

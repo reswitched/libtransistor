@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sched.h>
+#include <string.h>
+
 #include "phal.h"
 
 #include "rthread.h"
@@ -91,7 +93,7 @@ _rthread_internal_init(phal_tid maintid)
 	if (_threads_inited)
 		return;
 
-	thread->tib_tid = phal_thread_maintid();
+	thread->tib_tid = maintid;
 	*phal_get_tls() = thread;
 
 	thread->donesem.lock = _SPINLOCK_UNLOCKED;
@@ -124,8 +126,11 @@ _rthread_internal_init(phal_tid maintid)
 pthread_t
 pthread_self(void)
 {
-	if (__predict_false(!_threads_inited))
-		_rthread_internal_init();
+	if (__predict_false(!_threads_inited)) {
+		char msg[] = "_rthread_internal_init not called";
+		write(2, msg, strlen(msg));
+		return NULL;
+	}
 
 	return *phal_get_tls();
 }
