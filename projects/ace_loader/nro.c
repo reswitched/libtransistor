@@ -24,7 +24,7 @@ static char nro_args[NRO_MAX_ARG_BUF];
 static int nro_argc;
 static char *nro_argoffs;
 
-extern thread_h ACELOADER_MAIN_THREAD_HANDLE;
+extern thread_h aceloader_main_thread_handle;
 
 uint64_t nro_start()
 {
@@ -65,7 +65,7 @@ uint64_t nro_start()
 
 	loader_context.return_flags = 0; // out
 
-	loader_context.main_thread = ACELOADER_MAIN_THREAD_HANDLE;
+	loader_context.main_thread = aceloader_main_thread_handle;
 
 	// Backup and clean main thread TLS pointer
 	void **tls_userspace_pointer = (void**)(get_tls() + 0x1F8);

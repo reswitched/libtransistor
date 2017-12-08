@@ -9,7 +9,7 @@
 */
 
 #define LIBTRANSISTOR_CONTEXT_MAGIC 0x007874635f656361
-#define LIBTRANSISTOR_CONTEXT_VERSION 2
+#define LIBTRANSISTOR_CONTEXT_VERSION 3
 
 // return flags
 #define RETF_KEEP_LOADED	1	// do not unload NRO from memory

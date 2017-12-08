@@ -41,7 +41,7 @@ struct sockaddr_in stdout_server_addr =
 	.sin_port = htons(STDOUT_PORT),
 };
 
-thread_h ACELOADER_MAIN_THREAD_HANDLE;
+thread_h aceloader_main_thread_handle;
 
 uint64_t extra_cleanup(uint64_t arg0);
 
@@ -122,7 +122,7 @@ void locate_threads(void *base, uint64_t size, int simple)
 				{
 					uint64_t *ptr = tc->sp_mirror;
 					uint64_t sizE = tc->sp_size;
-					ACELOADER_MAIN_THREAD_HANDLE = tc->handle;
+					aceloader_main_thread_handle = tc->handle;
 					uint64_t *bend = wkBase + WK_SIZE;
 					switch(simple)
 					{
