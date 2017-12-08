@@ -117,11 +117,8 @@ _rthread_mutex_trylock(pthread_mutex_t mutex, int trywait,
 				abort();
 
 			/* self-deadlock, possibly until timeout */
-			// TODO: _twait
-			return ENOSYS;
-			/*while (_twait(&mutex->type, type, CLOCK_REALTIME,
-			    abs) != ETIMEDOUT)
-				;*/
+			// TODO: Timeout ?
+			phal_mutex_lock(&mutex->hal_handle);
 			return (ETIMEDOUT);
 		} else {
 			if (mutex->count == INT_MAX)
@@ -194,8 +191,8 @@ _rthread_mutex_timedlock(pthread_mutex_t *mutexp, int trywait,
 
 	while (lock != UNLOCKED) {
 		return ENOSYS;
-		// TODO: _twait
-		//error = _twait(&mutex->lock, CONTENDED, CLOCK_REALTIME, abs);
+		// TODO: timeout ?
+		error = phal_mutex_lock(&mutex->hal_handle);
 		if (error == ETIMEDOUT)
 			return (error);
 		/*

@@ -56,12 +56,13 @@ _sem_wait(sem_t sem, int tryonly, const struct timespec *abstime,
     int *delayed_cancel)
 {
 	void *ident = (void *)&sem->waitcount;
+	// This should never happen
 	int r;
 
 	if (sem->shared)
 		ident = SHARED_IDENT;
 
-	_spinlock(&sem->lock);
+	phal_mutex_lock(&sem->lock);
 	if (sem->value) {
 		sem->value--;
 		r = 0;
@@ -70,21 +71,26 @@ _sem_wait(sem_t sem, int tryonly, const struct timespec *abstime,
 	} else {
 		sem->waitcount++;
 		do {
-			// TODO: Sleep
-			//phal_semaphore_sleep(&sem->wait);
-			/*r = __thrsleep(ident, CLOCK_REALTIME, abstime,
-			    &sem->lock, delayed_cancel);*/
-			_spinlock(&sem->lock);
+			int nsec = 0;
+			if (abstime) {
+				nsec += abstime->tv_sec * 1000 * 1000 * 1000;
+				nsec += abstime->tv_nsec;
+			}
+			r = phal_semaphore_wait(ident, &sem->lock, nsec);
+			// TODO: Delayed_cancel ?
+			// At this point, I already have lock ! But do I need it ?
+			//_spinlock(&sem->lock);
 			/* ignore interruptions other than cancelation */
 			if (r == EINTR && (delayed_cancel == NULL ||
 			    *delayed_cancel == 0))
 				r = 0;
 		} while (r == 0 && sem->value == 0);
-		sem->waitcount--;
+		// TODO: Done by phal_semaphore_wait ?
+		//sem->waitcount--;
 		if (r == 0)
 			sem->value--;
 	}
-	_spinunlock(&sem->lock);
+	phal_mutex_unlock(&sem->lock);
 	return (r);
 }
 
@@ -98,15 +104,13 @@ _sem_post(sem_t sem)
 	if (sem->shared)
 		ident = SHARED_IDENT;
 
-	_spinlock(&sem->lock);
+	phal_mutex_lock(&sem->lock);
 	sem->value++;
 	if (sem->waitcount) {
-		return ENOSYS;
-		// TODO: __thrwakeup
-		//__thrwakeup(ident, 1);
+		phal_semaphore_signal(ident);
 		rv = 1;
 	}
-	_spinunlock(&sem->lock);
+	phal_mutex_unlock(&sem->lock);
 	return (rv);
 }
 
@@ -163,7 +167,7 @@ sem_init(sem_t *semp, int pshared, unsigned int value)
 		errno = ENOSPC;
 		return (-1);
 	}
-	sem->lock = _SPINLOCK_UNLOCKED;
+	phal_mutex_create(&sem->lock);
 	sem->value = value;
 	*semp = sem;
 
@@ -212,9 +216,9 @@ sem_getvalue(sem_t *semp, int *sval)
 		return (-1);
 	}
 
-	_spinlock(&sem->lock);
+	phal_mutex_lock(&sem->lock);
 	*sval = sem->value;
-	_spinunlock(&sem->lock);
+	phal_mutex_unlock(&sem->lock);
 
 	return (0);
 }
@@ -237,26 +241,22 @@ sem_post(sem_t *semp)
 int
 sem_wait(sem_t *semp)
 {
-	return ENOSYS;
-#if 0
-	struct tib *tib = TIB_GET();
-	pthread_t self;
+	pthread_t self = pthread_self();
 	sem_t sem;
 	int r;
-	PREP_CANCEL_POINT(tib);
+	//PREP_CANCEL_POINT(tib);
 
 	if (!_threads_ready)
 		_rthread_init();
-	self = tib->tib_thread;
 
 	if (!semp || !(sem = *semp)) {
 		errno = EINVAL;
 		return (-1);
 	}
 
-	ENTER_DELAYED_CANCEL_POINT(tib, self);
+	//ENTER_DELAYED_CANCEL_POINT(tib, self);
 	r = _sem_wait(sem, 0, NULL, &self->delayed_cancel);
-	LEAVE_CANCEL_POINT_INNER(tib, r);
+	//LEAVE_CANCEL_POINT_INNER(tib, r);
 
 	if (r) {
 		errno = r;
@@ -264,7 +264,6 @@ sem_wait(sem_t *semp)
 	}
 
 	return (0);
-#endif
 }
 
 int
@@ -412,7 +411,7 @@ sem_open(const char *name, int oflag, ...)
 		return (SEM_FAILED);
 	}
 	if (created) {
-		sem->lock = _SPINLOCK_UNLOCKED;
+		phal_mutex_create(&sem->lock);
 		sem->value = value;
 		sem->shared = 1;
 	}
