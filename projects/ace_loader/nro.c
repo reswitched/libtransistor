@@ -24,6 +24,8 @@ static char nro_args[NRO_MAX_ARG_BUF];
 static int nro_argc;
 static char *nro_argoffs;
 
+extern thread_h ACELOADER_MAIN_THREAD_HANDLE;
+
 uint64_t nro_start()
 {
 	uint64_t (*entry)(libtransistor_context_t*) = nro_base + 0x80;
@@ -62,6 +64,8 @@ uint64_t nro_start()
 	http_paste_ip(&loader_context.workstation_addr);
 
 	loader_context.return_flags = 0; // out
+
+	loader_context.main_thread = ACELOADER_MAIN_THREAD_HANDLE;
 
 	// Backup and clean main thread TLS pointer
 	void **tls_userspace_pointer = (void**)(get_tls() + 0x1F8);

@@ -41,6 +41,8 @@ typedef struct {
 	uint32_t workstation_addr; // in
   
 	uint64_t return_flags; // out
+
+	thread_h main_thread;
 } libtransistor_context_t;
 
 extern libtransistor_context_t *libtransistor_context;
