@@ -12,6 +12,7 @@
 #include<unistd.h>
 #include<errno.h>
 #include<stdlib.h>
+#include<rthread.h>
 
 int main(int argc, char **argv);
 
@@ -208,6 +209,10 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		}
 		libtransistor_context.mem_size = DEFAULT_NOCONTEXT_HEAP_SIZE;
 	}
+
+	dbg_printf("init threads");
+	phal_tid tid = { .id = libtransistor_context.main_thread, .stack = NULL };
+	_rthread_internal_init(tid);
 
 	dbg_printf("init stdio");
 	bsslog_stdout._write = bsslog_write;
