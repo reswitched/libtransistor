@@ -55,12 +55,11 @@ int
 _sem_wait(sem_t sem, int tryonly, const struct timespec *abstime,
     int *delayed_cancel)
 {
-	void *ident = (void *)&sem->waitcount;
 	// This should never happen
 	int r;
 
 	if (sem->shared)
-		ident = SHARED_IDENT;
+		return ENOSYS;
 
 	phal_mutex_lock(&sem->lock);
 	if (sem->value) {
@@ -76,7 +75,7 @@ _sem_wait(sem_t sem, int tryonly, const struct timespec *abstime,
 				nsec += abstime->tv_sec * 1000 * 1000 * 1000;
 				nsec += abstime->tv_nsec;
 			}
-			r = phal_semaphore_wait(ident, &sem->lock, nsec);
+			r = phal_semaphore_wait(&sem->sem, &sem->lock, nsec);
 			// TODO: Delayed_cancel ?
 			// At this point, I already have lock ! But do I need it ?
 			//_spinlock(&sem->lock);
@@ -85,8 +84,7 @@ _sem_wait(sem_t sem, int tryonly, const struct timespec *abstime,
 			    *delayed_cancel == 0))
 				r = 0;
 		} while (r == 0 && sem->value == 0);
-		// TODO: Done by phal_semaphore_wait ?
-		//sem->waitcount--;
+		sem->waitcount--;
 		if (r == 0)
 			sem->value--;
 	}
@@ -98,16 +96,17 @@ _sem_wait(sem_t sem, int tryonly, const struct timespec *abstime,
 int
 _sem_post(sem_t sem)
 {
-	void *ident = (void *)&sem->waitcount;
+	//void *ident = (void *)&sem->waitcount;
 	int rv = 0;
 
 	if (sem->shared)
-		ident = SHARED_IDENT;
+		return ENOSYS;
 
 	phal_mutex_lock(&sem->lock);
 	sem->value++;
 	if (sem->waitcount) {
-		phal_semaphore_signal(ident);
+		phal_semaphore_signal(&sem->sem);
+		// TODO: rv ?
 		rv = 1;
 	}
 	phal_mutex_unlock(&sem->lock);
