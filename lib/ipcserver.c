@@ -6,6 +6,7 @@
 #include<libtransistor/ipcserver.h>
 
 #include<string.h>
+#include<stdlib.h>
 
 result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_factory_t object_factory) {
 	srv->port = port;

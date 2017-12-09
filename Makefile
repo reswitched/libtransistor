@@ -15,7 +15,7 @@ export CC_FOR_TARGET = $(CC)
 export AS_FOR_TARGET = $(AS) -arch=aarch64 -mattr=+neon
 export AR_FOR_TARGET = $(AR)
 export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
-export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument
+export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument -Wno-error-implicit-function-declaration
 
 .SUFFIXES: # disable built-in rules
 
