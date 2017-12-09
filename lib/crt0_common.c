@@ -203,6 +203,8 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	} else {
 		dbg_printf("no context");
 
+		// Temporary fix to run this in Mephisto.
+		libtransistor_context.main_thread = 0xde00;
 		if(svcSetHeapSize(&libtransistor_context.mem_base, DEFAULT_NOCONTEXT_HEAP_SIZE) != RESULT_OK) {
 			dbg_printf("failed to set heap size");
 			return -5;
