@@ -40,8 +40,6 @@ start:
         adrp x1, _start // aslr base
 	bl _libtransistor_start
 loop:
-.global _exit
-_exit:  
 	b loop
 
 .global _get_module_header

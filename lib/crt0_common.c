@@ -6,6 +6,7 @@
 #include<assert.h>
 #include<stdio.h>
 #include<string.h>
+#include<setjmp.h>
 
 #include<ssp/ssp.h>
 
@@ -119,6 +120,8 @@ static int socklog_read(struct _reent *reent, void *v, char *ptr, int len) {
 #define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
 
 static bool dont_finalize_bsd = false;
+static jmp_buf exit_jmpbuf;
+static int exit_value;
 
 int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	if(relocate(aslr_base)) {
@@ -206,14 +209,24 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		stderr = &bsslog_stdout;
 	}
 	dbg_printf("set up stdout");
-	
-	int ret = main(argc, argv);
+
+	int ret;
+	if (setjmp(exit_jmpbuf) == 0) {
+		ret = main(argc, argv);
+	} else {
+		ret = exit_value;
+	}
 
 	if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0 && !dont_finalize_bsd) {
 		bsd_finalize();
 	}
 
 	return ret;
+}
+
+void _exit(int ret) {
+	exit_value = ret;
+	longjmp(exit_jmpbuf, 1);
 }
 
 void libtransistor_dont_finalize_bsd() {
