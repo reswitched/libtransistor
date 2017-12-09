@@ -286,6 +286,7 @@ struct __sem {
 	phal_mutex lock;
 	volatile int waitcount;
 	volatile int value;
+	phal_sem sem;
 	int shared;
 };
 

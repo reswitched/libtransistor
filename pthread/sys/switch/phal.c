@@ -46,7 +46,8 @@ int phal_semaphore_signal(phal_semaphore *sem) {
 // let's focus on the switch, which needs a locked mutex and a semaphore.
 int phal_semaphore_wait(phal_semaphore *sem, phal_mutex *m, uint64_t timeout) {
 	// Mutex must be locked at this point, otherwise shit stinks.
-	return svcWaitProcessWideKeyAtomic(m, sem, 1, timeout);
+	pthread_t self = pthread_self();
+	return svcWaitProcessWideKeyAtomic(m, sem, self->tib_tid, timeout);
 	// At this point, lock is still locked, and still ours !
 }
 
