@@ -180,8 +180,8 @@ _rthread_init(void)
 
 	LIST_INSERT_HEAD(&_thread_list, thread, threads);
 
-	_thread_pagesize = (size_t)sysconf(_SC_PAGESIZE);
-	_rthread_attr_default.guard_size = _thread_pagesize;
+	//_thread_pagesize = (size_t)sysconf(_SC_PAGESIZE);
+	_rthread_attr_default.guard_size = 0;//_thread_pagesize;
 	thread->attr = _rthread_attr_default;
 
 	/* get libc to start using our callbacks */
