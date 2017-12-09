@@ -29,27 +29,27 @@ static void runBarrierTests(void)
 static void runSemTests(void)
 {
 
-  //printf("Semaphore test #1\n");
-  //pthread_test_semaphore1();
+  printf("Semaphore test #1\n");
+  pthread_test_semaphore1();
 
-  //printf("Semaphore test #2\n");
-  //pthread_test_semaphore2();
+  printf("Semaphore test #2\n");
+  pthread_test_semaphore2();
 
-  //printf("Semaphore test #3\n");
-  //pthread_test_semaphore3();
+  printf("Semaphore test #3\n");
+  pthread_test_semaphore3();
 
 
-  //printf("Semaphore test #4\n");
-  //pthread_test_semaphore4();
+  printf("Semaphore test #4\n");
+  pthread_test_semaphore4();
 
-  //printf("Semaphore test #4t\n");
-  //pthread_test_semaphore4t();
+  printf("Semaphore test #4t\n");
+  pthread_test_semaphore4t();
 
-  //printf("Semaphore test #5\n");
-  //pthread_test_semaphore5();
+  printf("Semaphore test #5\n");
+  pthread_test_semaphore5();
 
-  //printf("Semaphore test #6\n");
-  //pthread_test_semaphore6();
+  printf("Semaphore test #6\n");
+  pthread_test_semaphore6();
 
 }
 
@@ -78,10 +78,12 @@ static void runThreadTests(void)
   pthread_test_join3();
 
   printf("Join test #4\n");
-  pthread_test_join4();
+  printf("Depends on cancel. Not running.\n");
+  //pthread_test_join4();
 
   printf("Kill test #1\n");
-  pthread_test_kill1();
+  printf("Depends on kill. Not running.\n");
+  //pthread_test_kill1();
 
   printf("Exit test #1\n");
   pthread_test_exit1();
@@ -93,10 +95,12 @@ static void runThreadTests(void)
   pthread_test_exit3();
 
   printf("Exit test #4\n");
-  pthread_test_exit4();
+  printf("Cannot call pthread_exit() on a thread not created through pthread_create()");
+  //pthread_test_exit4();
 
   printf("Exit test #5\n");
-  pthread_test_exit5();
+  printf("Cannot call pthread_exit() on a thread not created through pthread_create()");
+  //pthread_test_exit5();
 
   /* These tests can not be run in series with other tests,
    * as they rely on knowing what is on the reuse queue.
@@ -468,7 +472,7 @@ void pte_test_main()
       printf("   Test iteration #%d\n\n",i);
       printf("=========================\n");
 
-      //runThreadTests(); 
+      runThreadTests(); 
       runMiscTests();
       //runMutexTests();
       //runSemTests();
