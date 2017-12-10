@@ -47,7 +47,7 @@ result_t svcConnectToNamedPort(session_h *out, char name[8]);
 result_t svcSendSyncRequest(session_h session);
 result_t svcSendSyncRequestWithUserBuffer(void *buffer, u64 size, session_h session);
 // sendAsyncRequestWithUserBuffer
-// getProcessId
+result_t svcGetProcessId(uint32_t *pid, handle_t thread_or_process_handle);
 // getThreadId
 // break
 void svcOutputDebugString(char *str, u64 size);
