@@ -27,8 +27,9 @@ void phal_thread_exit(phal_tid *tid) {
 	svcExitThread();
 }
 
-int phal_thread_sleep(int msec) {
-	return svcSleepThread(msec * 1000000);
+int phal_thread_sleep(uint64_t msec) {
+	uint64_t nanos = msec * 1000 * 1000;
+	return svcSleepThread(nanos);
 }
 
 int phal_semaphore_create(phal_semaphore *sem) {

@@ -18,4 +18,4 @@ int phal_mutex_lock(phal_mutex *mutex);
 int phal_mutex_unlock(phal_mutex *mutex);
 
 // TODO: pass timespec instead
-int phal_thread_sleep(int msec);
+int phal_thread_sleep(uint64_t msec);
