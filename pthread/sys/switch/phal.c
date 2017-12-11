@@ -16,7 +16,7 @@ int phal_thread_create(phal_tid *tid, void (*start_routine)(void*), void *arg) {
 	if (stack == NULL)
 		return ENOMEM;
 	stack += 0x2000;
-	ret = svcCreateThread(tid, start_routine, (uint64_t)arg, stack, 0, -2);
+	ret = svcCreateThread(tid, start_routine, (uint64_t)arg, stack, 0x1F, -2);
 	if (ret)
 		return ret;
 	return svcStartThread(*tid);
