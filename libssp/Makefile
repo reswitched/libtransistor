@@ -7,14 +7,14 @@ ifneq ($(CC_FOR_TARGET),)
 CC := $(CC_FOR_TARGET)
 endif
 
-ifneq ($(CC_FLAGS_FOR_TARGET),)
-CC_FLAGS := $(CC_FLAGS_FOR_TARGET)
+ifneq ($(CFLAGS_FOR_TARGET),)
+CFLAGS := $(CFLAGS_FOR_TARGET)
 endif
 
 .SUFFIXES: # disable built-in rules
 
 %.o: %.c
-	@$(CC) $(CC_FLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) -fno-stack-protector -c -o $@ $<
 	@echo [CC] $@
 
 all: libssp.a

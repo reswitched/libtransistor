@@ -1,6 +1,17 @@
-dist: trusty
+env:
+  global:
+    - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
 language: c
 sudo: required
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+    - os: osx
+      osx_image: xcode9.1
+      compiler: clang
+  allow_failures:
+    - os: osx
 addons:
   apt:
     sources:
@@ -12,7 +23,21 @@ addons:
       - llvm-5.0-dev
       - lld-5.0
       - liblz4-dev
+install:
+    # Download and install recent cmake
+    - |
+      if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
+        CMAKE_URL="http://www.cmake.org/files/v3.4/cmake-3.4.3-Linux-x86_64.tar.gz"
+        mkdir -p ${DEPS_DIR}/cmake
+        travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${DEPS_DIR}/cmake
+        export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+      fi
 before_script:
+  # macos specific stuff
+  - "if [ ${TRAVIS_OS_NAME} = 'osx' ]; then brew install llvm qemu lz4; 
+      export PATH=\"/usr/local/opt/llvm/bin:$PATH\";
+	  ln -s /usr/local/opt/llvm/bin/clang++ /usr/local/opt/llvm/bin/clang++-5.0;
+	  ln -s /usr/local/opt/llvm/bin/ld.lld /usr/local/opt/llvm/bin/ld.lld-5.0; fi"
   - git clone https://github.com/reswitched/unicorn.git
   - cd unicorn
   - UNICORN_ARCHS="aarch64" ./make.sh
@@ -24,4 +49,4 @@ before_script:
   - make
   - cd ..
   - sudo pip2 install -r  requirements.txt
-script:  make LD=ld.lld-5.0 && make run_tests MEPHISTO=./Mephisto/ctu
+script:  make LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make -C projects/ace_loader LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make run_tests MEPHISTO=./Mephisto/ctu
