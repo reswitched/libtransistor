@@ -239,6 +239,9 @@ restart:
 			// TODO: stack and tib
 			//_rthread_free_stack(thread->stack);
 			//_dl_free_tib(thread->tib, sizeof(*thread));
+			int res = phal_thread_destroy(&thread->tib_tid);
+			if (res)
+				_rthread_debug(3, "Failed to free tid %d: %d", &thread->tib_tid, res);
 		} else {
 			/* initial thread isn't part of TIB allocation */
 			_rthread_debug(3, "rthread reaping %p (initial)\n",
