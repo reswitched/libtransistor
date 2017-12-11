@@ -27,6 +27,10 @@ void phal_thread_exit(phal_tid *tid) {
 	svcExitThread();
 }
 
+int phal_thread_destroy(phal_tid *tid) {
+	return svcCloseHandle(*tid);
+}
+
 int phal_thread_sleep(uint64_t msec) {
 	uint64_t nanos = msec * 1000 * 1000;
 	return svcSleepThread(nanos);

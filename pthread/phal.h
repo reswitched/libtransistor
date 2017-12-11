@@ -5,6 +5,9 @@
 
 int phal_thread_create(phal_tid *tid, void (*start_routine)(void*), void *arg);
 void phal_thread_exit(phal_tid *tid);
+
+// Called after the thread exited, to free up any potential resources
+int phal_thread_destroy(phal_tid *tid);
 void **phal_get_tls();
 
 int phal_semaphore_create(phal_semaphore *sem);
