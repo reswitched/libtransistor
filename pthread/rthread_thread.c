@@ -229,7 +229,7 @@ _rthread_reaper(void)
 restart:
 	_spinlock(&_thread_gc_lock);
 	TAILQ_FOREACH(thread, &_thread_gc_list, waiting) {
-		if (thread->tib_tid != 0)
+		if (!(thread->flags & THREAD_DONE))
 			continue;
 		TAILQ_REMOVE(&_thread_gc_list, thread, waiting);
 		_spinunlock(&_thread_gc_lock);
