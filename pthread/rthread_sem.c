@@ -70,10 +70,12 @@ _sem_wait(sem_t sem, int tryonly, const struct timespec *abstime,
 	} else {
 		sem->waitcount++;
 		do {
-			int nsec = 0;
+			uint64_t nsec = 0;
 			if (abstime) {
 				nsec += abstime->tv_sec * 1000 * 1000 * 1000;
 				nsec += abstime->tv_nsec;
+			} else {
+				nsec = -1;
 			}
 			r = phal_semaphore_wait(&sem->sem, &sem->lock, nsec);
 			// TODO: Delayed_cancel ?
