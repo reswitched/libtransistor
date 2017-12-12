@@ -9,7 +9,7 @@
 */
 
 #define LIBTRANSISTOR_CONTEXT_MAGIC 0x007874635f656361
-#define LIBTRANSISTOR_CONTEXT_VERSION 2
+#define LIBTRANSISTOR_CONTEXT_VERSION 3
 
 // return flags
 #define RETF_KEEP_LOADED	1	// do not unload NRO from memory
@@ -41,6 +41,8 @@ typedef struct {
 	uint32_t workstation_addr; // in
   
 	uint64_t return_flags; // out
+
+	thread_h main_thread; // in, handle to main thread.
 } libtransistor_context_t;
 
 extern libtransistor_context_t *libtransistor_context;
