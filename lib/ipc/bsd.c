@@ -67,14 +67,26 @@ result_t bsd_init() {
 			return r;
 		}
 
-		uint64_t raw[] = {32*1024, 32*1024, 16*1024, 16*1024,
-		                  0, // server copies pid to here
-		                  TRANSFER_MEM_SIZE};
+		struct {
+			uint32_t fields[8];
+			uint64_t pid_copy;
+			uint64_t tmem_size;
+		} raw;
+		raw.fields[0] = 0x3;
+		raw.fields[1] = 0x8000;
+		raw.fields[2] = 0x10000;
+		raw.fields[3] = 0x40000;
+		raw.fields[4] = 0x40000;
+		raw.fields[5] = 0x2400;
+		raw.fields[6] = 0xA500;
+		raw.fields[7] = 0x4;
+		raw.pid_copy = 0;
+		raw.tmem_size = TRANSFER_MEM_SIZE;
     
 		ipc_request_t rq = ipc_default_request;
 		rq.type = 4;
 		rq.request_id = 0;
-		rq.raw_data = (uint32_t*) raw;
+		rq.raw_data = (uint32_t*) &raw;
 		rq.raw_data_size = sizeof(raw);
 		rq.send_pid = true;
 		rq.num_copy_handles = 1;
