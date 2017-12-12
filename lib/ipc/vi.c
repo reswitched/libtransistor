@@ -241,6 +241,17 @@ result_t vi_create_stray_layer(uint32_t unknown, display_t *display, surface_t *
 	return 0;
 }
 
+result_t vi_adjust_refcount(int32_t handle, int32_t addval, int32_t type) {
+	uint32_t raw[] = {handle, addval, type};
+
+	ipc_request_t rq = ipc_default_request;
+	rq.request_id = 1;
+	rq.raw_data_size = sizeof(raw);
+	rq.raw_data = raw;
+
+	return ipc_send(ihosbd_object, &rq, &ipc_default_response_fmt);
+}
+
 result_t vi_transact_parcel(int32_t handle, uint32_t transaction, uint32_t flags, void *rq_parcel, size_t rq_parcel_size, void *rs_parcel, size_t rs_parcel_size) {
 
 	ipc_buffer_t rq_buffer;

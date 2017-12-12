@@ -10,6 +10,8 @@ result_t vi_open_display(const char *name, display_t *out);
 result_t vi_create_stray_layer(uint32_t unknown, display_t *display, surface_t *surface);
 result_t vi_open_layer(const char *display_name, uint64_t layer_id, aruid_t aruid, surface_t *surface);
 result_t vi_create_managed_layer(uint32_t unknown, display_t *display, uint64_t aruid, uint64_t *layer_id);
+
+result_t vi_adjust_refcount(int32_t handle, int32_t addval, int32_t type);
 result_t vi_transact_parcel(int32_t handle, uint32_t transaction, uint32_t flags, void *in_parcel, size_t in_parcel_size, void *out_parcel, size_t out_parcel_size);
 
 // imds
