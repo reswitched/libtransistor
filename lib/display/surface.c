@@ -41,63 +41,24 @@ static result_t queue_buffer_output_unflatten(parcel_t *parcel, queue_buffer_out
 }
 
 static result_t queue_buffer_input_flatten(parcel_t *parcel, queue_buffer_input_t *qbi) {
-	/*struct {
-	  uint64_t timestamp; // +0, +0   // v7 // timestamp?
-	  uint32_t is_auto_timestamp; // +8, +8   // v8 (!= 0) (isAutoTimestamp?) see decompL332, sourceL746
-	  rect_t crop; // +12 v115, +20 v116
-	  uint32_t scaling_mode; // +28, +28 // v13 // scaling_mode
-	  uint32_t transform; // +32, +32 // v12 // transform
-	  uint32_t uk7; // +36, +36 // v91
-	  uint32_t uk8; // +40, +40 // v9, v11 (!= 0), async?
-	  uint32_t uk9; // +44, +44 // v14
-	  fence_t fence;
-	  /*struct {
-	  uint32_t uk10; // +48, +48 // NOT v10, v10 is a pointer to some Fence object!
-	  // don't really know how this is packed
-	  // maybe more?
-	  } fence; // +48
-	  } template;
-
-	  template.timestamp = qbi->timestamp;
-	  template.is_auto_timestamp = qbi->is_auto_timestamp;
-	  template.crop = qbi->crop;
-	  template.scaling_mode = qbi->scaling_mode;
-	  template.transform = qbi->transform;
-	  template.uk7 = 0x1;
-	  template.uk8 = 0x0;
-	  template.uk9 = 0x0;
-	  template.fence = qbi->fence;*/
-  
-	/*uint32_t template[] = {
-	  0x54, 0x0,
-	  0x1,
-	  0x0, 0x0, 1280, 720,
-	  0x1, 0x1, 0x1, 0x0, 0x0,
-	  // fence?
-	  0x24, 0x0, 0x1, 0x0102, 0x13f4, 0xffffffff, 0x0, 0xffffffff, 0x0, 0xffffffff, 0x0
-	  };*/
-
-	uint32_t baz = 0x54;
-  
+	static uint32_t ts32 = 0x588bbba9;
 	uint32_t template[] = {
-		baz, 0,
-		1, 0, //u64 timestamp
-		0, 0, 0,
-		0, 2, // 2, 1
-		2, 2, 2,
+		0x54, 0, // unknown, but always these values
+		ts32, 0x7f, //u64 timestamp
+		1, 0, 0, // unknown, but always these values
+		1280, 720, // sometimes zero
+		0,
+		0, // also seen 2
+
+		0, 0,
 
 		// fence?
-		/*0x0, 0x1, 0x1,
-		  0x42, // <- 0x42
-		  0x0, //Increased by 6/7 each time.
-		  0xffffffff, 0x0,
-		  0xffffffff, 0x0, 0xffffffff, 0x0*/
-		0x1, 0x0, 0, 0,
-		0, 0, 0, 0,
-		0, 0, 0
+		1, 1, -1, 0,//0x43, 0xcc650100,
+		-1, 0, -1, 0, -1, 0
 	};
 
-	baz+= 6;
+	ts32++;
+	//ts32+= 0x2e45f00;
 
 	dbg_printf("flattened qbi:");
 	hexdump(&template, sizeof(template));

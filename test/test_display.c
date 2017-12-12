@@ -16,8 +16,8 @@ int main() {
   
 	result_t r;
 	ASSERT_OK(fail, sm_init());
-	ASSERT_OK(fail_sm, am_init());
-	ASSERT_OK(fail_am, gpu_initialize());
+	//ASSERT_OK(fail_sm, am_init());
+	ASSERT_OK(fail_sm, gpu_initialize());
 	ASSERT_OK(fail_gpu, vi_init());
 	
 	printf("init'd gpu and vi\n");
@@ -29,7 +29,7 @@ int main() {
   
 	surface_t surf;
 
-	uint64_t layer_id;
+	/*uint64_t layer_id;
 	ASSERT_OK(fail_vi, am_isc_create_managed_display_layer(&layer_id));
 	printf("got managed display layer from am: %ld\n", layer_id);
 
@@ -41,17 +41,22 @@ int main() {
 	printf("approved to display\n");
 	
 	ASSERT_OK(fail_vi, am_iwc_acquire_foreground_rights());
-	printf("got foreground rights\n");
+	printf("got foreground rights\n");*/
 	
-	//ASSERT_OK(fail_vi, vi_create_stray_layer(1, &display, &surf));
+	ASSERT_OK(fail_vi, vi_create_stray_layer(1, &display, &surf));
 	
 	/*uint64_t my_layer_id;
 	  ASSERT_OK(fail_vi, vi_create_managed_layer(1, &display, 0, &my_layer_id));
 	  dbg_printf("managed layer id: %d", my_layer_id);*/
 	
-	ASSERT_OK(fail_vi, vi_open_layer("Default", layer_id, aruid, &surf));
-	dbg_printf("opened managed layer");
+	/*ASSERT_OK(fail_vi, vi_open_layer("Default", layer_id, aruid, &surf));
+	  dbg_printf("opened managed layer");*/
 
+	printf("adjusting refcount\n");
+	ASSERT_OK(fail_vi, binder_adjust_refcount(&surf.igbp_binder, 1, 0));
+	ASSERT_OK(fail_vi, binder_adjust_refcount(&surf.igbp_binder, 1, 1));
+	printf("adjusted refcount\n");
+	
 	int64_t z;
   
 	ASSERT_OK(fail_vi, vi_iads_set_layer_scaling_mode(2, &surf));
@@ -67,7 +72,7 @@ int main() {
 	  //ASSERT_OK(fail_vi, vi_imds_set_display_layer_stack(0, &display));
 	  ASSERT_OK(fail_vi, vi_imds_set_conductor_layer(true, &surf));
 	  ASSERT_OK(fail_vi, vi_imds_set_content_visibility(true));*/
-    
+
 	int status;
 	queue_buffer_output_t qbo;
 	ASSERT_OK(fail_vi, surface_connect(&surf, 2, false, &status, &qbo));
