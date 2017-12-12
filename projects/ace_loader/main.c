@@ -41,6 +41,8 @@ struct sockaddr_in stdout_server_addr =
 	.sin_port = htons(STDOUT_PORT),
 };
 
+thread_h aceloader_main_thread_handle;
+
 uint64_t extra_cleanup(uint64_t arg0);
 
 // these handles seems to be always present
@@ -120,6 +122,7 @@ void locate_threads(void *base, uint64_t size, int simple)
 				{
 					uint64_t *ptr = tc->sp_mirror;
 					uint64_t sizE = tc->sp_size;
+					aceloader_main_thread_handle = tc->handle;
 					uint64_t *bend = wkBase + WK_SIZE;
 					switch(simple)
 					{
