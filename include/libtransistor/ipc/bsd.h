@@ -15,7 +15,6 @@ struct addrinfo_fixed {
 	char canonname[256];
 };
 
-result_t bsd_borrow(ipc_object_t bsd);
 result_t bsd_init();
 ipc_object_t bsd_get_object();
 int bsd_socket(int domain, int type, int protocol);
