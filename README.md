@@ -17,9 +17,9 @@ You *should* just be able to run `make`. If that doesn't work, submit an issue (
 
 ### Building on Fedora
 
-Fedora does not ship recent enough clang and lld binaries, however pre-built clang binaries from [llvm.org](http://releases.llvm.org) can be used. 
+Fedora does not ship recent enough clang and lld binaries. However, pre-built clang binaries from [llvm.org](http://releases.llvm.org) can be used. 
 
-Following an example:
+Example:
 
 ```bash
 wget -c http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
@@ -29,7 +29,7 @@ cd libtransistor
 make
 ```
 
-If some of the cmake CXX tests fail install the needed dependencies.
+If some of the cmake CXX tests fail, you may need to install the necessary dependencies.
 
 ```bash
 sudo dnf -y install libstdc++-devel gcc-c++.x86_64
