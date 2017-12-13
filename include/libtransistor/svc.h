@@ -48,7 +48,7 @@ result_t svcSendSyncRequest(session_h session);
 result_t svcSendSyncRequestWithUserBuffer(void *buffer, u64 size, session_h session);
 // sendAsyncRequestWithUserBuffer
 result_t svcGetProcessId(uint32_t *pid, handle_t thread_or_process_handle);
-// getThreadId
+result_t svcGetThreadId(thread_h *handle_out, thread_h handle_in);
 // break
 void svcOutputDebugString(char *str, u64 size);
 void svcReturnFromException(u64 result);

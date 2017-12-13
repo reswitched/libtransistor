@@ -49,4 +49,4 @@ before_script:
   - make
   - cd ..
   - sudo pip2 install -r  requirements.txt
-script:  make LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make run_tests MEPHISTO=./Mephisto/ctu
+script:  make LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make -C projects/ace_loader LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make run_tests MEPHISTO=./Mephisto/ctu

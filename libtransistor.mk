@@ -13,7 +13,7 @@ CC := clang$(LLVM_POSTFIX)
 CXX := clang++$(LLVM_POSTFIX)
 AS := llvm-mc$(LLVM_POSTFIX)
 AR := llvm-ar$(LLVM_POSTFIX)
-LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined -T $(LIBTRANSISTOR_HOME)/link.T
+LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined -T $(LIBTRANSISTOR_HOME)/link.T -L $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/ -L $(LIBTRANSISTOR_HOME)/libssp/ -L $(LIBTRANSISTOR_HOME)/build/compiler-rt/lib/linux/
 CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -O0 -mtune=cortex-a53 -target aarch64-none-linux-gnu -nostdlib -nostdlibinc $(INCLUDES) $(WARNINGS)
 AR_FLAGS := rcs
 # for compatiblity

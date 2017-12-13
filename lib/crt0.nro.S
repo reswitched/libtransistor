@@ -52,13 +52,6 @@ _get_module_header:
         add x0, x0, #:lo12:_mod_header
         ret
         
-.global _exit
-_exit:
-        //ldr x1, __crt0_exit_frame
-        //ldp x29, x30, [x1]
-        //ret
-        b _exit
-        
 .section .bss
 __crt0_exit_frame:       
         .quad 0
