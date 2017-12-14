@@ -44,16 +44,16 @@ static result_t queue_buffer_input_flatten(parcel_t *parcel, queue_buffer_input_
 	static uint32_t ts32 = 0x588bbba9;
 	uint32_t template[] = {
 		0x54, 0, // unknown, but always these values
-		ts32, 0x7f, //u64 timestamp
+		ts32, 0x0, //u64 timestamp
 		1, 0, 0, // unknown, but always these values
-		1280, 720, // sometimes zero
+		0, 0, // sometimes zero
 		0,
 		0, // also seen 2
 
 		0, 0,
 
 		// fence?
-		1, 1, -1, 0,//0x43, 0xcc650100,
+		1, 1, 0xa3, 0x0,
 		-1, 0, -1, 0, -1, 0
 	};
 
@@ -105,7 +105,7 @@ static result_t graphic_buffer_flatten(parcel_t *parcel, graphic_buffer_t *gb) {
 		0x00000000, 0x00000051,  0xffffffff, gpu_buffer_id,
 		0x00000000, 0xdaffcaff,  0x0000002a, 0x00000000,
 		0x00000b00, 0x00000001,  0x00000001, 0x00000500,
-		0x003c0000, 0x00000000,  0x00000000, 0x00000500,
+		0x003c0000, 0x00000001,  0x00000000, 0x00000500,
 		0x000002d0, 0x00532120,  0x00000001, 0x00000003,
 		0x00001400, gpu_buffer_copy.nvmap_handle,  gb->unknown, 0x000000fe,
 		0x00000004, 0x00000000,  0x00000000, 0x00000000,
