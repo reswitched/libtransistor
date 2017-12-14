@@ -11,9 +11,29 @@ First, clone the repo with
 git clone --recursive https://github.com/reswitched/libtransistor
 ```
 
-You will need Python 2 and the python packages listed in [`requirements.txt`](https://github.com/reswitched/libtransistor/blob/master/requirements.txt). You'll also need clang and lld (llvm linker).
+You will need Python 2 and the python packages listed in [`requirements.txt`](https://github.com/reswitched/libtransistor/blob/master/requirements.txt). You'll also need clang and lld >=5.0 (llvm linker).
 
 You *should* just be able to run `make`. If that doesn't work, submit an issue (or pull request). This will produce a number of `nro` and `nso` files in `build/test/`. These are binaries for the Nintendo Switch. NRO files are relocatable shared objects suitable for use with [ROhan](https://reswitched.tech/rohan). Both NRO and NSO binaries can be run under Mephisto, but NSO binaries don't get relocated properly at the moment and will crash pretty quickly.
+
+### Building on Fedora
+
+Fedora does not ship recent enough clang and lld binaries. However, pre-built clang binaries from [llvm.org](http://releases.llvm.org) can be used. 
+
+Example:
+
+```bash
+wget -c http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+tar xpf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+export PATH=`pwd`/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin:$PATH
+cd libtransistor
+make
+```
+
+If some of the cmake CXX tests fail, you may need to install the necessary dependencies.
+
+```bash
+sudo dnf -y install libstdc++-devel gcc-c++.x86_64
+```
 
 ## Running
 
