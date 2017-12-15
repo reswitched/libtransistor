@@ -3,6 +3,9 @@
 #include<string.h>
 #include<stdlib.h>
 #include<stdio.h>
+#include<math.h>
+
+#include "reswitched_logo.h"
 
 #define ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) {            \
 		printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
@@ -10,6 +13,88 @@
 	}
 
 static uint8_t __attribute__((aligned(0x1000))) gpu_buffer_memory[0x780000];
+
+int pdep(uint32_t mask, uint32_t value) {
+	uint32_t out = 0;
+	for (int shift = 0; shift < 32; shift++) {
+		uint32_t bit = 1u << shift;
+		if (mask & bit) {
+			if (value & 1)
+				out |= bit;
+			value >>= 1;
+		}
+	}
+	return out;
+}
+
+uint32_t swizzle_x(uint32_t v) { return pdep(~0x7B4u, v); }
+uint32_t swizzle_y(uint32_t v) { return pdep(0x7B4, v); }
+
+void blit(uint32_t *buffer, uint32_t *image, int w, int h, int tx, int ty) {
+  uint32_t *dest = buffer;
+  uint32_t *src = image;
+  int x0 = tx;
+  int y0 = ty;
+  int x1 = x0+w;
+  int y1 = y0+h;
+  const uint32_t tile_height = 128;
+  const uint32_t padded_width = 128 * 10;
+
+  // we're doing this in pixels - should just shift the swizzles instead
+  uint32_t offs_x0 = swizzle_x(x0);
+  uint32_t offs_y  = swizzle_y(y0);
+  uint32_t x_mask  = swizzle_x(~0u);
+  uint32_t y_mask  = swizzle_y(~0u);
+  uint32_t incr_y  = swizzle_x(padded_width);
+
+  // step offs_x0 to the right row of tiles
+  offs_x0 += incr_y * (y0 / tile_height);
+
+  uint32_t x, y;
+  for (y=y0; y < y1; y++) {
+    uint32_t *dest_line = dest + offs_y;
+    uint32_t offs_x = offs_x0;
+
+    for (x=x0; x < x1; x++) {
+      uint32_t pixel = *src++;
+      dest_line[offs_x] = pixel;
+      offs_x = (offs_x - x_mask) & x_mask;
+    }
+
+    offs_y = (offs_y - y_mask) & y_mask;
+    if (!offs_y) offs_x0 += incr_y; // wrap into next tile row
+  }
+}
+
+static uint32_t swizzle_image(uint32_t *graphics_buffer, uint32_t *image) {
+	uint32_t p = 0;
+	uint32_t swizzle = 0x384b;
+	for (uint32_t y = 0; y < 720; y++) {
+		for (uint32_t x = 0; x < 1280; x++) {
+			// actual addressing
+			uint32_t tileX = x / 128;
+			uint32_t tileY = y / 128;
+			uint32_t inTileX = x % 128;
+			uint32_t inTileY = y % 128;
+			
+			uint32_t *tile = &image[(tileY * 10 + tileX) * (128 * 128)];
+			
+			uint32_t inTileCoord = inTileY * 128 + inTileX;
+			//assert(inTileCoord <= 0x3fff);
+			
+			int mask = swizzle;
+			
+			int xPart = pdep(mask, inTileX);
+			int yPart = pdep(~mask, inTileY);
+			//assert((xPart & yPart) == 0);
+			inTileCoord = xPart | yPart;
+			
+			graphics_buffer[p++] = tile[inTileCoord];
+		}
+	}
+}
+
+uint32_t image[1280*720];
 
 int main() {
 	svcSleepThread(100000000);
@@ -86,8 +171,6 @@ int main() {
 	gpu_buffer_t gpu_buffer;
 	ASSERT_OK(fail_vi, gpu_buffer_initialize(&gpu_buffer, gpu_buffer_memory, sizeof(gpu_buffer_memory), 0, 0, 0x1000, 0));
   
-	memset(gpu_buffer_memory, 0x66, sizeof(gpu_buffer_memory));
-  
 	graphic_buffer_t graphic_buffer_0;
 	graphic_buffer_0.width = 1280;
 	graphic_buffer_0.height = 720;
@@ -105,10 +188,6 @@ int main() {
 
 	bool requested[2] = {0, 0};
 
-	for(size_t i = 0; i < sizeof(gpu_buffer_memory); i+= sizeof(int)) {
-		*((int*) (gpu_buffer_memory + i)) = rand();
-	}
-
 	printf("adding to layer stacks...\n");
 	ASSERT_OK(fail_vi, vi_imds_add_to_layer_stack(0x5, &surf));
 	ASSERT_OK(fail_vi, vi_imds_add_to_layer_stack(0x4, &surf));
@@ -117,22 +196,14 @@ int main() {
 	ASSERT_OK(fail_vi, vi_imds_add_to_layer_stack(0x0, &surf));
 	ASSERT_OK(fail_vi, vi_isds_set_layer_z(&surf, 2));
 	
-	for(int i = 0; i < 6; i++) {
-		svcSleepThread(5000000);
+	for(int i = 0; i < 600; i++) {
 		int slot;
 		fence_t fence;
 		ASSERT_OK(fail_vi, surface_dequeue_buffer(&surf, 1280, 720, 1, 0xb00, false, &status, &slot, &fence, NULL));
 		if(status != 0) {
 			printf("IGBP_DEQUEUE_BUFFER failure: %d\n", status);
 			goto fail_vi;
-		}
-    
-		printf("IGBP_DEQUEUE_BUFFER:\n");
-		printf("  status: %d\n", status);
-		printf("  slot: %d\n", slot);
-		printf("  fence:\n");
-		hexdump(&fence, sizeof(fence));
-		printf("(hexdump end)\n");
+		}    
     
 		if(!requested[slot]) {
 			graphic_buffer_t graphic_buffer_rq;
@@ -153,28 +224,30 @@ int main() {
 			requested[slot] = true;
 		}
 
-		//memset(gpu_buffer_memory, 0xff, sizeof(gpu_buffer_memory));
-		//printf("gpubm+0x1000\n");
-		//hexdump(gpu_buffer_memory + 0x1000, 0x20);
-    
+		uint32_t *out_buffer = gpu_buffer_memory + (slot * 0x3c0000);
+		/*memset(image, 0x22, 1280*720);
+		for(int x = 0; x < 1280; x++) {
+			image[x] = 0xFF00FF00;
+		}
+		for(int y = 0; y < 720; y++) {
+			image[y*1280] = 0xFF0000FF;
+		}
+		for(int d = 0; d < 720; d++) {
+			image[(d*1280)+d] = 0xFFFF0000;
+		}
+		swizzle_image(out_buffer, image);*/
+		memset(out_buffer, 0x22, 0x3c0000);
+		int x = (cos((double) i * 6.28 / 60.0) * 300.0 + 350.0);
+		int y = (sin((double) i * 6.28 / 60.0) * 300.0 + 350.0);
+		blit(out_buffer, reswitched_logo_data, 64, 64, x, y);
+		
 		ASSERT_OK(fail_vi, surface_queue_buffer(&surf, slot, NULL, &qbo, &status));
-		printf("IGBP_QUEUE_BUFFER:\n");
-		printf("  status: %d\n", status);
-		printf("  qbo:\n");
-		printf("    width: %d\n", qbo.width);
-		printf("    height: %d\n", qbo.height);
-		printf("    transform_hint: %d\n", qbo.transform_hint);
-		printf("    num_pending_buffers: %d\n", qbo.num_pending_buffers);
 		if(status != 0) {
 			printf("IGBP_QUEUE_BUFFER failure: %d\n", status);
 			goto fail_vi;
 		}
 
-		printf("done with frame %d\n", i);
-    
-		printf("i sleep\n");
-		svcSleepThread(1000000000);
-		printf("woke\n");
+		svcSleepThread(16666667);
 	}
   
 fail_vi:
