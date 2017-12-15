@@ -101,7 +101,6 @@ int main() {
   
 	result_t r;
 	ASSERT_OK(fail, sm_init());
-	ASSERT_OK(fail_sm, am_init());
 	ASSERT_OK(fail_sm, gpu_initialize());
 	ASSERT_OK(fail_gpu, vi_init());
 	
@@ -111,30 +110,13 @@ int main() {
 	ASSERT_OK(fail_vi, vi_open_display("Default", &display));
 	printf("opened display\n");
 	
-	//ASSERT_OK(fail_vi, vi_iads_set_display_enabled(true, &display));
-  
 	surface_t surf;
-
-	aruid_t aruid;
-	ASSERT_OK(fail_vi, am_iwc_get_applet_resource_user_id(&aruid));
-	printf("got aruid: %d\n", aruid);
-
-	ASSERT_OK(fail_vi, am_isc_approve_to_display());
-	printf("approved to display\n");
-	
-	ASSERT_OK(fail_vi, am_iwc_acquire_foreground_rights());
-	printf("got foreground rights\n");
-
 	uint64_t layer_id;
-	ASSERT_OK(fail_vi, am_isc_create_managed_display_layer(&layer_id));
-	dbg_printf("managed layer id from am: %ld", layer_id);
+	ASSERT_OK(fail_vi, vi_create_managed_layer(1, &display, 0, &layer_id));
+	printf("managed layer id: %d\n", layer_id);
 	
-	//uint64_t my_layer_id;
-	//ASSERT_OK(fail_vi, vi_create_managed_layer(1, &display, 0, &my_layer_id));
-	//dbg_printf("managed layer id: %d", my_layer_id);
-	
-	ASSERT_OK(fail_vi, vi_open_layer("Default", layer_id, aruid, &surf));
-	dbg_printf("opened managed layer");
+	ASSERT_OK(fail_vi, vi_open_layer("Default", layer_id, 0, &surf));
+	printf("opened managed layer\n");
 
 	printf("adjusting refcount\n");
 	ASSERT_OK(fail_vi, binder_adjust_refcount(&surf.igbp_binder, 1, 0));
@@ -225,17 +207,6 @@ int main() {
 		}
 
 		uint32_t *out_buffer = gpu_buffer_memory + (slot * 0x3c0000);
-		/*memset(image, 0x22, 1280*720);
-		for(int x = 0; x < 1280; x++) {
-			image[x] = 0xFF00FF00;
-		}
-		for(int y = 0; y < 720; y++) {
-			image[y*1280] = 0xFF0000FF;
-		}
-		for(int d = 0; d < 720; d++) {
-			image[(d*1280)+d] = 0xFFFF0000;
-		}
-		swizzle_image(out_buffer, image);*/
 		memset(out_buffer, 0x22, 0x3c0000);
 		int x = (cos((double) i * 6.28 / 60.0) * 300.0 + 350.0);
 		int y = (sin((double) i * 6.28 / 60.0) * 300.0 + 350.0);
@@ -254,8 +225,6 @@ fail_vi:
 	vi_finalize();
 fail_gpu:
 	gpu_finalize();
-fail_am:
-	am_finalize();
 fail_sm:
 	sm_finalize();
 fail:
