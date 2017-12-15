@@ -6,7 +6,7 @@
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/vi.h>
 #include<libtransistor/display/parcel.h>
-#include<libtransistor/display/surface.h>
+#include<libtransistor/display/graphic_buffer_queue.h>
 
 #include<string.h>
 #include<malloc.h>
@@ -105,7 +105,18 @@ result_t vi_open_display(const char *name, display_t *out) {
 	return ipc_send(iads_object, &rq, &rs);
 }
 
-result_t vi_open_layer(const char *display_name, uint64_t layer_id, uint64_t aruid, surface_t *surface) {
+result_t vi_close_display(display_t *display) {
+	ipc_request_t rq = ipc_default_request;
+	rq.request_id = 1020;
+	rq.raw_data_size = sizeof(display->id);
+	rq.raw_data = (uint32_t*) &display->id;
+
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+
+	return ipc_send(imds_object, &rq, &rs);
+}
+
+result_t vi_open_layer(const char *display_name, uint64_t layer_id, uint64_t aruid, igbp_t *igbp) {
 	uint8_t parcel_buf[0x210];
 	ipc_buffer_t parcel_ipc_buf;
 	parcel_ipc_buf.addr = parcel_buf;
@@ -146,15 +157,13 @@ result_t vi_open_layer(const char *display_name, uint64_t layer_id, uint64_t aru
 		return r;
 	}
 
-	surface->layer_id = layer_id;
-
 	parcel_t parcel;
 	r = parcel_load(&parcel, parcel_buf);
 	if(r) {
 		return r;
 	}
 
-	r = parcel_read_binder(&parcel, &(surface->igbp_binder));
+	r = parcel_read_binder(&parcel, &(igbp->igbp_binder));
 	if(r) {
 		return r;
 	}
@@ -186,7 +195,18 @@ result_t vi_create_managed_layer(uint32_t unknown, display_t *display, uint64_t 
 	return ipc_send(imds_object, &rq, &rs);
 }
 
-result_t vi_create_stray_layer(uint32_t unknown, display_t *display, surface_t *surface) {
+result_t vi_destroy_managed_layer(uint64_t layer_id) {
+	ipc_request_t rq = ipc_default_request;
+	rq.request_id = 2011;
+	rq.raw_data_size = sizeof(layer_id);
+	rq.raw_data = (uint32_t*) &layer_id;
+
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+
+	return ipc_send(imds_object, &rq, &rs);
+}
+
+result_t vi_create_stray_layer(uint32_t unknown, display_t *display, uint64_t *layer_id, igbp_t *igbp) {
 	uint8_t parcel_buf[0x210];
 	ipc_buffer_t parcel_ipc_buf;
 	parcel_ipc_buf.addr = parcel_buf;
@@ -225,7 +245,7 @@ result_t vi_create_stray_layer(uint32_t unknown, display_t *display, surface_t *
 		return r;
 	}
 
-	surface->layer_id = rs_vals.layer_id;
+	*layer_id = rs_vals.layer_id;
 
 	parcel_t parcel;
 	r = parcel_load(&parcel, parcel_buf);
@@ -233,7 +253,7 @@ result_t vi_create_stray_layer(uint32_t unknown, display_t *display, surface_t *
 		return r;
 	}
 
-	r = parcel_read_binder(&parcel, &(surface->igbp_binder));
+	r = parcel_read_binder(&parcel, &(igbp->igbp_binder));
 	if(r) {
 		return r;
 	}
@@ -302,13 +322,13 @@ static result_t ipc_simple_helper(ipc_object_t *object, uint32_t rqid, void* in,
 }
 
 // imds
-result_t vi_imds_set_layer_visibility(bool visible, surface_t *layer) {
+result_t vi_imds_set_layer_visibility(bool visible, uint64_t layer_id) {
 	struct {
 		uint32_t visible;
 		uint64_t layer_id;
 	} params;
 	params.visible = visible;
-	params.layer_id = layer->layer_id;
+	params.layer_id = layer_id;
 	return ipc_simple_helper(&imds_object, 6002, &params, sizeof(params), NULL, 0);
 }
 
@@ -322,23 +342,23 @@ result_t vi_imds_set_display_layer_stack(uint32_t stack, display_t *display) {
 	return ipc_simple_helper(&imds_object, 4203, &params, sizeof(params), NULL, 0);  
 }
 
-result_t vi_imds_add_to_layer_stack(uint32_t stack, surface_t *layer) {
+result_t vi_imds_add_to_layer_stack(uint32_t stack, uint64_t layer_id) {
 	struct {
 		uint32_t stack;
 		uint64_t layer_id;
 	} params;
 	params.stack = stack;
-	params.layer_id = layer->layer_id;
+	params.layer_id = layer_id;
 	return ipc_simple_helper(&imds_object, 6000, &params, sizeof(params), NULL, 0);  
 }
 
-result_t vi_imds_set_conductor_layer(bool conductor, surface_t *layer) {
+result_t vi_imds_set_conductor_layer(bool conductor, uint64_t layer_id) {
 	struct {
 		uint32_t conductor;
 		uint64_t layer_id;
 	} params;
 	params.conductor = conductor;
-	params.layer_id = layer->layer_id;
+	params.layer_id = layer_id;
 	return ipc_simple_helper(&imds_object, 8000, &params, sizeof(params), NULL, 0);  
 }
 
@@ -348,15 +368,15 @@ result_t vi_imds_set_content_visibility(bool visible) {
 }
 
 // isds
-result_t vi_isds_get_z_order_count_min(surface_t *layer, int64_t *z_count_min) {
+result_t vi_isds_get_z_order_count_min(uint64_t layer_id, int64_t *z_count_min) {
 	return ipc_simple_helper(&isds_object, 1200,
-	                         &layer->layer_id, sizeof(layer->layer_id),
+	                         &layer_id, sizeof(layer_id),
 	                         z_count_min, sizeof(*z_count_min));
 }
 
-result_t vi_isds_get_z_order_count_max(surface_t *layer, int64_t *z_count_max) {
+result_t vi_isds_get_z_order_count_max(uint64_t layer_id, int64_t *z_count_max) {
 	return ipc_simple_helper(&isds_object, 1202,
-	                         &layer->layer_id, sizeof(layer->layer_id),
+	                         &layer_id, sizeof(layer_id),
 	                         z_count_max, sizeof(*z_count_max));
 }
 
@@ -373,7 +393,7 @@ result_t vi_isds_get_display_logical_resolution(display_t *display, int32_t *wid
 	return r;
 }
 
-result_t vi_isds_set_layer_position(float x, float y, surface_t *layer) {
+result_t vi_isds_set_layer_position(float x, float y, uint64_t layer_id) {
 	struct {
 		float x;
 		float y;
@@ -381,19 +401,19 @@ result_t vi_isds_set_layer_position(float x, float y, surface_t *layer) {
 	} params;
 	params.x = x;
 	params.y = y;
-	params.layer_id = layer->layer_id;
+	params.layer_id = layer_id;
 	return ipc_simple_helper(&isds_object, 2201,
 	                         &params, sizeof(params),
 	                         NULL, 0);
 }
 
-result_t vi_isds_set_layer_size(surface_t *layer, int64_t width, int64_t height) {
+result_t vi_isds_set_layer_size(uint64_t layer_id, int64_t width, int64_t height) {
 	struct {
 		uint64_t layer_id;
 		int64_t width;
 		int64_t height;
 	} params;
-	params.layer_id = layer->layer_id;
+	params.layer_id = layer_id;
 	params.width = width;
 	params.height = height;
 	return ipc_simple_helper(&isds_object, 2203,
@@ -401,31 +421,31 @@ result_t vi_isds_set_layer_size(surface_t *layer, int64_t width, int64_t height)
 	                         NULL, 0);  
 }
 
-result_t vi_isds_get_layer_z(surface_t *layer, int64_t *z) {
+result_t vi_isds_get_layer_z(uint64_t layer_id, int64_t *z) {
 	return ipc_simple_helper(&isds_object, 2204,
-	                         &layer->layer_id, sizeof(layer->layer_id),
+	                         &layer_id, sizeof(layer_id),
 	                         z, sizeof(*z));
 }
 
-result_t vi_isds_set_layer_z(surface_t *layer, int64_t z) {
+result_t vi_isds_set_layer_z(uint64_t layer_id, int64_t z) {
 	struct {
 		uint64_t layer_id;
 		int64_t z;
 	} params;
-	params.layer_id = layer->layer_id;
+	params.layer_id = layer_id;
 	params.z = z;
 	return ipc_simple_helper(&isds_object, 2205,
 	                         &params, sizeof(params),
 	                         NULL, 0);
 }
 
-result_t vi_isds_set_layer_visibility(bool visible, surface_t *layer) {
+result_t vi_isds_set_layer_visibility(bool visible, uint64_t layer_id) {
 	struct {
 		uint32_t visible;
 		uint64_t layer_id;
 	} params;
 	params.visible = visible;
-	params.layer_id = layer->layer_id;
+	params.layer_id = layer_id;
 	return ipc_simple_helper(&isds_object, 2207,
 	                         &params, sizeof(params),
 	                         NULL, 0);
@@ -443,13 +463,13 @@ result_t vi_iads_set_display_enabled(bool enabled, display_t *display) {
 	                         NULL, 0);
 }
 
-result_t vi_iads_set_layer_scaling_mode(uint32_t scaling_mode, surface_t *layer) {
+result_t vi_iads_set_layer_scaling_mode(uint32_t scaling_mode, uint64_t layer_id) {
 	struct {
 		uint32_t scaling_mode;
 		uint64_t layer_id;
 	} params;
 	params.scaling_mode = scaling_mode;
-	params.layer_id = layer->layer_id;
+	params.layer_id = layer_id;
 	return ipc_simple_helper(&iads_object, 2101,
 	                         &params, sizeof(params),
 	                         NULL, 0);

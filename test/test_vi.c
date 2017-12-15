@@ -19,17 +19,18 @@ int main() {
 	display_t display;
 	ASSERT_OK(fail_vi, vi_open_display("Default", &display));
 
-	surface_t surf;
-	ASSERT_OK(fail_vi, vi_create_stray_layer(1, &display, &surf));
+	uint64_t layer_id;
+	igbp_t igbp;
+	ASSERT_OK(fail_vi, vi_create_stray_layer(1, &display, &layer_id, &igbp));
 
 	printf("created stray layer\n");
-	printf("  layer id: 0x%lx\n", surf.layer_id);
-	printf("  binder handle: 0x%x\n", surf.igbp_binder.handle);
+	printf("  layer id: 0x%lx\n", layer_id);
+	printf("  binder handle: 0x%x\n", igbp.igbp_binder.handle);
 
 	int status;
 	queue_buffer_output_t qbo;
   
-	ASSERT_OK(fail_vi, surface_connect(&surf, 2, false, &status, &qbo));
+	ASSERT_OK(fail_vi, igbp_connect(&igbp, 2, false, &status, &qbo));
 
 	printf("IGBP_CONNECT:\n");
 	printf("  status: %d\n", status);

@@ -48,6 +48,11 @@ result_t parcel_read_binder(parcel_t *parcel, binder_t *binder) {
 	flat_binder_object_t *fbo = parcel_read_inplace(parcel, sizeof(flat_binder_object_t));
 	// we really should check type/length, but I'm not sure how at the moment
 	binder->handle = fbo->handle;
+
+	// adjust refcount
+	result_t r;
+	if((r = binder_adjust_refcount(binder, 1, 0)) != RESULT_OK) { return r; }
+	if((r = binder_adjust_refcount(binder, 1, 1)) != RESULT_OK) { return r; }
 	return RESULT_OK;
 }
 

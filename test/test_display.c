@@ -12,8 +12,6 @@
 		goto label; \
 	}
 
-static uint8_t __attribute__((aligned(0x1000))) gpu_buffer_memory[0x780000];
-
 int pdep(uint32_t mask, uint32_t value) {
 	uint32_t out = 0;
 	for (int shift = 0; shift < 32; shift++) {
@@ -66,7 +64,7 @@ void blit(uint32_t *buffer, uint32_t *image, int w, int h, int tx, int ty) {
   }
 }
 
-static uint32_t swizzle_image(uint32_t *graphics_buffer, uint32_t *image) {
+static void swizzle_image(uint32_t *graphics_buffer, uint32_t *image) {
 	uint32_t p = 0;
 	uint32_t swizzle = 0x384b;
 	for (uint32_t y = 0; y < 720; y++) {
@@ -103,124 +101,32 @@ int main() {
 	ASSERT_OK(fail, sm_init());
 	ASSERT_OK(fail_sm, gpu_initialize());
 	ASSERT_OK(fail_gpu, vi_init());
+	ASSERT_OK(fail_vi, display_init());
 	
-	printf("init'd gpu and vi\n");
-	
-	display_t display;
-	ASSERT_OK(fail_vi, vi_open_display("Default", &display));
-	printf("opened display\n");
-	
+	printf("initialized all modules\n");
+
 	surface_t surf;
-	uint64_t layer_id;
-	ASSERT_OK(fail_vi, vi_create_managed_layer(1, &display, 0, &layer_id));
-	printf("managed layer id: %d\n", layer_id);
-	
-	ASSERT_OK(fail_vi, vi_open_layer("Default", layer_id, 0, &surf));
-	printf("opened managed layer\n");
-
-	printf("adjusting refcount\n");
-	ASSERT_OK(fail_vi, binder_adjust_refcount(&surf.igbp_binder, 1, 0));
-	ASSERT_OK(fail_vi, binder_adjust_refcount(&surf.igbp_binder, 1, 1));
-	printf("adjusted refcount\n");
-
-	// get native handle?
-  
-	int status;
-	queue_buffer_output_t qbo;
-	ASSERT_OK(fail_vi, surface_connect(&surf, 2, false, &status, &qbo));
-	
-	printf("IGBP_CONNECT:\n");
-	printf("  status: %d\n", status);
-	printf("  qbo:\n");
-	printf("    width: %d\n", qbo.width);
-	printf("    height: %d\n", qbo.height);
-	printf("    transform_hint: %d\n", qbo.transform_hint);
-	printf("    num_pending_buffers: %d\n", qbo.num_pending_buffers);
-	
-	if(status != 0) {
-		printf("IGBP_CONNECT failure\n");
-		goto fail_vi;
-	}
-
-	ASSERT_OK(fail_vi, vi_iads_set_layer_scaling_mode(2, &surf));
-
-	// get vsync event?
-
-	// QUERY?
-	
-	ASSERT_OK(fail_vi, svcSetMemoryAttribute(gpu_buffer_memory, sizeof(gpu_buffer_memory), 0x8, 0x8));
-  
-	gpu_buffer_t gpu_buffer;
-	ASSERT_OK(fail_vi, gpu_buffer_initialize(&gpu_buffer, gpu_buffer_memory, sizeof(gpu_buffer_memory), 0, 0, 0x1000, 0));
-  
-	graphic_buffer_t graphic_buffer_0;
-	graphic_buffer_0.width = 1280;
-	graphic_buffer_0.height = 720;
-	graphic_buffer_0.stride = 1280;
-	graphic_buffer_0.format = 1;
-	graphic_buffer_0.usage = 0xb00;
-	graphic_buffer_0.gpu_buffer = &gpu_buffer;
-  
-	graphic_buffer_t graphic_buffer_1 = graphic_buffer_0;
-	graphic_buffer_0.unknown = 0;
-	graphic_buffer_1.unknown = 0x3c0000;
-  
-	ASSERT_OK(fail_vi, surface_set_preallocated_buffer(&surf, 0, &graphic_buffer_0));
-	ASSERT_OK(fail_vi, surface_set_preallocated_buffer(&surf, 1, &graphic_buffer_1));
-
-	bool requested[2] = {0, 0};
-
-	printf("adding to layer stacks...\n");
-	ASSERT_OK(fail_vi, vi_imds_add_to_layer_stack(0x5, &surf));
-	ASSERT_OK(fail_vi, vi_imds_add_to_layer_stack(0x4, &surf));
-	ASSERT_OK(fail_vi, vi_imds_add_to_layer_stack(0x2, &surf));
-	ASSERT_OK(fail_vi, vi_imds_add_to_layer_stack(0xA, &surf));
-	ASSERT_OK(fail_vi, vi_imds_add_to_layer_stack(0x0, &surf));
-	ASSERT_OK(fail_vi, vi_isds_set_layer_z(&surf, 2));
+	ASSERT_OK(fail_display, display_open_layer(&surf));
 	
 	for(int i = 0; i < 600; i++) {
-		int slot;
-		fence_t fence;
-		ASSERT_OK(fail_vi, surface_dequeue_buffer(&surf, 1280, 720, 1, 0xb00, false, &status, &slot, &fence, NULL));
-		if(status != 0) {
-			printf("IGBP_DEQUEUE_BUFFER failure: %d\n", status);
-			goto fail_vi;
-		}    
-    
-		if(!requested[slot]) {
-			graphic_buffer_t graphic_buffer_rq;
-			ASSERT_OK(fail_vi, surface_request_buffer(&surf, slot, &status, &graphic_buffer_rq));
-			if(status != 0) {
-				printf("IGBP_REQUEST_BUFFER failure: %d\n", status);
-				goto fail_vi;
-			}
-			printf("IGBP_REQUEST_BUFFER:\n");
-			printf("  status: %d\n", status);
+		printf("begin frame %d\n", i);
+		uint32_t *out_buffer;
+		ASSERT_OK(fail_display, surface_dequeue_buffer(&surf, &out_buffer));
 
-			memory_info_t meminfo;
-			uint32_t pageinfo;
-			ASSERT_OK(fail_vi, svcQueryMemory(&meminfo, &pageinfo, gpu_buffer_memory));
-			printf("gpu buffer dev refcount: %d\n", meminfo.device_ref_count);
-			printf("gpu buffer size: 0x%lx (should be 0x%lx)\n", meminfo.size, sizeof(gpu_buffer_memory));
-      
-			requested[slot] = true;
+		for(int p = 0; p < (0x3c0000/sizeof(uint32_t)); p++) {
+			out_buffer[p] = 0xFF0000FF;
 		}
-
-		uint32_t *out_buffer = gpu_buffer_memory + (slot * 0x3c0000);
-		memset(out_buffer, 0x22, 0x3c0000);
 		int x = (cos((double) i * 6.28 / 60.0) * 300.0 + 350.0);
 		int y = (sin((double) i * 6.28 / 60.0) * 300.0 + 350.0);
 		blit(out_buffer, reswitched_logo_data, 64, 64, x, y);
 		
-		ASSERT_OK(fail_vi, surface_queue_buffer(&surf, slot, NULL, &qbo, &status));
-		if(status != 0) {
-			printf("IGBP_QUEUE_BUFFER failure: %d\n", status);
-			goto fail_vi;
-		}
-
+		ASSERT_OK(fail_display, surface_queue_buffer(&surf));
+		
 		svcSleepThread(16666667);
 	}
-  
+
+fail_display:
+	display_finalize();
 fail_vi:
 	vi_finalize();
 fail_gpu:

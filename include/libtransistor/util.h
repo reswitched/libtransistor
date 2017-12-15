@@ -1,5 +1,7 @@
 #pragma once
 
+#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+
 void *find_empty_memory_block(size_t len);
 char nybble2hex(u8 nybble);
 void hexdump(const void *rawbuf, size_t size);
