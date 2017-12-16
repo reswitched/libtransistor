@@ -116,6 +116,19 @@ result_t vi_close_display(display_t *display) {
 	return ipc_send(imds_object, &rq, &rs);
 }
 
+result_t vi_get_display_vsync_event(display_t *display) {
+	ipc_request_t rq = ipc_default_request;
+	rq.request_id = 5202;
+	rq.raw_data_size = sizeof(display->id);
+	rq.raw_data = (uint32_t*) &display->id;
+
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	rs.num_copy_handles = 1;
+	rs.copy_handles = &display->vsync;
+	
+	return ipc_send(iads_object, &rq, &rs);
+}
+
 result_t vi_open_layer(const char *display_name, uint64_t layer_id, uint64_t aruid, igbp_t *igbp) {
 	uint8_t parcel_buf[0x210];
 	ipc_buffer_t parcel_ipc_buf;

@@ -8,6 +8,7 @@
 result_t vi_init();
 result_t vi_open_display(const char *name, display_t *out);
 result_t vi_close_display(display_t *display);
+result_t vi_get_display_vsync_event(display_t *display);
 result_t vi_create_stray_layer(uint32_t unknown, display_t *display, uint64_t *layer_id, igbp_t *igbp);
 result_t vi_open_layer(const char *display_name, uint64_t layer_id, aruid_t aruid, igbp_t *igbp);
 result_t vi_create_managed_layer(uint32_t unknown, display_t *display, uint64_t aruid, uint64_t *layer_id);

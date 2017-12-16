@@ -28,13 +28,13 @@ result_t svcSleepThread(u64 nanos);
 result_t svcGetThreadPriority(u32 *priority, thread_h thread);
 result_t svcSetThreadCoreMask(thread_h thread, u32 in, u64 in2);
 u32 svcGetCurrentProcessorNumber();
-result_t svcSignalEvent(handle_t event);
-result_t svcClearEvent(handle_t event);
+result_t svcSignalEvent(wevent_h event);
+result_t svcClearEvent(event_h event);
 result_t svcMapSharedMemory(shared_memory_h block, void *addr, u64 size, u32 permission);
 result_t svcUnmapSharedMemory(shared_memory_h block, void *addr, u64 size);
 result_t svcCreateTransferMemory(transfer_memory_h *out, void *addr, u64 size, u32 permission);
 result_t svcCloseHandle(handle_t handle);
-result_t svcResetSignal(handle_t signal);
+result_t svcResetSignal(handle_t signal); // revent or process
 result_t svcWaitSynchronization(u32 *handle_index, handle_t *handles, u32 num_handles, u64 timeout);
 result_t svcCancelSynchronization(handle_t handle);
 void svcArbitrateLock(thread_h current_thread, void *lock, thread_h requesting_thread);

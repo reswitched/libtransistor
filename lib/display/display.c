@@ -59,6 +59,17 @@ fail:
 	return r;
 }
 
+result_t display_get_vsync_event(revent_h *event) {
+	if(display.vsync == 0) {
+		result_t r;
+		if((r = vi_get_display_vsync_event(&display)) != RESULT_OK) {
+			return r;
+		}
+	}
+	*event = display.vsync;
+	return RESULT_OK;
+}
+
 void display_finalize() {
 	vi_close_display(&display);
 }
