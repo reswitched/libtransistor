@@ -24,7 +24,8 @@ extern "C" {
 #include<libtransistor/ipc/am.h>
 #include<libtransistor/gpu/gpu.h>
 #include<libtransistor/hid.h>
-  
+#include<libtransistor/gfx/gfx.h>
+	
 #ifdef __cplusplus
 }
 #endif
