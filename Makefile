@@ -4,7 +4,7 @@ libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexd
 libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o context.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
-# for building newlib
+# for building newlib and sdl
 export LD
 export CC
 export CXX
@@ -106,6 +106,10 @@ $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
 		-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
 		-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
 		-DLLVM_CONFIG_PATH=llvm-config$(LLVM_POSTFIX)
+
+sdl/build/Makefile:
+	mkdir -p $(@D)
+	cd sdl/build; ../configure --host=aarch64-none-switch CC=$(CC) CFLAGS="$(CFLAGS_FOR_SDL)" --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads
 
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*

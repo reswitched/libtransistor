@@ -4,3 +4,6 @@
 [submodule "compiler-rt"]
 	path = compiler-rt
 	url = https://github.com/llvm-mirror/compiler-rt.git
+[submodule "sdl"]
+	path = sdl
+	url = https://github.com/reswitched/sdl-libtransistor.git
