@@ -5,5 +5,5 @@
 	path = compiler-rt
 	url = https://github.com/llvm-mirror/compiler-rt.git
 [submodule "sdl"]
-	path = sdl
+	path = sdl2
 	url = https://github.com/reswitched/sdl-libtransistor.git

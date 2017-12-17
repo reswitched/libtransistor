@@ -29,8 +29,6 @@ all: $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a \
 	$(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nro.so,$(libtransistor_TESTS))) \
 	$(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nso.so,$(libtransistor_TESTS)))
 
-sdlm: $(LIBTRANSISTOR_HOME)/build/sdl/Makefile
-
 run_tests: run_helloworld_test run_hexdump_test run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test run_multiple_set_heap_size_test
 
 run_bsd_test: $(LIBTRANSISTOR_HOME)/build/test/test_bsd.nro $(LIBTRANSISTOR_HOME)/test_helpers/bsd.rb
@@ -110,13 +108,13 @@ $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
 		-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
 		-DLLVM_CONFIG_PATH=llvm-config$(LLVM_POSTFIX)
 
-$(LIBTRANSISTOR_HOME)/build/sdl_install/lib/libSDL2.a: $(LIBTRANSISTOR_HOME)/build/sdl/Makefile
-	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl/
-	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl/ install
+$(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a: $(LIBTRANSISTOR_HOME)/build/sdl2/Makefile
+	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl2/
+	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl2/ install
 
-$(LIBTRANSISTOR_HOME)/build/sdl/Makefile:
+$(LIBTRANSISTOR_HOME)/build/sdl2/Makefile:
 	mkdir -p $(@D)
-	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl/configure --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --enable-video --prefix=$(LIBTRANSISTOR_HOME)/build/sdl_install/
+	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl2/configure --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --enable-video --prefix=$(LIBTRANSISTOR_HOME)/build/sdl2_install/
 
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
