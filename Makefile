@@ -1,12 +1,13 @@
 include libtransistor.mk
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl
 libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o context.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
 # for building newlib and sdl
 export LD
 export CC
+export CFLAGS
 export CXX
 export AS
 export AR
@@ -27,6 +28,8 @@ all: $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a \
 	$(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nso,$(libtransistor_TESTS))) \
 	$(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nro.so,$(libtransistor_TESTS))) \
 	$(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nso.so,$(libtransistor_TESTS)))
+
+sdlm: $(LIBTRANSISTOR_HOME)/build/sdl/Makefile
 
 run_tests: run_helloworld_test run_hexdump_test run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test run_multiple_set_heap_size_test
 
@@ -107,9 +110,13 @@ $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
 		-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
 		-DLLVM_CONFIG_PATH=llvm-config$(LLVM_POSTFIX)
 
-sdl/build/Makefile:
+$(LIBTRANSISTOR_HOME)/build/sdl_install/lib/libSDL2.a: $(LIBTRANSISTOR_HOME)/build/sdl/Makefile
+	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl/
+	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl/ install
+
+$(LIBTRANSISTOR_HOME)/build/sdl/Makefile:
 	mkdir -p $(@D)
-	cd sdl/build; ../configure --host=aarch64-none-switch CC=$(CC) CFLAGS="$(CFLAGS_FOR_SDL)" --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads
+	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl/configure --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --prefix=$(LIBTRANSISTOR_HOME)/build/sdl_install/
 
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
@@ -122,4 +129,3 @@ clean_compiler-rt:
 	rm -rf build/compiler-rt
 
 distclean: clean clean_newlib clean_compiler-rt
-
