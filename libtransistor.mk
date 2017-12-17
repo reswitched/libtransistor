@@ -14,7 +14,7 @@ CXX := clang++$(LLVM_POSTFIX)
 AS := llvm-mc$(LLVM_POSTFIX)
 AR := llvm-ar$(LLVM_POSTFIX)
 LD_FLAGS := -Bsymbolic --shared --emit-relocs --no-gc-sections --no-undefined -T $(LIBTRANSISTOR_HOME)/link.T -L $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/ -L $(LIBTRANSISTOR_HOME)/libssp/ -L $(LIBTRANSISTOR_HOME)/build/compiler-rt/lib/linux/ -L $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/
-CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -fuse-ld=lld -O0 -mtune=cortex-a53 -target aarch64-none-linux-gnu -nostdlib -nostdlibinc $(INCLUDES) $(WARNINGS) -D__SWITCH__=1
+CC_FLAGS := -g -fPIC -ffreestanding -fexceptions -fuse-ld=lld -O0 -mtune=cortex-a53 -target aarch64-none-linux-gnu -nostdlib -nostdlibinc $(INCLUDES) -D__SWITCH__=1
 AR_FLAGS := rcs
 # for compatiblity
 CFLAGS := $(CC_FLAGS)

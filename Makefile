@@ -7,7 +7,6 @@ libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(lib
 # for building newlib and sdl
 export LD
 export CC
-export CFLAGS
 export CXX
 export AS
 export AR
@@ -45,16 +44,16 @@ run_%_test: $(LIBTRANSISTOR_HOME)/build/test/test_%.nro
 
 $(LIBTRANSISTOR_HOME)/build/test/%.o: $(LIBTRANSISTOR_HOME)/test/%.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(WARNINGS) -c -o $@ $<
 
 # Disable stack protector for crt0_common
 $(LIBTRANSISTOR_HOME)/build/lib/crt0_common.o: $(LIBTRANSISTOR_HOME)/lib/crt0_common.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) -fno-stack-protector -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(WARNINGS) -fno-stack-protector -c -o $@ $<
 
 $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(WARNINGS) -c -o $@ $<
 
 $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.S
 	mkdir -p $(@D)
@@ -114,7 +113,7 @@ $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a: $(LIBTRANSISTOR_HOME)/bu
 
 $(LIBTRANSISTOR_HOME)/build/sdl2/Makefile:
 	mkdir -p $(@D)
-	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl2/configure --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --enable-video --prefix=$(LIBTRANSISTOR_HOME)/build/sdl2_install/
+	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl2/configure "CFLAGS=$(CFLAGS)" --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --enable-video --prefix=$(LIBTRANSISTOR_HOME)/build/sdl2_install/
 
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
