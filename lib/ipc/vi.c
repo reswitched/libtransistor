@@ -39,6 +39,11 @@ result_t vi_init() {
 	}
   
 	result_t r;
+	r = sm_init();
+	if(r) {
+		goto fail_no_service;
+	}
+	
 	r = sm_get_service(&imrs_object, "vi:m");
 	if(r) {
 		goto fail_no_service;
@@ -489,9 +494,12 @@ result_t vi_iads_set_layer_scaling_mode(uint32_t scaling_mode, uint64_t layer_id
 }
 
 void vi_finalize() {
-	ipc_close(isds_object);
-	ipc_close(ihosbd_object);
-	ipc_close(iads_object);
-	ipc_close(imrs_object);
-	ipc_close_domain(vi_domain);
+	if(vi_initialized) {
+		ipc_close(isds_object);
+		ipc_close(ihosbd_object);
+		ipc_close(iads_object);
+		ipc_close(imrs_object);
+		ipc_close_domain(vi_domain);
+	}
+	vi_initialized = false;
 }

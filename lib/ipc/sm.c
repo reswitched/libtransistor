@@ -41,6 +41,7 @@ void sm_finalize() {
 	if(sm_initialized) {
 		ipc_close(sm_object);
 	}
+	sm_initialized = false;
 }
 
 result_t sm_get_service(ipc_object_t *out_object, char *name) {

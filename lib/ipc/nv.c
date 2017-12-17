@@ -26,6 +26,11 @@ result_t nv_init() {
 	}
   
 	result_t r;
+	r = sm_init();
+	if(r) {
+		goto fail_no_service;
+	}
+	
 	r = sm_get_service(&nv_object, "nvdrv:a");
 	if(r) {
 		goto fail_no_service;
@@ -176,6 +181,9 @@ int nv_close(int fd) {
 }
 
 void nv_finalize() {
-	svcCloseHandle(transfer_mem);
-	ipc_close(nv_object);
+	if(nv_initialized) {
+		svcCloseHandle(transfer_mem);
+		ipc_close(nv_object);
+	}
+	nv_initialized = false;
 }

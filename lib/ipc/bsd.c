@@ -34,7 +34,12 @@ result_t bsd_init() {
 	if(bsd_initialized) {
 		return RESULT_OK;
 	}
-  
+
+	r = sm_init();
+	if(r) {
+		return r;
+	}
+	
 	if(libtransistor_context->has_bsd) {
 		borrowing_bsd = true;
 		bsd_object = libtransistor_context->bsd_object;

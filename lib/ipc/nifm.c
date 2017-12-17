@@ -4,13 +4,23 @@
 #include<libtransistor/ipc/sm.h>
 
 static ipc_object_t nifm_g_object;
+static bool nifm_initialized = false;
 
 result_t nifm_init() {
+	if(nifm_initialized) {
+		return RESULT_OK;
+	}
+	
 	result_t r;
 	ipc_object_t nifm_s_object;
 	ipc_request_t rq = ipc_default_request;
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 
+	r = sm_init();
+	if(r) {
+		return r;
+	}
+	
 	r = sm_get_service(&nifm_s_object, "nifm:s");
 	if(r)
 		return r;
@@ -43,5 +53,8 @@ result_t nifm_get_ip_address(u32 *ip) {
 }
 
 void nifm_finalize() {
-	ipc_close(nifm_g_object);
+	if(nifm_initialized) {
+		ipc_close(nifm_g_object);
+	}
+	nifm_initialized = false;
 }

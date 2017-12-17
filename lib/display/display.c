@@ -4,13 +4,28 @@
 #include<libtransistor/display/display.h>
 
 static display_t display;
+static bool display_initialized = false;
 
 result_t display_init() {
+	if(display_initialized) {
+		return RESULT_OK;
+	}
+	
 	result_t r;
 
+	if((r = gpu_initialize()) != RESULT_OK) {
+		return r;
+	}
+
+	if((r = vi_init()) != RESULT_OK) {
+		return r;
+	}
+	
 	if((r = vi_open_display("Default", &display)) != RESULT_OK) {
 		return r;
 	}
+
+	display_initialized = true;
 	
 	return RESULT_OK;
 }
@@ -71,5 +86,8 @@ result_t display_get_vsync_event(revent_h *event) {
 }
 
 void display_finalize() {
-	vi_close_display(&display);
+	if(display_initialized) {
+		vi_close_display(&display);
+	}
+	display_initialized = false;
 }

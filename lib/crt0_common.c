@@ -2,6 +2,16 @@
 #include<libtransistor/util.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc/bsd.h>
+#include<libtransistor/hid.h>
+#include<libtransistor/ipc/hid.h>
+#include<libtransistor/display/display.h>
+#include<libtransistor/gpu/gpu.h>
+#include<libtransistor/ipc/nv.h>
+#include<libtransistor/ipc/vi.h>
+#include<libtransistor/ipc/am.h>
+#include<libtransistor/ipc/ro.h>
+#include<libtransistor/ipc/nifm.h>
+#include<libtransistor/ipc/sm.h>
 
 #include<assert.h>
 #include<stdio.h>
@@ -123,6 +133,22 @@ static bool dont_finalize_bsd = false;
 static jmp_buf exit_jmpbuf;
 static int exit_value;
 
+static void finalize_modules() {
+	hid_finalize();
+	hid_ipc_finalize();
+	display_finalize();
+	gpu_finalize();
+	nv_finalize();
+	vi_finalize();
+	am_finalize();
+	ro_finalize();
+	nifm_finalize();
+	if(!dont_finalize_bsd) {
+		bsd_finalize();
+	}
+	sm_finalize();
+}
+
 int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	if(relocate(aslr_base)) {
 		return -4;
@@ -217,10 +243,8 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		ret = exit_value;
 	}
 
-	if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0 && !dont_finalize_bsd) {
-		bsd_finalize();
-	}
-
+	finalize_modules();
+	
 	return ret;
 }
 

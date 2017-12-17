@@ -20,6 +20,11 @@ result_t hid_ipc_init() {
 	}
 
 	result_t r;
+	r = sm_init();
+	if(r) {
+		goto fail_no_service;
+	}
+	
 	r = sm_get_service(&hid_server_object, "hid");
 	if(r) {
 		goto fail_no_service;
@@ -66,6 +71,9 @@ result_t hid_ipc_get_shared_memory_handle(shared_memory_h *handle) {
 }
 
 void hid_ipc_finalize() {
-	ipc_close(applet_resource_object);
-	ipc_close(hid_server_object);
+	if(hid_ipc_initialized) {
+		ipc_close(applet_resource_object);
+		ipc_close(hid_server_object);
+	}
+	hid_ipc_initialized = false;
 }

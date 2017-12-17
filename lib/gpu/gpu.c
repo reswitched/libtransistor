@@ -6,8 +6,13 @@
 
 static int nvas_fd;
 static int nvmap_fd;
+static bool gpu_initialized = false;
 
 result_t gpu_initialize() {
+	if(gpu_initialized) {
+		return RESULT_OK;
+	}
+	
 	result_t r;
 	if((r = nv_init()) != RESULT_OK) {
 		return r;
@@ -22,7 +27,9 @@ result_t gpu_initialize() {
 		r = nv_result;
 		goto fail_nvas;
 	}
-  
+
+	gpu_initialized = true;
+	
 	return RESULT_OK;
 
 fail_nvmap:
@@ -109,7 +116,9 @@ result_t gpu_buffer_initialize_from_id(gpu_buffer_t *gpu_b, uint32_t id) {
 }
 
 void gpu_finalize() {
-	nv_close(nvmap_fd);
-	nv_close(nvas_fd);
-	nv_finalize();
+	if(gpu_initialized) {
+		nv_close(nvmap_fd);
+		nv_close(nvas_fd);
+	}
+	gpu_initialized = false;
 }

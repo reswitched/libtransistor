@@ -12,8 +12,13 @@
 #include <netinet/in.h>
 
 static ipc_object_t ro_object;
+static bool ro_initialized = false;
 
 result_t ro_init() {
+	if(ro_initialized) {
+		return RESULT_OK;
+	}
+	
 	result_t r;
 	uint64_t raw[] = {0};
 	handle_t handle = 0xffff8001;
@@ -37,12 +42,16 @@ result_t ro_init() {
 		ipc_close(ro_object);
 		return r;
 	}
-	
+
+	ro_initialized = true;
 	return 0;
 }
 
 void ro_finalize() {
-	ipc_close(ro_object);
+	if(ro_initialized) {
+		ipc_close(ro_object);
+	}
+	ro_initialized = false;
 }
 
 result_t ro_load_nro(void **nro_base, void *nro_heap, uint64_t nro_size, void *nro_bss, uint64_t bss_size) {

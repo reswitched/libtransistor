@@ -32,6 +32,11 @@ result_t am_init() {
 	}
 
 	result_t r;
+	r = sm_init();
+	if(r) {
+		goto fail_no_service;
+	}
+	
 	r = sm_get_service(&proxy_service_object, "appletAE");
 	if(r) {
 		goto fail_no_service;
@@ -127,9 +132,12 @@ result_t am_iwc_acquire_foreground_rights() {
 }
 
 void am_finalize() {
-	ipc_close(iwc_object);
-	ipc_close(isc_object);
-	ipc_close(proxy_object);
-	ipc_close(proxy_service_object);
-	ipc_close_domain(am_domain);
+	if(am_initialized) {
+		ipc_close(iwc_object);
+		ipc_close(isc_object);
+		ipc_close(proxy_object);
+		ipc_close(proxy_service_object);
+		ipc_close_domain(am_domain);
+	}
+	am_initialized = false;
 }
