@@ -116,7 +116,7 @@ $(LIBTRANSISTOR_HOME)/build/sdl_install/lib/libSDL2.a: $(LIBTRANSISTOR_HOME)/bui
 
 $(LIBTRANSISTOR_HOME)/build/sdl/Makefile:
 	mkdir -p $(@D)
-	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl/configure --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --prefix=$(LIBTRANSISTOR_HOME)/build/sdl_install/
+	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl/configure --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --enable-video --prefix=$(LIBTRANSISTOR_HOME)/build/sdl_install/
 
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
