@@ -26,18 +26,18 @@ static ipc_object_t iresolver_object;
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
 static transfer_memory_h transfer_mem;
 
-static bool bsd_initialized = false;
+static int bsd_initializations = 0;
 
 result_t bsd_init() {
 	result_t r;
 
-	if(bsd_initialized) {
+	if(bsd_initializations++ > 0) {
 		return RESULT_OK;
 	}
 
 	r = sm_init();
 	if(r) {
-		return r;
+		goto fail;
 	}
 	
 	if(libtransistor_context->has_bsd) {
@@ -48,28 +48,26 @@ result_t bsd_init() {
 		r = sm_get_service(&bsd_object, "bsd:u");
 		if(r) {
 			r = sm_get_service(&bsd_object, "bsd:s");
-			if(r) { return r; }
+			if(r) {
+				goto fail_sm;
+			}
 		}
   
 		r = ipc_convert_to_domain(&bsd_object, &bsd_domain);
 		if(r) {
-			ipc_close_domain(bsd_domain);
-			return r;
+			goto fail_bsd_domain;
 		}
 	}
   
 	r = sm_get_service(&iresolver_object, "sfdnsres");
 	if(r) {
-		ipc_close_domain(bsd_domain);
-		return r;
+		goto fail_bsd_domain;
 	}
 
 	if(!borrowing_bsd) {
 		r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
 		if(r) {
-			ipc_close_domain(bsd_domain);
-			ipc_close(iresolver_object);
-			return r;
+			goto fail_iresolver;
 		}
 
 		struct {
@@ -106,23 +104,33 @@ result_t bsd_init() {
 		r = ipc_send(bsd_object, &rq, &rs);
     
 		if(r) {
-			svcCloseHandle(transfer_mem);
-			ipc_close_domain(bsd_domain);
-			ipc_close(iresolver_object);
-			return r;
+			goto fail_transfer_memory;
 		}
     
 		if(response[0]) {
 			bsd_errno = response[0];
-			svcCloseHandle(transfer_mem);
-			ipc_close_domain(bsd_domain);
-			ipc_close(iresolver_object);
-			return LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+			r = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+			goto fail_transfer_memory;
 		}
 	}
 
-	bsd_initialized = true;
-	return 0;
+	sm_finalize();
+	
+	return RESULT_OK;
+
+fail_transfer_memory:
+	svcCloseHandle(transfer_mem);
+fail_iresolver:
+	ipc_close(iresolver_object);
+fail_bsd_domain:
+	if(!borrowing_bsd) {
+		ipc_close_domain(bsd_domain);
+	}
+fail_sm:
+	sm_finalize();
+fail:
+	bsd_initializations--;
+	return r;
 }
 
 ipc_object_t bsd_get_object() {
@@ -703,7 +711,7 @@ int bsd_close(int socket) {
 }
 
 void bsd_finalize() {
-	if(bsd_initialized) {
+	if(--bsd_initializations == 0) {
 		ipc_close(iresolver_object);
 		if(!borrowing_bsd) {
 			svcCloseHandle(transfer_mem);
@@ -711,7 +719,6 @@ void bsd_finalize() {
 			ipc_close_domain(bsd_domain);
 		}
 		borrowing_bsd = false;
-		bsd_initialized = false;
 	}
 }
 

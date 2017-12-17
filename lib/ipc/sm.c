@@ -8,7 +8,7 @@
 #include<string.h>
 
 static ipc_object_t sm_object;
-static bool sm_initialized = false;
+static int sm_initializations = 0;
 
 static u64 str2u64(char *str) {
 	char buf[8];
@@ -24,24 +24,27 @@ static u64 str2u64(char *str) {
 }
 
 result_t sm_init() {
-	if(sm_initialized) {
+	if(sm_initializations++ > 0) {
 		return RESULT_OK;
 	}
   
 	sm_object.object_id = -1;
 	result_t r = svcConnectToNamedPort(&(sm_object.session), "sm:");
 	if(r != RESULT_OK) {
-		return r;
+		goto fail;
 	}
-	sm_initialized = true;
+
 	return RESULT_OK;
+
+fail:
+	sm_initializations--;
+	return r;
 }
 
 void sm_finalize() {
-	if(sm_initialized) {
+	if(--sm_initializations == 0) {
 		ipc_close(sm_object);
 	}
-	sm_initialized = false;
 }
 
 result_t sm_get_service(ipc_object_t *out_object, char *name) {

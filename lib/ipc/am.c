@@ -13,7 +13,7 @@ static ipc_object_t proxy_service_object; // nn::am::service::I{ApplicationProxy
 static ipc_object_t proxy_object;
 static ipc_object_t isc_object; // nn::am::service::ISelfController
 static ipc_object_t iwc_object; // nn::am::service::IWindowController
-static bool am_initialized = false;
+static int am_initializations = 0;
 
 static result_t get_object(ipc_object_t iface, int command, ipc_object_t *out) {
 	ipc_request_t rq = ipc_default_request;
@@ -27,19 +27,19 @@ static result_t get_object(ipc_object_t iface, int command, ipc_object_t *out) {
 }
 
 result_t am_init() {
-	if(am_initialized) {
+	if(am_initializations++ > 0) {
 		return RESULT_OK;
 	}
 
 	result_t r;
 	r = sm_init();
 	if(r) {
-		goto fail_no_service;
+		goto fail;
 	}
 	
 	r = sm_get_service(&proxy_service_object, "appletAE");
 	if(r) {
-		goto fail_no_service;
+		goto fail_sm;
 	}
 
 	r = ipc_convert_to_domain(&proxy_service_object, &am_domain);
@@ -75,8 +75,7 @@ result_t am_init() {
 	if((r = get_object(proxy_object, 1, &isc_object)) != 0) { goto fail_proxy; }
 	if((r = get_object(proxy_object, 2, &iwc_object)) != 0) { goto fail_isc; }
 
-	am_initialized = true;
-
+	sm_finalize();
 	return 0;
 
 fail_isc:
@@ -87,7 +86,10 @@ fail_proxy_service:
 	ipc_close(proxy_service_object);
 fail_domain:
 	ipc_close_domain(am_domain);
-fail_no_service:
+fail_sm:
+	sm_finalize();
+fail:
+	am_initializations--;
 	return r;
 }
 
@@ -132,12 +134,11 @@ result_t am_iwc_acquire_foreground_rights() {
 }
 
 void am_finalize() {
-	if(am_initialized) {
+	if(--am_initializations == 0) {
 		ipc_close(iwc_object);
 		ipc_close(isc_object);
 		ipc_close(proxy_object);
 		ipc_close(proxy_service_object);
 		ipc_close_domain(am_domain);
 	}
-	am_initialized = false;
 }

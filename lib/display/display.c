@@ -4,30 +4,36 @@
 #include<libtransistor/display/display.h>
 
 static display_t display;
-static bool display_initialized = false;
+static int display_initializations = 0;
 
 result_t display_init() {
-	if(display_initialized) {
+	if(display_initializations++ > 0) {
 		return RESULT_OK;
 	}
 	
 	result_t r;
 
 	if((r = gpu_initialize()) != RESULT_OK) {
-		return r;
+		goto fail;
 	}
 
 	if((r = vi_init()) != RESULT_OK) {
-		return r;
+		goto fail_gpu;
 	}
 	
 	if((r = vi_open_display("Default", &display)) != RESULT_OK) {
-		return r;
+		goto fail_vi;
 	}
 
-	display_initialized = true;
-	
 	return RESULT_OK;
+
+fail_vi:
+	vi_finalize();
+fail_gpu:
+	gpu_finalize();
+fail:
+	display_initializations--;
+	return r;
 }
 
 result_t display_open_layer(surface_t *surface) {
@@ -86,8 +92,7 @@ result_t display_get_vsync_event(revent_h *event) {
 }
 
 void display_finalize() {
-	if(display_initialized) {
+	if(--display_initializations == 0) {
 		vi_close_display(&display);
 	}
-	display_initialized = false;
 }

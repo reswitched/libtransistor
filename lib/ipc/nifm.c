@@ -4,10 +4,10 @@
 #include<libtransistor/ipc/sm.h>
 
 static ipc_object_t nifm_g_object;
-static bool nifm_initialized = false;
+static int nifm_initializations = 0;
 
 result_t nifm_init() {
-	if(nifm_initialized) {
+	if(nifm_initializations++ > 0) {
 		return RESULT_OK;
 	}
 	
@@ -18,12 +18,13 @@ result_t nifm_init() {
 
 	r = sm_init();
 	if(r) {
-		return r;
+		goto fail;
 	}
 	
 	r = sm_get_service(&nifm_s_object, "nifm:s");
-	if(r)
-		return r;
+	if(r) {
+		goto fail_sm;
+	}
 
 	rq.request_id = 4;
 	rs.num_objects = 1;
@@ -31,14 +32,21 @@ result_t nifm_init() {
 	nifm_g_object.object_id = -1;
 
 	r = ipc_send(nifm_s_object, &rq, &rs);
-	if(r)
-	{
-		ipc_close(nifm_s_object);
-		return r;
+	if(r) {
+		goto fail_s_object;
 	}
 
 	ipc_close(nifm_s_object);
+	sm_finalize();
 	return 0;
+
+fail_s_object:
+	ipc_close(nifm_s_object);
+fail_sm:
+	sm_finalize();
+fail:
+	nifm_initializations--;
+	return r;
 }
 
 result_t nifm_get_ip_address(u32 *ip) {
@@ -53,8 +61,7 @@ result_t nifm_get_ip_address(u32 *ip) {
 }
 
 void nifm_finalize() {
-	if(nifm_initialized) {
+	if(--nifm_initializations == 0) {
 		ipc_close(nifm_g_object);
 	}
-	nifm_initialized = false;
 }

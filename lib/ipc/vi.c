@@ -20,7 +20,7 @@ static ipc_object_t iads_object; // nn::visrv::sf::IApplicationDisplayService
 static ipc_object_t imds_object; // nn::visrv::sf::IManagerDisplayService
 static ipc_object_t isds_object; // nn::visrv::sf::ISystemDisplayService
 static ipc_object_t ihosbd_object; // nn::visrv::sf::IHOSBinderDriver
-static bool vi_initialized = false;
+static int vi_initializations = 0;
 
 static result_t get_object(ipc_object_t iface, int command, ipc_object_t *out) {
 	ipc_request_t rq = ipc_default_request;
@@ -34,19 +34,19 @@ static result_t get_object(ipc_object_t iface, int command, ipc_object_t *out) {
 }
 
 result_t vi_init() {
-	if(vi_initialized) {
+	if(vi_initializations++ > 0) {
 		return RESULT_OK;
 	}
   
 	result_t r;
 	r = sm_init();
 	if(r) {
-		goto fail_no_service;
+		goto fail;
 	}
 	
 	r = sm_get_service(&imrs_object, "vi:m");
 	if(r) {
-		goto fail_no_service;
+		goto fail_sm;
 	}
 
 	r = ipc_convert_to_domain(&imrs_object, &vi_domain);
@@ -75,8 +75,7 @@ result_t vi_init() {
 	if((r = get_object(iads_object, 101, &isds_object)) != 0) { goto fail_ihosbd; }
 	if((r = get_object(iads_object, 102, &imds_object)) != 0) { goto fail_isds; }
 
-	vi_initialized = true;
-  
+	sm_finalize();
 	return 0;
   
 fail_isds:
@@ -89,7 +88,10 @@ fail_imrs:
 	ipc_close(imrs_object);
 fail_domain:
 	ipc_close_domain(vi_domain);
-fail_no_service:
+fail_sm:
+	sm_finalize();
+fail:
+	vi_initializations--;
 	return r;
 }
 
@@ -494,12 +496,11 @@ result_t vi_iads_set_layer_scaling_mode(uint32_t scaling_mode, uint64_t layer_id
 }
 
 void vi_finalize() {
-	if(vi_initialized) {
+	if(--vi_initializations == 0) {
 		ipc_close(isds_object);
 		ipc_close(ihosbd_object);
 		ipc_close(iads_object);
 		ipc_close(imrs_object);
 		ipc_close_domain(vi_domain);
 	}
-	vi_initialized = false;
 }

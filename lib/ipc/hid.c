@@ -9,25 +9,25 @@
 #include<string.h>
 #include<malloc.h>
 
-static bool hid_ipc_initialized = false;
+static int hid_ipc_initializations = 0;
 
 static ipc_object_t hid_server_object;
 static ipc_object_t applet_resource_object;
 
 result_t hid_ipc_init() {
-	if(hid_ipc_initialized) {
+	if(hid_ipc_initializations++ > 0) {
 		return RESULT_OK;
 	}
 
 	result_t r;
 	r = sm_init();
 	if(r) {
-		goto fail_no_service;
+		goto fail;
 	}
 	
 	r = sm_get_service(&hid_server_object, "hid");
 	if(r) {
-		goto fail_no_service;
+		goto fail_sm;
 	}
 
 	{
@@ -49,13 +49,15 @@ result_t hid_ipc_init() {
 		}
 	}
 
-	hid_ipc_initialized = true;
-
+	sm_finalize();
 	return 0;
 
 fail_hid_server_object:
 	ipc_close(hid_server_object);
-fail_no_service:
+fail_sm:
+	sm_finalize();
+fail:
+	hid_ipc_initializations--;
 	return r;
 }
 
@@ -71,9 +73,8 @@ result_t hid_ipc_get_shared_memory_handle(shared_memory_h *handle) {
 }
 
 void hid_ipc_finalize() {
-	if(hid_ipc_initialized) {
+	if(--hid_ipc_initializations == 0) {
 		ipc_close(applet_resource_object);
 		ipc_close(hid_server_object);
 	}
-	hid_ipc_initialized = false;
 }
