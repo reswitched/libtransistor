@@ -223,7 +223,7 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout
 	ipc_server_object_t *dispatch = NULL;
 	if(msg.message_type == 5) {
 		dispatch = &sess->hipc_manager_object;
-	} else if(msg.message_type == 4) {
+	} else if(msg.message_type == 4 || msg.message_type == 0) { // TODO: remove message_type == 0
 		if(sess->is_domain) {
 			uint16_t data_size = raw_data[0] >> 16;
 			
