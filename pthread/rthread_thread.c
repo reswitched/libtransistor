@@ -172,8 +172,6 @@ _thread_key_zero(int key)
 void
 _rthread_init(void)
 {
-	return;
-#if 0
 	pthread_t thread = pthread_self();
 	struct sigaction sa;
 
@@ -187,7 +185,7 @@ _rthread_init(void)
 	thread->attr = _rthread_attr_default;
 
 	/* get libc to start using our callbacks */
-	{
+	/*{
 		struct thread_callbacks cb = { 0 };
 
 #ifndef TCB_HAVE_MD_GET
@@ -206,7 +204,7 @@ _rthread_init(void)
 		dlctl(NULL, DL_SETTHREADLCK, _rthread_dl_lock);
 	}
 #endif
-
+	*/
 	/*
 	 * Set the handler on the signal used for cancelation and
 	 * suspension, and make sure it's unblocked
@@ -219,8 +217,6 @@ _rthread_init(void)
 	sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL);
 
 	_threads_ready = 1;
-
-	_malloc_init(1);
 
 	_rthread_debug(1, "rthread init\n");
 #endif

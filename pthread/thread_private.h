@@ -7,11 +7,13 @@
 
 #include <stdio.h>		/* for FILE and __isthreaded */
 
+#if 0
 #define _MALLOC_MUTEXES 4
 void _malloc_init(int);
 #ifdef __LIBC__
 PROTO_NORMAL(_malloc_init);
 #endif /* __LIBC__ */
+#endif
 
 /*
  * The callbacks needed by libc to handle the threaded case.
@@ -281,7 +283,7 @@ __END_HIDDEN_DECLS
 #define	_SPINLOCK_UNLOCKED _ATOMIC_LOCK_UNLOCKED
 
 struct __sem {
-	_atomic_lock_t lock;
+	phal_mutex lock;
 	volatile int waitcount;
 	volatile int value;
 	int shared;

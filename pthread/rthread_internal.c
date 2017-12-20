@@ -82,8 +82,8 @@ _spinunlock(volatile _atomic_lock_t *lock)
 	*lock = _ATOMIC_LOCK_UNLOCKED;
 }
 
-static void
-_rthread_internal_init(void)
+void
+_rthread_internal_init(phal_tid maintid)
 {
 	pthread_t thread = &_initial_thread;
 	//struct tib *tib;
@@ -91,9 +91,7 @@ _rthread_internal_init(void)
 	if (_threads_inited)
 		return;
 
-	//tib = TIB_GET();
-	//tib->tib_thread = thread;
-	//thread->tib = tib;
+	thread->tib_tid = phal_thread_maintid();
 	*phal_get_tls() = thread;
 
 	thread->donesem.lock = _SPINLOCK_UNLOCKED;
