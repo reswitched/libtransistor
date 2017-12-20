@@ -36,14 +36,17 @@ static void runSemTests(void)
   pthread_test_semaphore2();
 
   printf("Semaphore test #3\n");
-  pthread_test_semaphore3();
-
+  printf("Our semaphore's getvalue returns the number of pre-signaling values");
+  printf("which is different from Linux returning the number of waiting threads.\n");
+  //pthread_test_semaphore3();
 
   printf("Semaphore test #4\n");
-  pthread_test_semaphore4();
+  printf("Ditto, and this tests cancel behavior, which we don't implement (yet).\n");
+  //pthread_test_semaphore4();
 
   printf("Semaphore test #4t\n");
-  pthread_test_semaphore4t();
+  printf("Ditto\n");
+  //pthread_test_semaphore4t();
 
   printf("Semaphore test #5\n");
   pthread_test_semaphore5();
@@ -95,11 +98,11 @@ static void runThreadTests(void)
   pthread_test_exit3();
 
   printf("Exit test #4\n");
-  printf("Cannot call pthread_exit() on a thread not created through pthread_create()");
+  printf("Cannot call pthread_exit() on a thread not created through pthread_create()\n");
   //pthread_test_exit4();
 
   printf("Exit test #5\n");
-  printf("Cannot call pthread_exit() on a thread not created through pthread_create()");
+  printf("Cannot call pthread_exit() on a thread not created through pthread_create()\n");
   //pthread_test_exit5();
 
   /* These tests can not be run in series with other tests,
@@ -213,13 +216,15 @@ static void runMutexTests(void)
   pthread_test_mutex3r();
 
   printf("Mutex test #4\n");
-  pthread_test_mutex4();
+  printf("Depends on undefined behavior. OpenBSD's undef is to abort, causing test to fail.\n");
+  //pthread_test_mutex4();
 
   printf("Mutex test #5\n");
   pthread_test_mutex5();
 
   printf("Mutex test #6\n");
-  pthread_test_mutex6();
+  printf("Depends on undefined behavior (unlocking from another thread). OpenBSD's undef is to abort, causing test to fail.\n");
+  //pthread_test_mutex6();
 
   printf("Mutex test #6e\n");
   pthread_test_mutex6e();
@@ -228,7 +233,8 @@ static void runMutexTests(void)
   pthread_test_mutex6es();
 
   printf("Mutex test #6n\n");
-  pthread_test_mutex6n();
+  printf("Depends on undefined behavior (unlocking from another thread). OpenBSD's undef is to abort, causing test to fail.\n");
+  //pthread_test_mutex6n();
 
   printf("Mutex test #6r\n");
   pthread_test_mutex6r();
@@ -237,10 +243,12 @@ static void runMutexTests(void)
   pthread_test_mutex6rs();
 
   printf("Mutex test #6s\n");
-  pthread_test_mutex6s();
+  printf("Depends on undefined behavior (unlocking from another thread). OpenBSD's undef is to abort, causing test to fail.\n");
+  //pthread_test_mutex6s();
 
   printf("Mutex test #7\n");
-  pthread_test_mutex7();
+  printf("Depends on undefined behavior (unlocking an unlocked mutex). OpenBSD's undef is to abort, causing test to fail.\n");
+  //pthread_test_mutex7();
 
   printf("Mutex test #7e\n");
   pthread_test_mutex7e();
@@ -287,47 +295,49 @@ static void runCondvarTests()
   printf("Condvar test #1\n");
   pthread_test_condvar1();
 
-  //printf("Condvar test #1-1\n");
-  //pthread_test_condvar1_1();
+  /*printf("Condvar test #1-1\n");
+  pthread_test_condvar1_1();
 
-  //printf("Condvar test #1-2\n");
-  //pthread_test_condvar1_2();
+  printf("Condvar test #1-2\n");
+  pthread_test_condvar1_2();*/
 
-  //printf("Condvar test #2\n");
-  //pthread_test_condvar2();
+  printf("Condvar test #2\n");
+  pthread_test_condvar2();
 
-  //printf("Condvar test #2-1\n");
-  //pthread_test_condvar2_1();
+  printf("Condvar test #2-1\n");
+  pthread_test_condvar2_1();
 
-  //printf("Condvar test #3\n");
-  //pthread_test_condvar3();
+  printf("Condvar test #3\n");
+  pthread_test_condvar3();
 
-  //printf("Condvar test #3-1\n");
-  //pthread_test_condvar3_1();
+  printf("Condvar test #3-1\n");
+  pthread_test_condvar3_1();
 
-  //printf("Condvar test #3-2\n");
-  //pthread_test_condvar3_2();
+  printf("Condvar test #3-2\n");
+  pthread_test_condvar3_2();
 
-  //printf("Condvar test #3-3\n");
-  //pthread_test_condvar3_3();
+  printf("Condvar test #3-3\n");
+  pthread_test_condvar3_3();
 
-  //printf("Condvar test #4\n");
-  //pthread_test_condvar4();
+  printf("Condvar test #4\n");
+  pthread_test_condvar4();
 
-  //printf("Condvar test #5\n");
-  //pthread_test_condvar5();
+  printf("Condvar test #5\n");
+  pthread_test_condvar5();
 
-  //printf("Condvar test #6\n");
+  printf("Condvar test #6\n");
+  printf("Test is unsound. It relies on timing. Needs to be rewritten.\n");
+  // TODO: Rewrite this to be sound
   //pthread_test_condvar6();
 
-  //printf("Condvar test #7\n");
-  //pthread_test_condvar7();
+  printf("Condvar test #7\n");
+  pthread_test_condvar7();
 
-  //printf("Condvar test #8\n");
-  //pthread_test_condvar8();
+  printf("Condvar test #8\n");
+  pthread_test_condvar8();
 
-  //printf("Condvar test #9\n");
-  //pthread_test_condvar9();
+  printf("Condvar test #9\n");
+  pthread_test_condvar9();
 
 }
 
@@ -342,44 +352,44 @@ static void runRwlockTests()
   printf("Rwlock test #1\n");
   pthread_test_rwlock1();
 
-  //printf("Rwlock test #2\n");
-  //pthread_test_rwlock2();
+  printf("Rwlock test #2\n");
+  pthread_test_rwlock2();
 
-  //printf("Rwlock test #2t\n");
-  //pthread_test_rwlock2t();
+  printf("Rwlock test #2t\n");
+  pthread_test_rwlock2t();
 
-  //printf("Rwlock test #3\n");
-  //pthread_test_rwlock3();
+  printf("Rwlock test #3\n");
+  pthread_test_rwlock3();
 
-  //printf("Rwlock test #3t\n");
-  //pthread_test_rwlock3t();
+  printf("Rwlock test #3t\n");
+  pthread_test_rwlock3t();
 
-  //printf("Rwlock test #4\n");
-  //pthread_test_rwlock4();
+  printf("Rwlock test #4\n");
+  pthread_test_rwlock4();
 
-  //printf("Rwlock test #4t\n");
-  //pthread_test_rwlock4t();
+  printf("Rwlock test #4t\n");
+  pthread_test_rwlock4t();
 
-  //printf("Rwlock test #5\n");
-  //pthread_test_rwlock5();
+  printf("Rwlock test #5\n");
+  pthread_test_rwlock5();
 
-  //printf("Rwlock test #5t\n");
-  //pthread_test_rwlock5t();
+  printf("Rwlock test #5t\n");
+  pthread_test_rwlock5t();
 
-  //printf("Rwlock test #6\n");
-  //pthread_test_rwlock6();
+  printf("Rwlock test #6\n");
+  pthread_test_rwlock6();
 
-  //printf("Rwlock test #6t\n");
-  //pthread_test_rwlock6t();
+  printf("Rwlock test #6t\n");
+  pthread_test_rwlock6t();
 
-  //printf("Rwlock test #6t2\n");
-  //pthread_test_rwlock6t2();
+  printf("Rwlock test #6t2\n");
+  pthread_test_rwlock6t2();
 
-  //printf("Rwlock test #7\n");
-  //pthread_test_rwlock7();
+  printf("Rwlock test #7\n");
+  pthread_test_rwlock7();
 
-  //printf("Rwlock test #8\n");
-  //pthread_test_rwlock8();
+  printf("Rwlock test #8\n");
+  pthread_test_rwlock8();
 
 }
 
@@ -472,14 +482,14 @@ void pte_test_main()
       printf("   Test iteration #%d\n\n",i);
       printf("=========================\n");
 
-      runThreadTests(); 
-      runMiscTests();
-      //runMutexTests();
-      //runSemTests();
-      //runCondvarTests();
-      //runBarrierTests();
-      //runSpinTests();
-      //runRwlockTests();
+      ///runThreadTests(); 
+      ///runMiscTests();
+      ///runMutexTests();
+      ///runSemTests();
+      runCondvarTests();
+      runBarrierTests();
+      runSpinTests();
+      runRwlockTests();
       //runCancelTests();
       //runExceptionTests();
       //runBenchTests();

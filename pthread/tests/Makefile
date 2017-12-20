@@ -57,14 +57,14 @@ MISC_TEST_OBJS = \
 # Depends on unimplemented newlib functions
 #  stress1.o \
 
-#SEM_TEST_OBJS = \
-#  semaphore1.o \
-#  semaphore2.o \
-#  semaphore3.o \
-#  semaphore4.o \
-#  semaphore4t.o \
-#  semaphore5.o \
-#  semaphore6.o
+SEM_TEST_OBJS = \
+  semaphore1.o \
+  semaphore2.o \
+  semaphore3.o \
+  semaphore4.o \
+  semaphore4t.o \
+  semaphore5.o \
+  semaphore6.o
 
 BARRIER_TEST_OBJS = \
   barrier1.o \
@@ -116,39 +116,37 @@ SPIN_TEST_OBJS = \
 
 CONDVAR_TEST_OBJS = \
   condvar1.o \
+  condvar2.o \
+  condvar2_1.o \
+  condvar3.o \
+  condvar3_1.o \
+  condvar3_2.o \
+  condvar3_3.o \
+  condvar4.o \
+  condvar5.o \
+  condvar6.o \
+  condvar7.o \
+  condvar8.o \
+  condvar9.o 
 # Needs NP method
 #  condvar1_1.o \
 #  condvar1_2.o \
-# Needs ftime
-#  condvar2.o \
-#  condvar2_1.o \
-#  condvar3.o \
-#  condvar3_1.o \
-#  condvar3_2.o \
-#  condvar3_3.o \
-#  condvar4.o \
-#  condvar5.o \
-#  condvar6.o \
-#  condvar7.o \
-#  condvar8.o \
-#  condvar9.o 
-#
+
 RWLOCK_TEST_OBJS = \
   rwlock1.o \
-# Needs ftime
-#  rwlock2.o \
-#  rwlock2_t.o \
-#  rwlock3.o \
-#  rwlock3_t.o \
-#  rwlock4.o \
-#  rwlock4_t.o \
-#  rwlock5.o \
-#  rwlock5_t.o \
-#  rwlock6.o \
-#  rwlock6_t.o \
-#  rwlock6_t2.o \
-#  rwlock7.o \
-#  rwlock8.o
+  rwlock2.o \
+  rwlock2_t.o \
+  rwlock3.o \
+  rwlock3_t.o \
+  rwlock4.o \
+  rwlock4_t.o \
+  rwlock5.o \
+  rwlock5_t.o \
+  rwlock6.o \
+  rwlock6_t.o \
+  rwlock6_t2.o \
+  rwlock7.o \
+  rwlock8.o
 
 CANCEL_TEST_OBJS = \
   cancel1.o \
@@ -179,7 +177,7 @@ OBJS = $(MUTEX_TEST_OBJS) $(MISC_OBJS) $(MISC_TEST_OBJS) $(THREAD_TEST_OBJS) $(S
 
 all: $(PROGRAM).nro
 
-CFLAGS += -I../ -I../sys/switch
+CFLAGS += -I../ -I../sys/switch -finstrument-functions
 $(PROGRAM).nro.so: ${OBJS} $(LIBTRANSITOR_NRO_LIB) $(LIBTRANSISTOR_COMMON_LIBS)
 	$(LD) $(LD_FLAGS) -o $@ ${OBJS} $(LIBTRANSISTOR_NRO_LDFLAGS)
 
