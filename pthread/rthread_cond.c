@@ -40,6 +40,7 @@ pthread_cond_init(pthread_cond_t *condp, const pthread_condattr_t *attr)
 		cond->clock = CLOCK_REALTIME;
 	else
 		cond->clock = (*attr)->ca_clock;
+	phal_semaphore_create(&cond->sem);
 	*condp = cond;
 
 	return (0);
@@ -75,7 +76,7 @@ _rthread_cond_timedwait(pthread_cond_t cond, pthread_mutex_t *mutexp,
 	pthread_t self = pthread_self();
 	int error, rv = 0, canceled = 0, mutex_count = 0;
 	clockid_t clock = cond->clock;
-	int seq = cond->seq;
+	//int seq = cond->seq;
 	//PREP_CANCEL_POINT(tib);
 
 	_rthread_debug(5, "%p: cond_timed %p,%p (%p)\n", self,
@@ -98,13 +99,15 @@ _rthread_cond_timedwait(pthread_cond_t cond, pthread_mutex_t *mutexp,
 	if (mutex->type == PTHREAD_MUTEX_RECURSIVE)
 		mutex_count = mutex->count;
 
+	// Lock the semaphore now, and unlock user mutex then.
+	// This ensures the atomicity of thread wakeups.
+	phal_semaphore_lock(&cond->sem);
+
 	pthread_mutex_unlock(mutexp);
 
 	do {
 		/* If ``seq'' wraps you deserve to lose a signal. */
-		// TODO: _twait ?
-		return (ENOSYS);
-		//error = _twait(&cond->seq, seq, clock, abs);
+		error = phal_semaphore_wait(&cond->sem, abs);
 		/*
 		* If we took a normal signal (not from cancellation) then
 		* we should just go back to sleep without changing state
@@ -120,6 +123,7 @@ _rthread_cond_timedwait(pthread_cond_t cond, pthread_mutex_t *mutexp,
 		canceled = 1;
 
 	pthread_mutex_lock(mutexp);
+	phal_semaphore_unlock(&cond->sem);
 
 	/* restore the mutex's count */
 	if (mutex->type == PTHREAD_MUTEX_RECURSIVE)
@@ -176,10 +180,11 @@ pthread_cond_signal(pthread_cond_t *condp)
 
 	cond = *condp;
 
-	cond->seq++;
-	// TODO: _wake
-	//count = _wake(&cond->seq, 1);
-	return ENOSYS;
+	//cond->seq++;
+	phal_semaphore_lock(&cond->sem);
+	phal_semaphore_signal(&cond->sem);
+	phal_semaphore_unlock(&cond->sem);
+	count = 1; // We don't know :shrug:
 
 	_rthread_debug(5, "%p: cond_signal %p, %d awaken\n", pthread_self(),
 	    (void *)cond, count);
@@ -198,13 +203,14 @@ pthread_cond_broadcast(pthread_cond_t *condp)
 
 	cond = *condp;
 
-	cond->seq++;
+	//cond->seq++;
 #if notyet
 	count = _requeue(&cond->seq, 1, INT_MAX, &cond->mutex->lock);
 #else
-	// TODO: _wake
-	//count = _wake(&cond->seq, INT_MAX);
-	return ENOSYS;
+	phal_semaphore_lock(&cond->sem);
+	phal_semaphore_broadcast(&cond->sem);
+	phal_semaphore_unlock(&cond->sem);
+	count = 0; // We don't know :shrug:
 #endif
 
 	_rthread_debug(5, "%p: cond_broadcast %p, %d awaken\n", pthread_self(),
