@@ -43,6 +43,8 @@
  * Thread locks then trylocks mutex (attempted recursive lock).
  * The thread should lock first time and EBUSY second time.
  *
+ * PHAL fix: unlocking an  unlocked mutex returns 0.
+ *
  * Depends on API functions:
  *      pthread_create()
  *      pthread_mutexattr_init()
@@ -69,7 +71,8 @@ static void * locker(void * arg)
   assert(pthread_mutex_trylock(&mutex) == EBUSY);
   lockCount++;
   assert(pthread_mutex_unlock(&mutex) == 0);
-  assert(pthread_mutex_unlock(&mutex) == EPERM);
+  // Unlocking an unlocked mutex returns 0;
+  assert(pthread_mutex_unlock(&mutex) == 0);
 
   return (void *) 555;
 }
@@ -91,6 +94,8 @@ pthread_test_mutex7n()
 
   assert(pthread_create(&t, NULL, locker, NULL) == 0);
 
+  // Yield multiple times. Yes this sucks. Mephisto doesn't understand timeouts.
+  phal_thread_sleep(1000);
   phal_thread_sleep(1000);
 
   assert(lockCount == 2);

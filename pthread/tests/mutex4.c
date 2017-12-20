@@ -80,6 +80,7 @@ pthread_test_mutex4()
   assert(pthread_mutex_lock(&mutex1) == 0);
   /*
    * NORMAL (fast) mutexes don't check ownership.
+   * STRICT mutexes do. The default is STRICT !
    */
   assert(pthread_create(&t, NULL, unlocker, (void *) 0) == 0);
   assert(pthread_join(t, NULL) == 0);

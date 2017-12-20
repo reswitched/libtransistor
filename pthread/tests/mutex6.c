@@ -44,6 +44,9 @@
  * Thread locks mutex twice (recursive lock).
  * Locking thread should deadlock on second attempt.
  *
+ * PHAL: The default is actually PTHREAD_MUTEX_STRICT_NP, which aborts in case
+ * of undef behavior. We'll force set it to PTHREAD_MUTEX_NORMAL.
+ *
  * Depends on API functions:
  *	pthread_mutex_lock()
  *	pthread_mutex_trylock()
