@@ -181,24 +181,23 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 			dbg_printf("invalid context magic");
 			return -2;
 		}
-    
-		ctx->log_buffer = log_buffer;
-		ctx->log_length = &log_length;
-		ctx->return_flags = 0;
-    
-		argv = ctx->argv;
-		argc = (int) ctx->argc;
 
-		if(ctx->version != LIBTRANSISTOR_CONTEXT_VERSION) {
+		if(ctx->version < 2 || ctx->version > LIBTRANSISTOR_CONTEXT_VERSION) {
 			dbg_printf("mismatched context version");
 			return -2;
 		}
-    
-		if(ctx->size != sizeof(libtransistor_context_t)) {
-			dbg_printf("mismatched context size");
-			return -3;
-		}
+
+		ctx->log_buffer = log_buffer;
+		ctx->log_length = &log_length;
+		ctx->return_flags = 0;
+
+		argv = ctx->argv;
+		argc = (int) ctx->argc;
+
 		memcpy(&libtransistor_context, ctx, ctx->size);
+
+		if (ctx->version == 2)
+			libtransistor_context.main_thread = 0;
 	} else {
 		dbg_printf("no context");
 
@@ -248,7 +247,16 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 			init_array[i]();
 		}
 	}
-	
+
+	dbg_printf("init threads");
+	if (libtransistor_context.main_thread != 0) {
+		phal_tid maintid;
+		maintid.id = libtransistor_context.main_thread;
+		maintid.stack = NULL;
+		_rthread_internal_init(maintid);
+	} else
+		dbg_printf("Ctx version doesn't support threading.");
+
 	int ret;
 	if (setjmp(exit_jmpbuf) == 0) {
 		ret = main(argc, argv);
