@@ -20,14 +20,13 @@ static int result_to_errno(result_t res) {
 
 int phal_thread_create(phal_tid *tid, void (*start_routine)(void*), void *arg) {
 	int ret;
-	void *stack = malloc(0x2000);
-	if (stack == NULL)
+	tid->stack = malloc(0x2000);
+	if (tid->stack == NULL)
 		return ENOMEM;
-	stack += 0x2000;
-	ret = svcCreateThread(tid, start_routine, (uint64_t)arg, stack, 0x1F, -2);
+	ret = result_to_errno(svcCreateThread(&tid->id, start_routine, (uint64_t)arg, tid->stack + 0x2000, 0x1F, -2));
 	if (ret)
 		return ret;
-	return svcStartThread(*tid);
+	return result_to_errno(svcStartThread(tid->id));
 }
 
 // Noreturn !
@@ -36,12 +35,13 @@ void phal_thread_exit(phal_tid *tid) {
 }
 
 int phal_thread_destroy(phal_tid *tid) {
-	return svcCloseHandle(*tid);
+	free(tid->stack);
+	return result_to_errno(svcCloseHandle(tid->id));
 }
 
 int phal_thread_sleep(uint64_t msec) {
 	uint64_t nanos = msec * 1000 * 1000;
-	return svcSleepThread(nanos);
+	return result_to_errno(svcSleepThread(nanos));
 }
 
 int phal_semaphore_create(phal_semaphore *sem) {
@@ -148,12 +148,12 @@ int phal_semaphore_lock(phal_semaphore *sem) {
 
 	while (1) {
 		uint32_t cur = 0;
-		if (atomic_compare_exchange_strong(mutex, &cur, self->tib_tid)) {
+		if (atomic_compare_exchange_strong(mutex, &cur, self->tib_tid.id)) {
 			// We won the race!
 			return 0;
 		}
 
-		if ((cur &~ HAS_LISTENERS) == self->tib_tid) {
+		if ((cur &~ HAS_LISTENERS) == self->tib_tid.id) {
 			// Kernel assigned it to us!
 			return 0;
 		}
