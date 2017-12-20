@@ -96,7 +96,7 @@ _rthread_internal_init(phal_tid maintid)
 	thread->tib_tid = maintid;
 	*phal_get_tls() = thread;
 
-	thread->donesem.lock = _SPINLOCK_UNLOCKED;
+	//thread->donesem.lock = _SPINLOCK_UNLOCKED;
 
 	thread->tib_thread_flags = TIB_THREAD_INITIAL_STACK;
 

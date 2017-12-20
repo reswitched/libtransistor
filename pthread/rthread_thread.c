@@ -337,7 +337,7 @@ pthread_create(pthread_t *threadp, const pthread_attr_t *attr,
 	if (thread == NULL)
 		return (ENOMEM);
 	memset(thread, 0, sizeof(*thread));
-	thread->donesem.lock = _SPINLOCK_UNLOCKED;
+	//thread->donesem.lock = _SPINLOCK_UNLOCKED;
 	thread->flags_lock = _SPINLOCK_UNLOCKED;
 	thread->fn = start_routine;
 	thread->arg = arg;

@@ -117,8 +117,9 @@ _rthread_mutex_trylock(pthread_mutex_t mutex, int trywait,
 				abort();
 
 			/* self-deadlock, possibly until timeout */
-			// TODO: Timeout ?
-			phal_mutex_lock(&mutex->hal_handle);
+			phal_semaphore_lock(&mutex->sem);
+			phal_semaphore_wait(&mutex->sem, abs);
+			phal_semaphore_unlock(&mutex->sem);
 			return (ETIMEDOUT);
 		} else {
 			if (mutex->count == INT_MAX)
@@ -190,9 +191,14 @@ _rthread_mutex_timedlock(pthread_mutex_t *mutexp, int trywait,
 	}
 
 	while (lock != UNLOCKED) {
-		return ENOSYS;
-		// TODO: timeout ?
-		error = phal_mutex_lock(&mutex->hal_handle);
+		// We don't *actually* need the lock here, as we are only using this to
+		// allow cross-thread signaling.
+		// If I could remove the mutex, I would, but I think switch's
+		// implementation actually requires a valid, locked mutex.
+		// TODO: error handling.
+		phal_semaphore_lock(&mutex->sem);
+		error = phal_semaphore_wait(&mutex->sem, abs);
+		phal_semaphore_unlock(&mutex->sem);
 		if (error == ETIMEDOUT)
 			return (error);
 		/*
@@ -282,9 +288,9 @@ pthread_mutex_unlock(pthread_mutex_t *mutexp)
 	//membar_exit_before_atomic();
 	if (atomic_fetch_sub(&mutex->lock, 1) != (UNLOCKED + 1)) {
 		mutex->lock = UNLOCKED;
-		return ENOSYS;
-		// TODO: _wake
-		//_wake(&mutex->lock, 1);
+		phal_semaphore_lock(&mutex->sem);
+		phal_semaphore_signal(&mutex->sem);
+		phal_semaphore_unlock(&mutex->sem);
 	}
 
 	return (0);
