@@ -59,25 +59,25 @@
 sem_t sema;
 //HANDLE w32sema;
 
-struct _timeb currSysTimeStart;
-struct _timeb currSysTimeStop;
+struct timeval currSysTimeStart;
+struct timeval currSysTimeStop;
 long durationMilliSecs;
 long overHeadMilliSecs = 0;
 int one = 1;
 int zero = 0;
 
-#define GetDurationMilliSecs(_TStart, _TStop) ((_TStop.time*1000+_TStop.millitm) \
-                                               - (_TStart.time*1000+_TStart.millitm))
+#define GetDurationMilliSecs(_TStart, _TStop) ((_TStop.tv_sec*1000+_TStop.tv_usec / 1000) \
+                                               - (_TStart.tv_sec*1000+_TStart.tv_usec / 1000))
 
 /*
  * Dummy use of j, otherwise the loop may be removed by the optimiser
  * when doing the overhead timing with an empty loop.
  */
 #define TESTSTART \
-  { int i, j = 0, k = 0; _ftime(&currSysTimeStart); for (i = 0; i < ITERATIONS; i++) { j++;
+  { int i, j = 0, k = 0; gettimeofday(&currSysTimeStart); for (i = 0; i < ITERATIONS; i++, NULL) { j++;
 
 #define TESTSTOP \
-  }; _ftime(&currSysTimeStop); if (j + k == i) j++; }
+  }; gettimeofday(&currSysTimeStop); if (j + k == i, NULL) j++; }
 
 
 void

@@ -114,10 +114,10 @@ int pthread_test_condvar3()
     {
       0, 0
     };
-  struct _timeb currSysTime;
+  struct timeval currSysTime;
   const unsigned int NANOSEC_PER_MILLISEC = 1000000;
 
-  assert((t[0] = pthread_self()).p != NULL);
+  assert((t[0] = pthread_self()) != NULL);
 
   assert(pthread_cond_init(&cv, NULL) == 0);
 
@@ -126,17 +126,17 @@ int pthread_test_condvar3()
   assert(pthread_mutex_lock(&mutex) == 0);
 
   /* get current system time */
-  _ftime(&currSysTime);
+  gettimeofday(&currSysTime, NULL);
 
-  abstime.tv_sec = currSysTime.time;
-  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+  abstime.tv_sec = currSysTime.tv_sec;
+  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
 
   assert(pthread_create(&t[1], NULL, mythread, (void *) 1) == 0);
 
   abstime.tv_sec += 5;
 
   while (! (shared > 0))
-    assert(pthread_cond_timedwait(&cv, &mutex, &abstime) == 0);
+    assert_eq(pthread_cond_timedwait(&cv, &mutex, &abstime), 0);
 
   assert(shared > 0);
 

@@ -120,16 +120,16 @@ enum
 static struct timespec *
       millisecondsFromNow (struct timespec * time, int millisecs)
   {
-    struct _timeb currSysTime;
+    struct timeval currSysTime;
     int64_t nanosecs, secs;
     const int64_t NANOSEC_PER_MILLISEC = 1000000;
     const int64_t NANOSEC_PER_SEC = 1000000000;
 
     /* get current system time and add millisecs */
-    _ftime(&currSysTime);
+    gettimeofday(&currSysTime, NULL);
 
-    secs = (int64_t)(currSysTime.time) + (millisecs / 1000);
-    nanosecs = ((int64_t) (millisecs%1000 + currSysTime.millitm)) * NANOSEC_PER_MILLISEC;
+    secs = (int64_t)(currSysTime.tv_sec) + (millisecs / 1000);
+    nanosecs = ((int64_t) (millisecs%1000 + currSysTime.tv_usec / 1000)) * NANOSEC_PER_MILLISEC;
     if (nanosecs >= NANOSEC_PER_SEC)
       {
         secs++;

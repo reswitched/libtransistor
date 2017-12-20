@@ -97,15 +97,15 @@ int pthread_test_rwlock6t2()
   int wr1Result = 0;
   int wr2Result = 0;
   int rdResult = 0;
-  struct _timeb currSysTime;
+  struct timeval currSysTime;
   const long long NANOSEC_PER_MILLISEC = 1000000;
 
   rwlock1 = PTHREAD_RWLOCK_INITIALIZER;
 
-  _ftime(&currSysTime);
+  gettimeofday(&currSysTime, NULL);
 
-  abstime.tv_sec = currSysTime.time;
-  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+  abstime.tv_sec = currSysTime.tv_sec;
+  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
 
   abstime.tv_sec += 1;
 

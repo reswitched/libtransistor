@@ -87,15 +87,13 @@
 static pthread_cond_t cv;
 static pthread_mutex_t mutex;
 
-#include "../implement.h"
-
 int pthread_test_condvar2()
 {
   struct timespec abstime =
     {
       0, 0
     };
-  struct _timeb currSysTime;
+  struct timeval currSysTime;
   const unsigned int NANOSEC_PER_MILLISEC = 1000000;
 
   assert(pthread_cond_init(&cv, NULL) == 0);
@@ -105,10 +103,10 @@ int pthread_test_condvar2()
   assert(pthread_mutex_lock(&mutex) == 0);
 
   /* get current system time */
-  _ftime(&currSysTime);
+  gettimeofday(&currSysTime, NULL);
 
-  abstime.tv_sec = currSysTime.time;
-  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+  abstime.tv_sec = currSysTime.tv_sec;
+  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
 
   abstime.tv_sec += 1;
 

@@ -93,7 +93,7 @@ static struct timespec abstime =
 
 enum
 {
-  NUMTHREADS = OS_MAX_SIMUL_THREADS
+  NUMTHREADS = 16 // OS_MAX_SIMUL_THREADS
 };
 
 static void *
@@ -108,14 +108,12 @@ mythread(void * arg)
   return arg;
 }
 
-#include "../implement.h"
-
 int pthread_test_condvar2_1()
 {
   int i;
   pthread_t t[NUMTHREADS + 1];
   int result = 0;
-  struct _timeb currSysTime;
+  struct timeval currSysTime;
   const unsigned int NANOSEC_PER_MILLISEC = 1000000;
 
   assert(pthread_cond_init(&cv, NULL) == 0);
@@ -123,10 +121,10 @@ int pthread_test_condvar2_1()
   assert(pthread_mutex_init(&mutex, NULL) == 0);
 
   /* get current system time */
-  _ftime(&currSysTime);
+  gettimeofday(&currSysTime, NULL);
 
-  abstime.tv_sec = currSysTime.time;
-  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+  abstime.tv_sec = currSysTime.tv_sec;
+  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
 
   abstime.tv_sec += 5;
 

@@ -84,8 +84,8 @@
 #define _WIN32_WINNT 0x400
 
 #include "test.h"
-#include "implement.h"
-
+#include <stdint.h>
+#include <stdatomic.h>
 
 static pthread_cond_t cv;
 static pthread_mutex_t mutex;
@@ -97,12 +97,12 @@ static struct timespec abstime2 =
   {
     0, 0
   };
-static int timedout = 0;
-static int awoken = 0;
+static _Atomic(int) timedout = 0;
+static _Atomic(int) awoken = 0;
 
 enum
 {
-  NUMTHREADS = OS_MAX_SIMUL_THREADS
+  NUMTHREADS = 16 //OS_MAX_SIMUL_THREADS
 };
 
 static void *
@@ -123,25 +123,23 @@ mythread(void * arg)
   assert(pthread_mutex_unlock(&mutex) == 0);
   if (result == ETIMEDOUT)
     {
-      PTE_ATOMIC_INCREMENT(&timedout);
+      timedout++;
     }
   else
     {
-      PTE_ATOMIC_INCREMENT(&awoken);
+      awoken++;
     }
 
 
   return arg;
 }
 
-#include "../implement.h"
-
 int pthread_test_condvar3_2()
 {
   int i;
   pthread_t t[NUMTHREADS + 1];
   int result = 0;
-  struct _timeb currSysTime;
+  struct timeval currSysTime;
   const unsigned int NANOSEC_PER_MILLISEC = 1000000;
 
   timedout = 0;
@@ -153,10 +151,10 @@ int pthread_test_condvar3_2()
   assert(pthread_mutex_init(&mutex, NULL) == 0);
 
   /* get current system time */
-  _ftime(&currSysTime);
+  gettimeofday(&currSysTime, NULL);
 
-  abstime.tv_sec = abstime.tv_sec = currSysTime.time + 5;
-  abstime.tv_nsec = abstime2.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+  abstime.tv_sec = abstime.tv_sec = currSysTime.tv_sec + 5;
+  abstime.tv_nsec = abstime2.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
 
   assert(pthread_mutex_lock(&mutex) == 0);
 
@@ -180,7 +178,7 @@ int pthread_test_condvar3_2()
 
 //      assert(pthread_mutex_lock(&mutex) == 0);
 
-      if (PTE_ATOMIC_EXCHANGE_ADD(&awoken, 0L) > NUMTHREADS/3)
+      if (atomic_fetch_add(&awoken, 0L) > NUMTHREADS/3)
         {
           assert(pthread_cond_broadcast(&cv) == 0);
         }

@@ -121,7 +121,7 @@ pthread_test_exception2()
       exit(0);
     }
   */
-  assert((mt = pthread_self()).p != NULL);
+  assert((mt = pthread_self()) != NULL);
 
   for (i = 0; i < NUMTHREADS; i++)
     {

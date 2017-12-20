@@ -95,17 +95,17 @@ int pthread_test_condvar3_3()
     {
       0, 0
     };
-  struct _timeb currSysTime;
+  struct timeval currSysTime;
   const unsigned int NANOSEC_PER_MILLISEC = 1000000;
 
   assert(pthread_cond_init(&cnd, 0) == 0);
   assert(pthread_mutex_init(&mtx, 0) == 0);
 
   /* get current system time */
-  _ftime(&currSysTime);
+  gettimeofday(&currSysTime, NULL);
 
-  abstime.tv_sec = currSysTime.time;
-  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+  abstime.tv_sec = currSysTime.tv_sec;
+  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
   abstime.tv_sec += 1;
 
   /* Here pthread_cond_timedwait should time out after one second. */
@@ -130,9 +130,9 @@ int pthread_test_condvar3_3()
 
   assert(pthread_mutex_lock(&mtx) == 0);
 
-  _ftime(&currSysTime);
-  abstime.tv_sec = currSysTime.time;
-  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+  gettimeofday(&currSysTime, NULL);
+  abstime.tv_sec = currSysTime.tv_sec;
+  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
   abstime.tv_sec += 1;
 
   assert((rc = pthread_cond_timedwait(&cnd, &mtx, &abstime)) == ETIMEDOUT);

@@ -59,25 +59,25 @@
 
 static pthread_mutex_t mx;
 static pthread_mutexattr_t ma;
-static struct _timeb currSysTimeStart;
-static struct _timeb currSysTimeStop;
+static struct timeval currSysTimeStart;
+static struct timeval currSysTimeStop;
 static long durationMilliSecs;
 static long overHeadMilliSecs = 0;
 static int one = 1;
 static int zero = 0;
 
-#define GetDurationMilliSecs(_TStart, _TStop) ((_TStop.time*1000+_TStop.millitm) \
-                                               - (_TStart.time*1000+_TStart.millitm))
+#define GetDurationMilliSecs(_TStart, _TStop) ((_TStop.tv_sec*1000+_TStop.tv_usec / 1000) \
+                                               - (_TStart.tv_sec*1000+_TStart.tv_usec / 1000))
 
 /*
  * Dummy use of j, otherwise the loop may be removed by the optimiser
  * when doing the overhead timing with an empty loop.
  */
 #define TESTSTART \
-  { int i, j = 0, k = 0; _ftime(&currSysTimeStart); for (i = 0; i < ITERATIONS; i++) { j++;
+  { int i, j = 0, k = 0; gettimeofday(&currSysTimeStart); for (i = 0; i < ITERATIONS; i++, NULL) { j++;
 
 #define TESTSTOP \
-  }; _ftime(&currSysTimeStop); if (j + k == i) j++; }
+  }; gettimeofday(&currSysTimeStop); if (j + k == i, NULL) j++; }
 
 
 static void

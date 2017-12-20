@@ -108,7 +108,7 @@ static void *
 mythread(void * arg)
 {
   int result;
-  struct _timeb currSysTime;
+  struct timeval currSysTime;
   const unsigned int NANOSEC_PER_MILLISEC = 1000000;
 
   assert(pthread_mutex_lock(&mutex1) == 0);
@@ -119,10 +119,10 @@ mythread(void * arg)
   assert(pthread_mutex_lock(&mutex) == 0);
 
   /* get current system time */
-  _ftime(&currSysTime);
+  gettimeofday(&currSysTime, NULL);
 
-  abstime.tv_sec = currSysTime.time;
-  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+  abstime.tv_sec = currSysTime.tv_sec;
+  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
 
   abstime.tv_sec += 5;
 
@@ -139,8 +139,6 @@ mythread(void * arg)
 
   return arg;
 }
-
-#include "../implement.h"
 
 int pthread_test_condvar3_1()
 {
@@ -186,12 +184,12 @@ int pthread_test_condvar3_1()
 
   for (i = 1; i <= NUMTHREADS; i++)
     {
-      assert(pthread_join(t[i], (void **) &result) == 0);
-      assert(result == i);
+      assert_eq(pthread_join(t[i], (void **) &result), 0);
+      assert_eq(result, i);
     }
 
-  assert(signaled == awoken);
-  assert(timedout == NUMTHREADS - signaled);
+  assert_eq(awoken, signaled);
+  assert_eq(timedout, NUMTHREADS - signaled);
 
   assert(pthread_cond_destroy(&cv1) == 0);
 

@@ -133,7 +133,7 @@ int pthread_test_reuse2()
    */
   for (i = 0; i < NUMTHREADS; i++)
     {
-      if (t[i].p != NULL)
+      if (t[i] != NULL)
         {
           unsigned int j, thisMax;
 
@@ -158,7 +158,7 @@ int pthread_test_reuse2()
     }
 
   for (i = 0; i < NUMTHREADS; i++)
-    if (t[i].p != NULL)
+    if (t[i] != NULL)
       totalHandles++;
 
   /*

@@ -59,12 +59,12 @@ static void * locker(void * arg)
   struct timeb currSysTime;
   const unsigned long NANOSEC_PER_MILLISEC = 1000000;
 
-  _ftime(&currSysTime);
+  gettimeofday(&currSysTime, NULL);
 
-  currSysTime.time += 1; // wait for one seconds
+  currSysTime.tv_sec += 1; // wait for one seconds
 
-  abstime.tv_sec = currSysTime.time;
-  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+  abstime.tv_sec = currSysTime.tv_sec;
+  abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
 
   assert(pthread_mutex_timedlock(&mutex, &abstime) == ETIMEDOUT);
 

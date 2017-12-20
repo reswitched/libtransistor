@@ -125,7 +125,7 @@ pthread_test_exception3()
   pthread_t et[NUMTHREADS];
   pthread_mutexattr_t ma;
 
-  assert((mt = pthread_self()).p != NULL);
+  assert((mt = pthread_self()) != NULL);
 
   assert(pthread_mutexattr_init(&ma) == 0);
   assert(pthread_mutexattr_settype(&ma, PTHREAD_MUTEX_ERRORCHECK) == 0);

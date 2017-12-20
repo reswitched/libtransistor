@@ -128,7 +128,7 @@ static void *
 mythread(void * arg)
 {
   bag_t * bag = (bag_t *) arg;
-  struct _timeb currSysTime;
+  struct timeval currSysTime;
   const unsigned int NANOSEC_PER_MILLISEC = 1000000;
 
   assert(bag == &threadbag[bag->threadnum]);
@@ -143,14 +143,14 @@ mythread(void * arg)
 
   while (! (cvthing.shared > 0))
     {
-      _ftime(&currSysTime);
+      gettimeofday(&currSysTime, NULL);
 
-      abstime.tv_sec = currSysTime.time;
-      abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+      abstime.tv_sec = currSysTime.tv_sec;
+      abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.tv_usec / 1000;
 
       abstime.tv_sec += 5;
 
-      assert(pthread_cond_timedwait(&cvthing.notbusy, &cvthing.lock, &abstime) == 0);
+      assert_eq(pthread_cond_timedwait(&cvthing.notbusy, &cvthing.lock, &abstime), 0);
     }
 
   assert(cvthing.shared > 0);
@@ -175,7 +175,7 @@ int pthread_test_condvar6()
 
   cvthing.shared = 0;
 
-  assert((t[0] = pthread_self()).p != NULL);
+  assert((t[0] = pthread_self()) != NULL);
 
   assert(cvthing.notbusy == PTHREAD_COND_INITIALIZER);
 
@@ -185,7 +185,7 @@ int pthread_test_condvar6()
 
 
 
-  assert((t[0] = pthread_self()).p != NULL);
+  assert((t[0] = pthread_self()) != NULL);
 
   awoken = 0;
 

@@ -82,7 +82,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_COUNT OS_MAX_SIMUL_THREADS
+#define MAX_COUNT 16 // OS_MAX_SIMUL_THREADS
 
 static sem_t s;
 

@@ -46,21 +46,21 @@
 #include "test.h"
 
 static pthread_spinlock_t lock = PTHREAD_SPINLOCK_INITIALIZER;
-static struct _timeb currSysTimeStart;
-static struct _timeb currSysTimeStop;
+static struct timeval currSysTimeStart;
+static struct timeval currSysTimeStop;
 
-#define GetDurationMilliSecs(_TStart, _TStop) ((_TStop.time*1000+_TStop.millitm) \
-					       - (_TStart.time*1000+_TStart.millitm))
+#define GetDurationMilliSecs(_TStart, _TStop) ((_TStop.tv_sec*1000+_TStop.tv_usec / 1000) \
+					       - (_TStart.tv_sec*1000+_TStart.tv_usec / 1000))
 
 static int washere = 0;
 
 static void * func(void * arg)
 {
-  _ftime(&currSysTimeStart);
+  gettimeofday(&currSysTimeStart, NULL);
   washere = 1;
   assert(pthread_spin_lock(&lock) == 0);
   assert(pthread_spin_unlock(&lock) == 0);
-  _ftime(&currSysTimeStop);
+  gettimeofday(&currSysTimeStop, NULL);
 
   return (void *) GetDurationMilliSecs(currSysTimeStart, currSysTimeStop);
 }
@@ -69,7 +69,7 @@ int pthread_test_spin4()
 {
   long result = 0;
   pthread_t t;
-  struct _timeb sysTime;
+  struct timeval sysTime;
 
   if (pthread_num_processors_np() == 1)
     {
@@ -89,7 +89,7 @@ int pthread_test_spin4()
   do
     {
       sched_yield();
-      _ftime(&sysTime);
+      gettimeofday(&sysTime, NULL);
     }
   while (GetDurationMilliSecs(currSysTimeStart, sysTime) <= 1000);
 

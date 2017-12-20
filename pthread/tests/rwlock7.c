@@ -110,8 +110,8 @@ int pthread_test_rwlock7()
   int thread_updates = 0;
   int data_updates = 0;
 
-  struct _timeb currSysTime1;
-  struct _timeb currSysTime2;
+  struct timeval currSysTime1;
+  struct timeval currSysTime2;
 
   /*
    * Initialize the shared data.
@@ -124,7 +124,7 @@ int pthread_test_rwlock7()
       assert(pthread_rwlock_init (&data[data_count].lock, NULL) == 0);
     }
 
-  _ftime(&currSysTime1);
+  gettimeofday(&currSysTime1, NULL);
 
   /*
    * Create THREADS threads to access shared data.
@@ -182,7 +182,7 @@ int pthread_test_rwlock7()
       assert(pthread_rwlock_destroy (&data[data_count].lock) == 0);
     }
 
-  _ftime(&currSysTime2);
+  gettimeofday(&currSysTime2, NULL);
 
   return 0;
 }
