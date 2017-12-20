@@ -264,26 +264,23 @@ sem_wait(sem_t *semp)
 int
 sem_timedwait(sem_t *semp, const struct timespec *abstime)
 {
-	return ENOSYS;
-#if 0
-	struct tib *tib = TIB_GET();
 	pthread_t self;
 	sem_t sem;
 	int r;
-	PREP_CANCEL_POINT(tib);
+	//PREP_CANCEL_POINT(tib);
 
 	if (!_threads_ready)
 		_rthread_init();
-	self = tib->tib_thread;
+	self = pthread_self();
 
 	if (!semp || !(sem = *semp)) {
 		errno = EINVAL;
 		return (-1);
 	}
 
-	ENTER_DELAYED_CANCEL_POINT(tib, self);
+	//ENTER_DELAYED_CANCEL_POINT(tib, self);
 	r = _sem_wait(sem, 0, abstime, &self->delayed_cancel);
-	LEAVE_CANCEL_POINT_INNER(tib, r);
+	//LEAVE_CANCEL_POINT_INNER(tib, r);
 
 	if (r) {
 		errno = r == EWOULDBLOCK ? ETIMEDOUT : r;
@@ -291,7 +288,6 @@ sem_timedwait(sem_t *semp, const struct timespec *abstime)
 	}
 
 	return (0);
-#endif
 }
 
 int
