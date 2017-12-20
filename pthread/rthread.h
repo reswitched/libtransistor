@@ -95,6 +95,7 @@ int	_sem_wait(sem_t, int, const struct timespec *, int *);
 int	_sem_post(sem_t);
 
 void	_rthread_init(void);
+void	_rthread_internal_init(phal_tid tid);
 struct stack *_rthread_alloc_stack(pthread_t);
 void	_rthread_free_stack(struct stack *);
 #if 0

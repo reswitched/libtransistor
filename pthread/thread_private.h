@@ -6,7 +6,6 @@
 #define _THREAD_PRIVATE_H_
 
 #include <stdio.h>		/* for FILE and __isthreaded */
-
 #if 0
 #define _MALLOC_MUTEXES 4
 void _malloc_init(int);
@@ -283,18 +282,17 @@ __END_HIDDEN_DECLS
 #define	_SPINLOCK_UNLOCKED _ATOMIC_LOCK_UNLOCKED
 
 struct __sem {
-	phal_mutex lock;
 	volatile int waitcount;
 	volatile int value;
-	phal_sem sem;
+	phal_semaphore sem;
 	int shared;
 };
 
 TAILQ_HEAD(pthread_queue, pthread);
 
 struct pthread_mutex {
-	phal_mutex hal_handle;
-	atomic_int lock;
+	phal_semaphore sem;
+	_Atomic(int) lock;
 	int type;
 	pthread_t owner;
 	int count;
@@ -302,7 +300,7 @@ struct pthread_mutex {
 };
 
 struct pthread_cond {
-	atomic_uint seq;
+	phal_semaphore sem;
 	clockid_t clock;
 	struct pthread_mutex *mutex;
 };

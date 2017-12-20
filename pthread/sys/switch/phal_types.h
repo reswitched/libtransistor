@@ -3,6 +3,7 @@
 #include <libtransistor/nx.h>
 
 typedef thread_h phal_tid;
-typedef _Atomic(uint32_t) phal_mutex;
-typedef _Atomic(uint32_t) phal_sem;
-typedef void *phal_semaphore;
+typedef struct {
+	_Atomic(uint32_t) lock;
+	uint32_t sem;
+} phal_semaphore;
