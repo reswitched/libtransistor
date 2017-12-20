@@ -241,7 +241,8 @@ restart:
 			//_dl_free_tib(thread->tib, sizeof(*thread));
 			int res = phal_thread_destroy(&thread->tib_tid);
 			if (res)
-				_rthread_debug(3, "Failed to free tid %d: %d", &thread->tib_tid, res);
+				_rthread_debug(3, "Failed to free tid of %p: %d", thread, res);
+			free(thread);
 		} else {
 			/* initial thread isn't part of TIB allocation */
 			_rthread_debug(3, "rthread reaping %p (initial)\n",
@@ -341,7 +342,6 @@ pthread_create(pthread_t *threadp, const pthread_attr_t *attr,
 	thread->flags_lock = _SPINLOCK_UNLOCKED;
 	thread->fn = start_routine;
 	thread->arg = arg;
-	thread->tib_tid = -1;
 
 	thread->attr = attr != NULL ? *(*attr) : _rthread_attr_default;
 	if (thread->attr.sched_inherit == PTHREAD_INHERIT_SCHED) {
@@ -531,7 +531,7 @@ _thread_dump_info(void)
 
 	_spinlock(&_thread_lock);
 	LIST_FOREACH(thread, &_thread_list, threads)
-		printf("thread %d flags 0x%x name %s\n", thread->tib_tid,
+		printf("thread %p flags 0x%x name %s\n", thread,
 		    thread->tib_thread_flags, thread->name);
 	_spinunlock(&_thread_lock);
 }
