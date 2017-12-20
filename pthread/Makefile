@@ -3,9 +3,9 @@
 NAME=libpthread.a
 
 #CFLAGS+=-Wall -g -Werror -Wshadow
-#CFLAGS+=-Werror-implicit-function-declaration
+CC_FLAGS += -Werror-implicit-function-declaration -finstrument-functions
 #CFLAGS+=-Wsign-compare
-CC_FLAGS+=-Isys/switch/ -I.
+CC_FLAGS += -Isys/switch/ -I.
 
 LDADD = -Wl,-znodelete 
 SRCS=	rthread_attr.c \

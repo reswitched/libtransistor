@@ -52,11 +52,16 @@ $(LIBTRANSISTOR_HOME)/build/test/%.o: $(LIBTRANSISTOR_HOME)/test/%.c
 # Disable stack protector for crt0_common
 $(LIBTRANSISTOR_HOME)/build/lib/crt0_common.o: $(LIBTRANSISTOR_HOME)/lib/crt0_common.c
 	mkdir -p $(@D)
+	$(CC) $(CC_FLAGS) $(WARNINGS) -fno-stack-protector -Ipthread/ -Ipthread/sys/switch -c -o $@ $<
+
+# Don't instrument ipc.c, it might mess up the state
+$(LIBTRANSISTOR_HOME)/build/lib/ipc.o: $(LIBTRANSISTOR_HOME)/lib/ipc.c
+	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) $(WARNINGS) -fno-stack-protector -c -o $@ $<
 
 $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) $(WARNINGS) -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(WARNINGS) -finstrument-functions -c -o $@ $<
 
 $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.S
 	mkdir -p $(@D)

@@ -159,7 +159,7 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 
 static jmp_buf exit_jmpbuf;
 static int exit_value;
-
+static void *global_aslr_base;
 int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	if(relocate(aslr_base)) {
 		return -4;
@@ -170,6 +170,7 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 
 	char *argv_default[] = {"contextless", NULL};
 	char **argv = argv_default;
+	global_aslr_base = aslr_base;
 	int argc = 1;
   
 	if(ctx != NULL) {
@@ -244,7 +245,9 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		stdout = &bsslog_stdout;
 		stderr = &bsslog_stdout;
 	}
+
 	dbg_printf("set up stdout");
+	printf("ASLR base %p\n", aslr_base);
 
 	if(init_array != NULL) {
 		if(init_array_size == -1) {
@@ -295,4 +298,62 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 void _exit(int ret) {
 	exit_value = ret;
 	longjmp(exit_jmpbuf, 1);
+}
+
+char		*ft_itoa(char buf[16], uintmax_t n, char *base)
+{
+	int				i;
+	size_t			base_len;
+
+	i = 0;
+	base_len = strlen(base);
+	while (n > 0)
+	{
+		buf[i++] = base[n % base_len];
+		n /= base_len;
+	}
+	i = 0;
+	while (i < 16 / 2) {
+		char c = buf[i];
+		buf[i] = buf[15 - i];
+		buf[15 - i] = c;
+		i++;
+	}
+	return (buf);
+}
+
+static int in_cyg = 0;
+void __cyg_profile_func_enter(void *des, void *src_call) {
+	if (in_cyg)
+		return;
+	in_cyg = 1;
+
+
+	char msg[] = "\nThread 0x0000000000000000 Entering function 0x0000000000000000 from 0x0000000000000000\n";
+
+	void *tid = get_tls();
+	ft_itoa(msg + strlen("\nThread 0x"), tid, "0123456789ABCDEF");
+	ft_itoa(msg + strlen("\nThread 0x0000000000000000 Entering function 0x"), des - global_aslr_base, "0123456789ABCDEF");
+	ft_itoa(msg + strlen("\nThread 0x0000000000000000 Entering function 0x0000000000000000 from 0x"), src_call - global_aslr_base, "0123456789ABCDEF");
+	if (bsd_get_object().object_id != 0 && libtransistor_context.has_bsd && libtransistor_context.std_socket > 0) {
+		bsd_send(libtransistor_context.std_socket, msg, strlen(msg), 0);
+	}
+	in_cyg = 0;
+}
+
+void __cyg_profile_func_exit(void *des, void *src_call) {
+	if (in_cyg)
+		return;
+	in_cyg = 1;
+
+	char msg[] = "\nThread 0x0000000000000000 Exit function 0x0000000000000000 to 0x0000000000000000\n";
+
+	void *tid = get_tls();
+	ft_itoa(msg + strlen("\nThread 0x"), tid, "0123456789ABCDEF");
+	ft_itoa(msg + strlen("\nThread 0x0000000000000000 Exit function 0x"), des - global_aslr_base, "0123456789ABCDEF");
+	ft_itoa(msg + strlen("\nThread 0x0000000000000000 Exit function 0x0000000000000000 to 0x"), src_call - global_aslr_base, "0123456789ABCDEF");
+	if (bsd_get_object().object_id != 0 && libtransistor_context.has_bsd && libtransistor_context.std_socket > 0) {
+		bsd_send(libtransistor_context.std_socket, msg, strlen(msg), 0);
+	}
+	in_cyg = 0;
 }
