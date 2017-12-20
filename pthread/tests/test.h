@@ -52,7 +52,7 @@
 #include "pthread.h"
 #include "sched.h"
 #include <errno.h>
-//#include "semaphore.h"
+#include "semaphore.h"
 
 //#include <windows.h>
 
@@ -92,10 +92,20 @@ extern const char * error_string;
 			            #e, __FILE__, (int) __LINE__), \
 	                            fflush(stdout) : \
                              0) : \
-          (fprintf(stderr, "Assertion failed: (%s), file %s, line %d\n", \
-                   #e, __FILE__, (int) __LINE__), exit(1), 0))
+          (fprintf(stderr, "Assertion failed: (" #e "), file " __FILE__ ", line %d\n", \
+                   (int) __LINE__), exit(1), 0))
 
 extern int assertE;
+
+# define assert_eq(e, r) \
+   (((assertE = (e)) == (r)) ? ((ASSERT_TRACE) ? fprintf(stdout, \
+                                    "Assertion succeeded: (%s == %s), file %s, line %d\n", \
+			            #e, #r, __FILE__, (int) __LINE__), \
+	                            fflush(stdout) : \
+                             0) : \
+          (fprintf(stderr, "Assertion failed: (%s (%d) == %s), file %s, line %d\n", \
+                   #e, assertE, #r, __FILE__, (int) __LINE__), exit(1), 0))
+
 # define assert_e(e, o, r) \
    (((assertE = e) o (r)) ? ((ASSERT_TRACE) ? fprintf(stdout, \
                                     "Assertion succeeded: (%s), file %s, line %d\n", \
