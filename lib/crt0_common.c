@@ -109,12 +109,12 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 
 static FILE socklog_stdout;
 static int socklog_write(struct _reent *reent, void *v, const char *ptr, int len) {
-	return bsd_send(libtransistor_context->std_socket, ptr, len, 0);
+	return bsd_send(libtransistor_context.std_socket, ptr, len, 0);
 }
 
 static FILE socklog_stdin;
 static int socklog_read(struct _reent *reent, void *v, char *ptr, int len) {
-	return bsd_recv(libtransistor_context->std_socket, ptr, len, 0);
+	return bsd_recv(libtransistor_context.std_socket, ptr, len, 0);
 }
 
 #define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
@@ -136,9 +136,6 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	char *argv_default[] = {"contextless", NULL};
 	char **argv = argv_default;
 	int argc = 1;
-
-	libtransistor_context_t empty_context;
-	memset(&empty_context, 0, sizeof(empty_context));
   
 	if(ctx != NULL) {
 		dbg_printf("found context");
@@ -167,17 +164,15 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 			dbg_printf("mismatched context size");
 			return -3;
 		}
-
-		libtransistor_context = ctx;
+		memcpy(&libtransistor_context, ctx, ctx->size);
 	} else {
 		dbg_printf("no context");
 
-		libtransistor_context = &empty_context;
-		if(svcSetHeapSize(&libtransistor_context->mem_base, DEFAULT_NOCONTEXT_HEAP_SIZE) != RESULT_OK) {
+		if(svcSetHeapSize(&libtransistor_context.mem_base, DEFAULT_NOCONTEXT_HEAP_SIZE) != RESULT_OK) {
 			dbg_printf("failed to set heap size");
 			return -5;
 		}
-		libtransistor_context->mem_size = DEFAULT_NOCONTEXT_HEAP_SIZE;
+		libtransistor_context.mem_size = DEFAULT_NOCONTEXT_HEAP_SIZE;
 	}
 
 	dbg_printf("init stdio");
@@ -197,7 +192,7 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 
 	printf("_"); // init stdout
 	getchar(); // init stdin
-	if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0) {
+	if(libtransistor_context.has_bsd && libtransistor_context.std_socket > 0) {
 		dbg_printf("using socklog stdio");
 		bsd_init(); // borrow bsd object from loader
 		stdin  = &socklog_stdin;
@@ -217,9 +212,13 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		ret = exit_value;
 	}
 
-	if(libtransistor_context->has_bsd && libtransistor_context->std_socket > 0 && !dont_finalize_bsd) {
+	if(libtransistor_context.has_bsd && libtransistor_context.std_socket > 0 && !dont_finalize_bsd) {
 		bsd_finalize();
 	}
+
+	// If we had a context, copy out parameters in there
+	if (ctx != NULL)
+		memcpy(ctx, &libtransistor_context, ctx->size);
 
 	return ret;
 }
