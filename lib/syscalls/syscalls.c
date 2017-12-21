@@ -168,8 +168,27 @@ finalize:
 }
 
 int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__restrict z) {
-  reent->_errno = ENOSYS;
-  return -1;
+	u64 time;
+	result_t res;
+	
+	if (z != NULL) {
+		reent->_errno = ENOSYS;
+		return -1;
+	}
+	if (p == NULL) {
+		reent->_errno = EINVAL;
+		return -1;
+	}
+	sm_init();
+	time_init();
+	if ((res = time_get_current_time(&time)) != RESULT_OK) {
+		reent->_errno = -EINVAL;
+		return -1;
+	}
+	p->tv_sec = time;
+	// No usec support on here :(.
+  p->tv_usec = 0;
+  return 0;
 }
 
 long sysconf(int name) {
