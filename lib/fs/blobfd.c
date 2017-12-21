@@ -1,5 +1,5 @@
 #include<libtransistor/fs/blobfd.h>
-#include<sys/fd.h>
+#include<libtransistor/fd.h>
 #include<errno.h>
 #include<stdio.h>
 #include<string.h>

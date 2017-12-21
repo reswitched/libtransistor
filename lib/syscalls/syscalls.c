@@ -10,6 +10,8 @@
 
 #include<libtransistor/context.h>
 #include<libtransistor/fd.h>
+#include<libtransistor/err.h>
+#include<libtransistor/fs/fs.h>
 
 void _exit(); // implemented in libtransistor crt0
 
@@ -83,7 +85,20 @@ finalize:
 }
 
 int _open_r(struct _reent *reent, const char *name, int flags, ...) {
-	reent->_errno = ENOSYS;
+	int fd;
+	switch(trn_fs_open(&fd, name, flags)) {
+	case RESULT_OK:
+		return fd;
+	case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
+		reent->_errno = -ENOTDIR;
+		break;
+	case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
+		reent->_errno = -ENOENT;
+		break;
+	default:
+		reent->_errno = ENOSYS;
+		return -1;
+	}
 	return -1;
 }
 
