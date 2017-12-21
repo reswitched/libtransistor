@@ -109,12 +109,12 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 
 static FILE socklog_stdout;
 static int socklog_write(struct _reent *reent, void *v, const char *ptr, int len) {
-	return bsd_send(libtransistor_context->std_socket, ptr, len, 0);
+	return bsd_send(libtransistor_context.std_socket, ptr, len, 0);
 }
 
 static FILE socklog_stdin;
 static int socklog_read(struct _reent *reent, void *v, char *ptr, int len) {
-	return bsd_recv(libtransistor_context->std_socket, ptr, len, 0);
+	return bsd_recv(libtransistor_context.std_socket, ptr, len, 0);
 }
 
 #define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
@@ -165,8 +165,6 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 			return -3;
 		}
 		memcpy(&libtransistor_context, ctx, ctx->size);
-
-		libtransistor_context = ctx;
 	} else {
 		dbg_printf("no context");
 
