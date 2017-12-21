@@ -6,7 +6,7 @@ endif
 
 SYS_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/include/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/include/
 INCLUDES := $(SYS_INCLUDES) -I$(LIBTRANSISTOR_HOME)/include/ -I$(LIBTRANSISTOR_HOME)/libssp/include
-WARNINGS := -Wall -Wextra
+WARNINGS := -Wall -Wextra -Wno-unused-parameter
 
 LD := ld.lld$(LLVM_POSTFIX)
 CC := clang$(LLVM_POSTFIX)

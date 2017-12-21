@@ -2,6 +2,7 @@
 #include<libtransistor/util.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc/bsd.h>
+#include<libtransistor/fs/blobfd.h>
 
 #include<sys/socket.h>
 #include<assert.h>
@@ -12,6 +13,9 @@
 #include<errno.h>
 
 #include<ssp/ssp.h>
+
+#include "default_squashfs_image.h"
+#include "squashfs/squashfuse.h"
 
 int main(int argc, char **argv);
 
@@ -115,6 +119,7 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 static bool dont_finalize_bsd = false;
 static jmp_buf exit_jmpbuf;
 static int exit_value;
+int sqfs_img_fd;
 
 int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	if(relocate(aslr_base)) {
@@ -197,6 +202,11 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	}
 	dbg_printf("set up stdout");
 
+	printf("setting up filesystem...\n");
+	blob_file sqfs_blob;
+	size_t sqfs_size = ((uint8_t*) &_libtransistor_squashfs_image_end) - ((uint8_t*) &_libtransistor_squashfs_image); // TODO: not this
+	sqfs_img_fd = blobfd_create(&sqfs_blob, &_libtransistor_squashfs_image, sqfs_size);
+	
 	int ret;
 	if (setjmp(exit_jmpbuf) == 0) {
 		ret = main(argc, argv);

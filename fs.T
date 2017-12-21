@@ -3,8 +3,8 @@ OUTPUT_FORMAT(elf64-littleaarch64)
 SECTIONS
 {
   .data : {
-    SQUASHFS_IMAGE_START = .;
+    _libtransistor_squashfs_image = .;
     *(.data .data*)
-    SQUASHFS_IMAGE_END = .;
+    _libtransistor_squashfs_image_end = .;
   }
 }
