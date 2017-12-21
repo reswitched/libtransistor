@@ -55,7 +55,7 @@ $(LIBTRANSISTOR_HOME)/build/test/%.squashfs.o: $(LIBTRANSISTOR_HOME)/build/test/
 $(LIBTRANSISTOR_HOME)/build/empty_file:
 	touch $@
 
-$(LIBTRANSISTOR_HOME)/build/test/%.squashfs: $(wildcard $(LIBTRANSISTOR_HOME)/test/fs_%/*) $(LIBTRANSISTOR_HOME)/build/empty_file
+$(LIBTRANSISTOR_HOME)/build/test/%.squashfs: $(LIBTRANSISTOR_HOME)/test/fs_%/* $(LIBTRANSISTOR_HOME)/build/empty_file
 	mkdir -p $(@D)
 	mksquashfs $^ $@ -comp lz4 -nopad -noappend
 
