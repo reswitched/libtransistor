@@ -9,6 +9,7 @@
 #include<string.h>
 #include<setjmp.h>
 #include<unistd.h>
+#include<errno.h>
 
 #include<ssp/ssp.h>
 
@@ -175,7 +176,7 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	if(libtransistor_context.has_bsd && libtransistor_context.std_socket > 0) {
 		dbg_printf("using socklog stdio");
 		bsd_init(); // borrow bsd object from loader
-		int fd = socket_from_bsd(libtransistor_context->std_socket);
+		int fd = socket_from_bsd(libtransistor_context.std_socket);
 		if (fd < 0) {
 			dbg_printf("Error creating socket: %d", errno);
 		} else {
