@@ -3,7 +3,7 @@ require "socket"
 server = TCPServer.new(5555)
 
 child = fork do
-  exec(ARGV[0], "--load-nro", "build/test/test_bsd.nro", "--enable-sockets")
+  exec(ARGV[0], "--load-nro", File.expand_path(File.dirname(__FILE__)) + "/../build/test/test_bsd.nro", "--enable-sockets")
 end
 
 client = server.accept
