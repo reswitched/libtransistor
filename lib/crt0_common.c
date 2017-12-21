@@ -3,10 +3,13 @@
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc/bsd.h>
 
+#include<sys/socket.h>
 #include<assert.h>
 #include<stdio.h>
 #include<string.h>
 #include<setjmp.h>
+#include<unistd.h>
+#include<errno.h>
 
 #include<ssp/ssp.h>
 
@@ -107,16 +110,6 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 	return len;
 }
 
-static FILE socklog_stdout;
-static int socklog_write(struct _reent *reent, void *v, const char *ptr, int len) {
-	return bsd_send(libtransistor_context.std_socket, ptr, len, 0);
-}
-
-static FILE socklog_stdin;
-static int socklog_read(struct _reent *reent, void *v, char *ptr, int len) {
-	return bsd_recv(libtransistor_context.std_socket, ptr, len, 0);
-}
-
 #define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
 
 static bool dont_finalize_bsd = false;
@@ -127,9 +120,9 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	if(relocate(aslr_base)) {
 		return -4;
 	}
-  
+
 	__guard_setup();
-	
+
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("ctx: %p", ctx);
 
@@ -180,26 +173,25 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	bsslog_stdout._flags = __SWR | __SNBF;
 	bsslog_stdout._bf._base = (void*) 1;
 
-	char stdin_buf[1024];
-	socklog_stdin._read = socklog_read;
-	socklog_stdin._flags = __SRD | __SNBF;
-	socklog_stdin._bf._base = stdin_buf;
-	socklog_stdin._bf._size = sizeof(stdin_buf);
-	
-	socklog_stdout._write = socklog_write;
-	socklog_stdout._flags = __SWR | __SNBF;
-	socklog_stdout._bf._base = (void*) 1;
-
-	printf("_"); // init stdout
-	getchar(); // init stdin
 	if(libtransistor_context.has_bsd && libtransistor_context.std_socket > 0) {
 		dbg_printf("using socklog stdio");
 		bsd_init(); // borrow bsd object from loader
-		stdin  = &socklog_stdin;
-		stdout = &socklog_stdout;
-		stderr = &socklog_stdout;
+		int fd = socket_from_bsd(libtransistor_context.std_socket);
+		if (fd < 0) {
+			dbg_printf("Error creating socket: %d", errno);
+		} else {
+			if (dup2(fd, STDIN_FILENO) < 0)
+				dbg_printf("Error setting up stdin: %d", errno);
+			if (dup2(fd, STDOUT_FILENO) < 0)
+				dbg_printf("Error setting up stdout: %d", errno);
+			if (dup2(fd, STDERR_FILENO) < 0)
+				dbg_printf("Error setting up stderr: %d", errno);
+		}
 	} else {
+		// TODO: Create a fake FD for bsslog
 		dbg_printf("using bsslog stdout");
+		printf("_"); // init stdout
+		getchar(); // init stdin
 		stdout = &bsslog_stdout;
 		stderr = &bsslog_stdout;
 	}
