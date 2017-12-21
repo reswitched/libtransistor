@@ -46,11 +46,11 @@ result_t trn_fs_open(int *fd, const char *path, int flags) {
 			return LIBTRANSISTOR_ERR_FS_INVALID_PATH;
 		}
 
-		if(strncmp("..", segment, seglen) == 0) {
+		if(seglen == 2 && strncmp("..", segment, seglen) == 0) {
 			if(traverse_recursion > 0) { // root is its own parent
 				traverse_recursion--;
 			}
-		} else if(strncmp(".", segment, seglen) == 0) {
+		} else if(seglen == 1 && strncmp(".", segment, seglen) == 0) {
 		} else {
 			if(traverse_recursion + 1 >= MAX_RECURSION) {
 				return LIBTRANSISTOR_ERR_FS_PATH_TOO_DEEP;
