@@ -7,9 +7,11 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include<libtransistor/context.h>
 #include<libtransistor/fd.h>
+#include<libtransistor/ipc/time.h>
 
 void _exit(); // implemented in libtransistor crt0
 
@@ -179,8 +181,14 @@ int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__
 		reent->_errno = EINVAL;
 		return -1;
 	}
-	sm_init();
-	time_init();
+	
+	static bool time_initialized = false;
+	if(!time_initialized) {
+		time_init();
+		time_initialized = true;
+		atexit(time_finalize());
+	}
+	
 	if ((res = time_get_current_time(&time)) != RESULT_OK) {
 		reent->_errno = -EINVAL;
 		return -1;
