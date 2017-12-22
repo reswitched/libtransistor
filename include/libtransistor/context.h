@@ -45,7 +45,7 @@ typedef struct {
 	thread_h main_thread; // in, handle to main thread.
 } libtransistor_context_t;
 
-extern libtransistor_context_t *libtransistor_context;
+extern libtransistor_context_t libtransistor_context;
 
 void libtransistor_set_keep_loaded();
 void libtransistor_set_run_meminfo();

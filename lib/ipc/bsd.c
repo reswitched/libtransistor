@@ -40,9 +40,9 @@ result_t bsd_init() {
 		goto fail;
 	}
 	
-	if(libtransistor_context->has_bsd) {
+	if(libtransistor_context.has_bsd) {
 		borrowing_bsd = true;
-		bsd_object = libtransistor_context->bsd_object;
+		bsd_object = libtransistor_context.bsd_object;
 	} else {
 		borrowing_bsd = false;
 		r = sm_get_service(&bsd_object, "bsd:u");
