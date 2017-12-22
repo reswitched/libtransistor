@@ -5,7 +5,7 @@
 
 static ipc_object_t isystemclock_object;
 
-static bool time_initialized = false;
+static int time_initializations = 0;
 
 result_t time_init() {
 	result_t r;
@@ -13,16 +13,23 @@ result_t time_init() {
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	ipc_object_t time_object;
 
-	if (time_initialized)
+	if(time_initializations++ > 0) {
 		return RESULT_OK;
+	}
 
+	r = sm_init();
+	if(r != RESULT_OK) {
+		goto fail;
+	}
+	
 	r = sm_get_service(&time_object, "time:s");
 	if(r != RESULT_OK) {
 		r = sm_get_service(&time_object, "time:g");
 		if (r != RESULT_OK) {
 			r = sm_get_service(&time_object, "time:a");
-			if (r != RESULT_OK)
-				return r;
+			if (r != RESULT_OK) {
+				goto fail_sm;
+			}
 		}
 	}
 
@@ -30,13 +37,22 @@ result_t time_init() {
 	rs.num_objects = 1;
 	rs.objects = &isystemclock_object;
 	r = ipc_send(time_object, &rq, &rs);
-	ipc_close(time_object);
-	if (r == RESULT_OK) {
-		time_initialized = true;
-		return RESULT_OK;
-	} else {
-		return r;
+
+	if(r != RESULT_OK) {
+		goto fail_time_object;
 	}
+
+	sm_finalize();
+	ipc_close(time_object);
+	return RESULT_OK;
+
+fail_time_object:
+	ipc_close(time_object);
+fail_sm:
+	sm_finalize();
+fail:
+	time_initializations--;
+	return r;
 }
 
 result_t time_get_current_time(u64 *time) {
@@ -51,6 +67,7 @@ result_t time_get_current_time(u64 *time) {
 }
 
 void time_finalize() {
-	ipc_close(isystemclock_object);
-	time_initialized = false;
+	if(--time_initializations == 0) {
+		ipc_close(isystemclock_object);
+	}
 }
