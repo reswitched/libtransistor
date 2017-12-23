@@ -34,7 +34,14 @@ int main() {
 		dump_controller_color("right color", c->right_color);
 		dump_controller_color("left color", c->left_color);
 	}
-  
+
+	for(int i = 0; i < 200; i++) {
+		hid_controller_t *num8 = controllers + 8;
+		hid_controller_state_entry_t ent = num8->main.entries[num8->main.latest_idx];
+		printf("num8: 0x%16lx, (%d, %d), (%d, %d)\n", ent.button_state, ent.left_stick_x, ent.left_stick_y, ent.right_stick_x, ent.right_stick_y);
+		svcSleepThread(50000000);
+	}
+	
 	hid_finalize();
 	sm_finalize();
 	return 0;
