@@ -41,7 +41,7 @@ static result_t trn_sqfs_dir_next(void *data, trn_dirent_t *dirent) {
 			return LIBTRANSISTOR_ERR_FS_OUT_OF_DIR_ENTRIES;
 		}
 	}
-
+	
 	trn_sqfs_inode_t *out_data = malloc(sizeof(*out_data));
 	if(out_data == NULL) {
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
@@ -62,7 +62,7 @@ static result_t trn_sqfs_dir_next(void *data, trn_dirent_t *dirent) {
 	
 	memcpy(dirent->name, dir->dentry.name, dir->dentry.name_size);
 	dirent->name_size = dir->dentry.name_size;
-	
+
 	return RESULT_OK;
 }
 
@@ -128,7 +128,7 @@ static result_t trn_sqfs_is_dir(void *data, bool *out) {
 
 static result_t trn_sqfs_lookup(void *data, trn_inode_t *out, const char *name, size_t name_length) {
 	trn_sqfs_inode_t *inode = data;
-	
+
 	out->ops = &trn_sqfs_inode_ops;
 	if(!S_ISDIR(inode->inode.base.mode)) {
 		return LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY;

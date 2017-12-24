@@ -7,6 +7,9 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <malloc.h>
 
 #include<libtransistor/context.h>
 #include<libtransistor/fd.h>
@@ -213,4 +216,76 @@ long sysconf(int name) {
 	}
 	errno = ENOSYS;
 	return 01;
+}
+
+char *realpath(const char *path, char *resolved_path) {
+	char **resolved_path_var = &resolved_path;
+	switch(trn_fs_realpath(path, resolved_path_var)) {
+	case RESULT_OK:
+		return resolved_path_var;
+	case LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG:
+		errno = ENAMETOOLONG;
+		return NULL;
+	case LIBTRANSISTOR_ERR_OUT_OF_MEMORY:
+		errno = ENOMEM;
+	}
+	return NULL;
+}
+
+DIR *opendir(const char *name) {
+	DIR *dir = malloc(sizeof(*dir));
+	if(dir == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	result_t r;
+	switch(r = trn_fs_opendir(&dir->dir, name)) {
+	case RESULT_OK:
+		return dir;
+	case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
+	case LIBTRANSISTOR_ERR_FS_INVALID_PATH:
+		errno = ENOENT;
+		break;
+	case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
+		errno = ENOTDIR;
+		break;
+	default:
+		printf("unspec err: 0x%x\n", r);
+		errno = EIO;
+		break;
+	}
+	free(dir);
+	return NULL;
+}
+
+struct dirent *readdir(DIR *dirp) {
+	trn_dirent_t trn_dirent;
+	
+	switch(dirp->dir.ops->next(dirp->dir.data, &trn_dirent)) {
+	case RESULT_OK:
+		break;
+	case LIBTRANSISTOR_ERR_FS_OUT_OF_DIR_ENTRIES:
+		return NULL;
+	default:
+		errno = ENOSYS; // TODO: find a better errno
+		return NULL;
+	}
+
+	dirp->ent.d_ino = 0;
+	dirp->ent.d_namlen = trn_dirent.name_size;
+	memcpy(dirp->ent.d_name, trn_dirent.name, 256);
+	return &dirp->ent;
+}
+
+int closedir(DIR *dirp) {
+	if(dirp->dir.ops->close != NULL) {
+		dirp->dir.ops->close(dirp->dir.data);
+	}
+	return 0;
+}
+
+int mkdir(const char *path, mode_t mode) {
+	errno = EROFS;
+	return -1;
 }
