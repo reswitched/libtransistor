@@ -23,6 +23,7 @@ addons:
       - llvm-5.0-dev
       - lld-5.0
       - liblz4-dev
+      - squashfs-tools
 install:
     # Download and install recent cmake
     - |
