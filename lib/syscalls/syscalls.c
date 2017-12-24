@@ -8,11 +8,14 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <dirent.h>
+#include <malloc.h>
 
 #include<libtransistor/context.h>
 #include<libtransistor/err.h>
 #include<libtransistor/ipc/time.h>
 #include<libtransistor/fd.h>
+#include<libtransistor/svc.h>
 #include<libtransistor/fs/fs.h>
 
 void _exit(); // implemented in libtransistor crt0
@@ -201,7 +204,7 @@ int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__
 	if(!time_initialized) {
 		time_init();
 		time_initialized = true;
-		atexit(time_finalize());
+		atexit(time_finalize);
 	}
 	
 	if ((res = time_get_current_time(&time)) != RESULT_OK) {
@@ -220,5 +223,110 @@ long sysconf(int name) {
 		return 0x1000;
 	}
 	errno = ENOSYS;
+	return -1;
+}
+
+int nanosleep(const struct timespec *rqtp, struct timespec *rmtp) {
+	svcSleepThread(rqtp->tv_nsec + (rqtp->tv_sec * 1000000000));
+	return 0;
+}
+
+int posix_memalign (void **memptr, size_t alignment, size_t size) {
+	void *mem;
+	
+	if (alignment % sizeof(void *) != 0 || (alignment & (alignment - 1)) != 0) {
+    return EINVAL;
+	}
+
+	mem = memalign(alignment, size);
+	
+	if (mem != NULL) {
+		*memptr = mem;
+		return 0;
+	}
+	
+	return ENOMEM;
+}
+
+int _rename_r(struct _reent *reent, const char *old, const char *new) {
+	// TODO: implement this
+	reent->_errno = EROFS;
 	return 01;
+}
+
+ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize) {
+	errno = ENOSYS;
+	return -1;
+}
+
+char *realpath(const char *path, char *resolved_path) {
+	char **resolved_path_var = &resolved_path;
+	switch(trn_fs_realpath(path, resolved_path_var)) {
+	case RESULT_OK:
+		return resolved_path_var;
+	case LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG:
+		errno = ENAMETOOLONG;
+		return NULL;
+	case LIBTRANSISTOR_ERR_OUT_OF_MEMORY:
+		errno = ENOMEM;
+	}
+	return NULL;
+}
+
+DIR *opendir(const char *name) {
+	DIR *dir = malloc(sizeof(*dir));
+	if(dir == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	result_t r;
+	switch(r = trn_fs_opendir(&dir->dir, name)) {
+	case RESULT_OK:
+		return dir;
+	case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
+	case LIBTRANSISTOR_ERR_FS_INVALID_PATH:
+		errno = ENOENT;
+		break;
+	case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
+		errno = ENOTDIR;
+		break;
+	default:
+		printf("unspec err: 0x%x\n", r);
+		errno = EIO;
+		break;
+	}
+	free(dir);
+	return NULL;
+}
+
+struct dirent *readdir(DIR *dirp) {
+	trn_dirent_t trn_dirent;
+	
+	switch(dirp->dir.ops->next(dirp->dir.data, &trn_dirent)) {
+	case RESULT_OK:
+		break;
+	case LIBTRANSISTOR_ERR_FS_OUT_OF_DIR_ENTRIES:
+		return NULL;
+	default:
+		errno = ENOSYS; // TODO: find a better errno
+		return NULL;
+	}
+
+	dirp->ent.d_ino = 0;
+	dirp->ent.d_namlen = trn_dirent.name_size;
+	memcpy(dirp->ent.d_name, trn_dirent.name, 256);
+	return &dirp->ent;
+}
+
+int closedir(DIR *dirp) {
+	if(dirp->dir.ops->close != NULL) {
+		dirp->dir.ops->close(dirp->dir.data);
+	}
+	return 0;
+}
+
+int mkdir(const char *path, mode_t mode) {
+	errno = EROFS;
+	return -1;
 }

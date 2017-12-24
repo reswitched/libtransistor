@@ -17,6 +17,7 @@ typedef struct {
 } trn_dirent_t;
 
 typedef struct {
+	result_t (*rewind)(void *dir);
 	result_t (*next)(void *dir, trn_dirent_t *dirent);
 	void (*close)(void *dir);
 } trn_dir_ops_t;

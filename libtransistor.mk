@@ -4,7 +4,7 @@ else
     LIBTRANSISTOR_HOME := $(realpath $(LIBTRANSISTOR_HOME))
 endif
 
-SYS_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/include/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/include/
+SYS_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/include/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/include/
 INCLUDES := $(SYS_INCLUDES) -I$(LIBTRANSISTOR_HOME)/include/ -I$(LIBTRANSISTOR_HOME)/libssp/include -I $(LIBTRANSISTOR_HOME)/build/sdl2_install/include/
 WARNINGS := -Wall -Wextra -Wno-unused-parameter
 

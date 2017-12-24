@@ -1,15 +1,29 @@
-#include<stdio.h>
 #include<libtransistor/types.h>
 #include<libtransistor/util.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
 #include<libtransistor/fs/fs.h>
 #include<errno.h>
+#include<stdio.h>
+#include<dirent.h>
+#include<fcntl.h>
 
 #include"../lib/squashfs/squashfuse.h"
 
 int main(int argc, char *argv[]) {
 	result_t r;
+
+	DIR *d = opendir("/");
+	if(d == NULL) {
+		printf("failed to open directory: %d\n", errno);
+		return 1;
+	}
+
+	struct dirent *dent;
+	while((dent = readdir(d)) != NULL) {
+		printf("dent: %.*s\n", dent->d_namlen, dent->d_name);
+	}
+	closedir(d);
 	
 	printf("trn_fs_open:\n");
 	int fd;
