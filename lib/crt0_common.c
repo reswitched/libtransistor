@@ -117,7 +117,7 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 	return len;
 }
 
-#define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
+#define DEFAULT_NOCONTEXT_HEAP_SIZE 0x4000000
 
 static jmp_buf exit_jmpbuf;
 static int exit_value;
@@ -160,9 +160,9 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("ctx: %p", ctx);
 
-	char *argv_default[] = {"contextless", NULL};
+	char *argv_default[] = {"contextless", "--verbose", "what", NULL};
 	char **argv = argv_default;
-	int argc = 1;
+	int argc = 3;
   
 	if(ctx != NULL) {
 		dbg_printf("found context");
@@ -179,8 +179,8 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		ctx->log_length = &log_length;
 		ctx->return_flags = 0;
     
-		argv = ctx->argv;
-		argc = (int) ctx->argc;
+		//argv = ctx->argv;
+		//argc = (int) ctx->argc;
 
 		if(ctx->version != LIBTRANSISTOR_CONTEXT_VERSION) {
 			dbg_printf("mismatched context version");
