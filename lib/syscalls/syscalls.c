@@ -14,6 +14,7 @@
 #include<libtransistor/context.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/err.h>
+#include<libtransistor/svc.h>
 #include<libtransistor/fs/fs.h>
 
 void _exit(); // implemented in libtransistor crt0
@@ -197,8 +198,10 @@ int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__
 		reent->_errno = EINVAL;
 		return -1;
 	}
+
 	sm_init();
 	time_init();
+
 	if ((res = time_get_current_time(&time)) != RESULT_OK) {
 		reent->_errno = -EINVAL;
 		return -1;
@@ -215,7 +218,40 @@ long sysconf(int name) {
 		return 0x1000;
 	}
 	errno = ENOSYS;
+	return -1;
+}
+
+int nanosleep(const struct timespec *rqtp, struct timespec *rmtp) {
+	svcSleepThread(rqtp->tv_nsec + (rqtp->tv_sec * 1000000000));
+	return 0;
+}
+
+int posix_memalign (void **memptr, size_t alignment, size_t size) {
+	void *mem;
+	
+	if (alignment % sizeof(void *) != 0 || (alignment & (alignment - 1)) != 0) {
+    return EINVAL;
+	}
+
+	mem = memalign(alignment, size);
+	
+	if (mem != NULL) {
+		*memptr = mem;
+		return 0;
+	}
+	
+	return ENOMEM;
+}
+
+int _rename_r(struct _reent *reent, const char *old, const char *new) {
+	// TODO: implement this
+	reent->_errno = EROFS;
 	return 01;
+}
+
+ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize) {
+	errno = ENOSYS;
+	return -1;
 }
 
 char *realpath(const char *path, char *resolved_path) {
