@@ -31,6 +31,7 @@ void func_exec(char*);
 void func_meminfo(char*);
 void func_stats(char*);
 void func_reboot(char*);
+void func_args(char*);
 
 static const scmd_t server_commands[] =
 {
@@ -42,6 +43,7 @@ static const scmd_t server_commands[] =
 	{func_meminfo, "meminfo", "print memory map using svcQueryMemory"},
 	{func_stats, "stats", "print statistics"},
 	{func_reboot, "reboot", "reboot the console"},
+	{func_args, "args", "set name and arguments for directly uploaded NROs"},
 };
 #define NUM_CMDS (sizeof(server_commands) / sizeof(scmd_t))
 
@@ -116,6 +118,8 @@ void server_loop()
 		printf("- IP is %u.%u.%u.%u\n", ip & 0xFF, (ip >> 8) & 0xFF, (ip >> 16) & 0xFF, (ip >> 24) & 0xFF);
 	nifm_finalize();
 
+	nro_arg_name("NRO"); // default args
+	
 	while(1)
 	{
 		if(sockets[1] == -1)
@@ -152,7 +156,6 @@ void server_loop()
 				// load and run NRO
 				if(size != heap_size && size != 0xFFFFFFFF)
 				{
-					nro_arg_name("NRO");
 					size = nro_execute(heap_base, (int)(ptr - heap_base));
 					printf("- NRO returned 0x%016lX\n", size);
 				}
@@ -360,18 +363,9 @@ void func_stdout(char *par)
 		printf("- socket creation failed\n");
 }
 
-void func_exec(char *par)
+void func_args(char *par)
 {
-	int ret;
 	char *arg = par;
-	char *name = par;
-
-	if(!par)
-	{
-		printf("specify server side path\n");
-		return;
-	}
-
 	// parse name
 	while(*par && *par != ' ')
 		par++;
@@ -405,6 +399,21 @@ void func_exec(char *par)
 		}
 	} else
 		nro_arg_name(arg);
+}
+
+void func_exec(char *par)
+{
+	int ret;
+	char *name = par;
+
+	if(!par)
+	{
+		printf("specify server side path\n");
+		return;
+	}
+
+	// parse name and arguments
+	func_args(par);
 
 	// load & run
 	ret = http_get_file(name, heap_base, heap_size);
