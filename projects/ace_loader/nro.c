@@ -238,4 +238,3 @@ void nro_add_arg(const char *text)
 	// NULL next one
 	nro_argv[nro_argc] = NULL;
 }
-

@@ -298,6 +298,13 @@ void hook_func(uint64_t arg0)
 		goto crash;
 	}
 
+	ret = nifm_init();
+	if(ret)
+	{
+		printf("- nifm initialization error 0x%06x\n", ret);
+		goto crash;
+	}
+
 	// release sm; it's not needed anymore
 	sm_finalize();
 
