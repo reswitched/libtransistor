@@ -30,6 +30,7 @@ void func_stdout(char*);
 void func_exec(char*);
 void func_meminfo(char*);
 void func_stats(char*);
+void func_reboot(char*);
 
 static const scmd_t server_commands[] =
 {
@@ -39,7 +40,8 @@ static const scmd_t server_commands[] =
 	{func_stdout, "stdout", "reconnect / disconnect / connect to stdout server"},
 	{func_exec, "exec", "load and run NRO from HTTP server"},
 	{func_meminfo, "meminfo", "print memory map using svcQueryMemory"},
-	{func_stats, "stats", "print statistics"}
+	{func_stats, "stats", "print statistics"},
+	{func_reboot, "reboot", "reboot the console"},
 };
 #define NUM_CMDS (sizeof(server_commands) / sizeof(scmd_t))
 
@@ -430,3 +432,8 @@ void func_stats(char *par)
 	printf("ACE Loader stats:\n total NRO loads: %i\n currently loaded NROs: %i\n NRO unload errors: %i\n", nro_load_count, nro_loaded_count, nro_unload_fail);
 }
 
+void func_reboot(char *par)
+{
+	result_t r = bpc_reboot_system();
+	printf("- failed to reboot system: 0x%06x\n", r); // in this case, even RESULT_OK is a failure because execution should've stopped
+}
