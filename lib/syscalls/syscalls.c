@@ -168,7 +168,7 @@ finalize:
 }
 
 int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__restrict z) {
-	u64 time;
+	uint64_t time;
 	result_t res;
 	
 	if (z != NULL) {
