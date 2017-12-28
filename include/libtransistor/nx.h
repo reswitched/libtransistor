@@ -21,6 +21,7 @@ extern "C" {
 #include<libtransistor/ipc/time.h>
 #include<libtransistor/ipc/nifm.h>
 #include<libtransistor/ipc/audio.h>
+#include<libtransistor/ipc/bpc.h>
 #include<libtransistor/ipc/nv.h>
 #include<libtransistor/ipc/vi.h>
 #include<libtransistor/ipc/am.h>

@@ -21,27 +21,17 @@
 #endif
 #endif
 
-typedef uint8_t u8;   ///<  8-bit unsigned integer
-typedef uint16_t u16; ///< 16-bit unsigned integer
-typedef uint32_t u32; ///< 32-bit unsigned integer
-typedef uint64_t u64; ///< 64-bit unsigned integer
+typedef volatile uint8_t vu8;   ///<  8-bit volatile unsigned integer.
+typedef volatile uint16_t vu16; ///< 16-bit volatile unsigned integer.
+typedef volatile uint32_t vu32; ///< 32-bit volatile unsigned integer.
+typedef volatile uint64_t vu64; ///< 64-bit volatile unsigned integer.
 
-typedef int8_t s8;   ///<  8-bit signed integer
-typedef int16_t s16; ///< 16-bit signed integer
-typedef int32_t s32; ///< 32-bit signed integer
-typedef int64_t s64; ///< 64-bit signed integer
+typedef volatile int8_t vs8;   ///<  8-bit volatile signed integer.
+typedef volatile int16_t vs16; ///< 16-bit volatile signed integer.
+typedef volatile int32_t vs32; ///< 32-bit volatile signed integer.
+typedef volatile int64_t vs64; ///< 64-bit volatile signed integer.
 
-typedef volatile u8 vu8;   ///<  8-bit volatile unsigned integer.
-typedef volatile u16 vu16; ///< 16-bit volatile unsigned integer.
-typedef volatile u32 vu32; ///< 32-bit volatile unsigned integer.
-typedef volatile u64 vu64; ///< 64-bit volatile unsigned integer.
-
-typedef volatile s8 vs8;   ///<  8-bit volatile signed integer.
-typedef volatile s16 vs16; ///< 16-bit volatile signed integer.
-typedef volatile s32 vs32; ///< 32-bit volatile signed integer.
-typedef volatile s64 vs64; ///< 64-bit volatile signed integer.
-
-typedef u32 handle_t;                 ///< Resource handle.
+typedef uint32_t handle_t;                 ///< Resource handle.
 typedef handle_t thread_h;
 typedef handle_t shared_memory_h;
 typedef handle_t transfer_memory_h;
@@ -53,7 +43,7 @@ typedef handle_t debug_h;
 typedef handle_t revent_h;
 typedef handle_t wevent_h;
 typedef handle_t event_h; // either revent_h or wevent_h
-typedef u32 result_t;                 ///< Function result.
+typedef uint32_t result_t;                 ///< Function result.
 typedef void (*thread_entry)(void *); ///< Thread entrypoint function.
 typedef void (*voidfn)(void);
 

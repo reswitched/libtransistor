@@ -49,7 +49,7 @@ fail:
 	return r;
 }
 
-result_t nifm_get_ip_address(u32 *ip) {
+result_t nifm_get_ip_address(uint32_t *ip) {
 	ipc_request_t rq = ipc_default_request;
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 

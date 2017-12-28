@@ -16,21 +16,21 @@ typedef struct {
 
 typedef struct {
 	void *addr;
-	u64 size;
-	u32 type;
+	uint64_t size;
+	uint32_t type;
 } ipc_buffer_t;
 
 typedef struct {
-	u32 type;
-	u32 num_buffers;
+	uint32_t type;
+	uint32_t num_buffers;
 	ipc_buffer_t **buffers;
-	u32 request_id;
-	u32 *raw_data;
+	uint32_t request_id;
+	uint32_t *raw_data;
 	size_t raw_data_size; // in BYTES
 	bool send_pid;
-	u8 num_copy_handles;
-	u8 num_move_handles;
-	u8 num_objects;
+	uint8_t num_copy_handles;
+	uint8_t num_move_handles;
+	uint8_t num_objects;
 	handle_t *copy_handles;
 	handle_t *move_handles;
 	ipc_object_t *objects;
@@ -47,10 +47,10 @@ typedef struct {
 	ipc_object_t *objects;
   
 	size_t raw_data_size; // in BYTES
-	u32 *raw_data;
+	uint32_t *raw_data;
 
 	bool has_pid;
-	u32 *pid;
+	uint32_t *pid;
 } ipc_response_fmt_t;
 
 // see ipc.c for actual default values
@@ -61,13 +61,13 @@ extern ipc_object_t       ipc_null_object;
 /*
   Packs the IPC message described by `rq` and `object` into `buffer`.
 */
-result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object);
+result_t ipc_marshal(uint32_t *buffer, ipc_request_t *rq, ipc_object_t object);
 
 /*
   Unpacks the IPC message described by `rs` from `buffer`. `object` should
   be the object the request was sent to.
 */
-result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object);
+result_t ipc_unmarshal(uint32_t *buffer, ipc_response_fmt_t *rs, ipc_object_t object);
 
 /*
   Send a request described by `rq` to `object` and then unpack the response

@@ -239,3 +239,12 @@ void nro_add_arg(const char *text)
 	nro_argv[nro_argc] = NULL;
 }
 
+void nro_print_args()
+{
+	for(int i = 0; i < nro_argc; i++) {
+		if(i > 0) {
+			printf(" ");
+		}
+		printf("%s", nro_argv[i]);
+	}
+}

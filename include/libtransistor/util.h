@@ -3,7 +3,7 @@
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
 void *find_empty_memory_block(size_t len);
-char nybble2hex(u8 nybble);
+char nybble2hex(uint8_t nybble);
 void hexdump(const void *rawbuf, size_t size);
 void hexnum(int num);
 int log_string(const char *string, size_t len);

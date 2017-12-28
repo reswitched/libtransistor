@@ -10,7 +10,7 @@
 static ipc_object_t sm_object;
 static int sm_initializations = 0;
 
-static u64 str2u64(char *str) {
+static uint64_t str2u64(char *str) {
 	char buf[8];
 	int i = 0;
 	for(; i < 8; i++) {
@@ -20,7 +20,7 @@ static u64 str2u64(char *str) {
 	for(; i < 8; i++) {
 		buf[i] = 0;
 	}
-	return *(u64*) buf;
+	return *(uint64_t*) buf;
 }
 
 result_t sm_init() {
@@ -52,7 +52,7 @@ result_t sm_get_service(ipc_object_t *out_object, char *name) {
 		return LIBTRANSISTOR_ERR_SM_NOT_INITIALIZED;
 	}
   
-	u64 service_name = str2u64(name);
+	uint64_t service_name = str2u64(name);
   
 	if(strlen(name) > 8) {
 		return LIBTRANSISTOR_ERR_SM_SERVICE_NAME_TOO_LONG;
@@ -62,7 +62,7 @@ result_t sm_get_service(ipc_object_t *out_object, char *name) {
   
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 1;
-	rq.raw_data = (u32*) &service_name;
+	rq.raw_data = (uint32_t*) &service_name;
 	rq.raw_data_size = sizeof(service_name);
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
