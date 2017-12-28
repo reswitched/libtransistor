@@ -30,6 +30,8 @@ void func_stdout(char*);
 void func_exec(char*);
 void func_meminfo(char*);
 void func_stats(char*);
+void func_reboot(char*);
+void func_args(char*);
 
 static const scmd_t server_commands[] =
 {
@@ -39,7 +41,9 @@ static const scmd_t server_commands[] =
 	{func_stdout, "stdout", "reconnect / disconnect / connect to stdout server"},
 	{func_exec, "exec", "load and run NRO from HTTP server"},
 	{func_meminfo, "meminfo", "print memory map using svcQueryMemory"},
-	{func_stats, "stats", "print statistics"}
+	{func_stats, "stats", "print statistics"},
+	{func_reboot, "reboot", "reboot the console"},
+	{func_args, "args", "set name and arguments for directly uploaded NROs"},
 };
 #define NUM_CMDS (sizeof(server_commands) / sizeof(scmd_t))
 
@@ -103,21 +107,19 @@ void server_loop()
 	uint32_t idx;
 	void *ptr = NULL;
 	uint64_t size = 0;
-	u32 ip;
+	uint32_t ip;
 	result_t r;
 
 	printf("- starting push server ...\n");
-	r = nifm_init();
-	if (r) {
-		printf("- Failed to get IP: nifm_init returned %x\n", r);
-	} else {
-		r = nifm_get_ip_address(&ip);
-		if (r)
-			printf("- Failed to get IP: nifm_get_ip_address returned %x\n", r);
-		else
-			printf("- IP is %u.%u.%u.%u\n", ip & 0xFF, (ip >> 8) & 0xFF, (ip >> 16) & 0xFF, (ip >> 24) & 0xFF);
-		nifm_finalize();
-	}
+	r = nifm_get_ip_address(&ip);
+	if (r)
+		printf("- Failed to get IP: nifm_get_ip_address returned %x\n", r);
+	else
+		printf("- IP is %u.%u.%u.%u\n", ip & 0xFF, (ip >> 8) & 0xFF, (ip >> 16) & 0xFF, (ip >> 24) & 0xFF);
+	nifm_finalize();
+
+	nro_arg_name("NRO"); // default args
+	
 	while(1)
 	{
 		if(sockets[1] == -1)
@@ -154,7 +156,6 @@ void server_loop()
 				// load and run NRO
 				if(size != heap_size && size != 0xFFFFFFFF)
 				{
-					nro_arg_name("NRO");
 					size = nro_execute(heap_base, (int)(ptr - heap_base));
 					printf("- NRO returned 0x%016lX\n", size);
 				}
@@ -362,18 +363,17 @@ void func_stdout(char *par)
 		printf("- socket creation failed\n");
 }
 
-void func_exec(char *par)
+void func_args(char *par)
 {
-	int ret;
-	char *arg = par;
-	char *name = par;
-
 	if(!par)
 	{
-		printf("specify server side path\n");
+		printf("current command line: ");
+		nro_print_args();
+		printf("\n");
 		return;
 	}
-
+	
+	char *arg = par;
 	// parse name
 	while(*par && *par != ' ')
 		par++;
@@ -407,6 +407,21 @@ void func_exec(char *par)
 		}
 	} else
 		nro_arg_name(arg);
+}
+
+void func_exec(char *par)
+{
+	int ret;
+	char *name = par;
+
+	if(!par)
+	{
+		printf("specify server side path\n");
+		return;
+	}
+
+	// parse name and arguments
+	func_args(par);
 
 	// load & run
 	ret = http_get_file(name, heap_base, heap_size);
@@ -430,3 +445,8 @@ void func_stats(char *par)
 	printf("ACE Loader stats:\n total NRO loads: %i\n currently loaded NROs: %i\n NRO unload errors: %i\n", nro_load_count, nro_loaded_count, nro_unload_fail);
 }
 
+void func_reboot(char *par)
+{
+	result_t r = bpc_reboot_system();
+	printf("- failed to reboot system: 0x%06x\n", r); // in this case, even RESULT_OK is a failure because execution should've stopped
+}

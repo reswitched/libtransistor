@@ -55,7 +55,7 @@ fail:
 	return r;
 }
 
-result_t time_get_current_time(u64 *time) {
+result_t time_get_current_time(uint64_t *time) {
 	ipc_request_t rq = ipc_default_request;
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 

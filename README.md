@@ -22,9 +22,9 @@ Fedora does not ship recent enough clang and lld binaries. However, pre-built cl
 Example:
 
 ```bash
-wget -c http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-tar xpf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-export PATH=`pwd`/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin:$PATH
+wget -c http://releases.llvm.org/5.0.1/clang+llvm-5.0.1-x86_64-linux-gnu-Fedora27.tar.xz
+tar xpf clang+llvm-5.0.1-x86_64-linux-gnu-Fedora27.tar.xz
+export PATH=`pwd`/clang+llvm-5.0.1-x86_64-linux-gnu-Fedora27/bin:$PATH
 cd libtransistor
 make
 ```

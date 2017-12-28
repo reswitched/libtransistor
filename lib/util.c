@@ -25,7 +25,7 @@ void *find_empty_memory_block(size_t len) {
 	return (void*)addr;
 }
 
-char nybble2hex(u8 nybble) {
+char nybble2hex(uint8_t nybble) {
 	if(nybble < 10) {
 		return '0' + nybble;
 	} else {
@@ -61,7 +61,7 @@ int log_string(const char *string, size_t len) {
 }
 
 void hexdump(const void *rawbuf, size_t size) {
-	const u8 *buf = rawbuf;
+	const uint8_t *buf = rawbuf;
 	char line[0x31 + 4 + 0x10 + 1];
 	int i = 0;
 	size_t total = 0;
@@ -73,7 +73,7 @@ void hexdump(const void *rawbuf, size_t size) {
 		// hexdump section
 		while(total < linestart + 0x10) {
 			if(total < size) {
-				u8 byte = buf[total++];
+				uint8_t byte = buf[total++];
 				line[i++] = nybble2hex(byte >> 4);
 				line[i++] = nybble2hex(byte & 15);
 				line[i++] = ' ';
@@ -95,7 +95,7 @@ void hexdump(const void *rawbuf, size_t size) {
     
 		while(total < linestart + 0x10) {
 			if(total < size) {
-				u8 ch = buf[total++];
+				uint8_t ch = buf[total++];
 				if(ch >= ' ' && ch < 0x7F) {
 					line[i++] = ch;
 				} else {

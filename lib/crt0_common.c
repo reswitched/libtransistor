@@ -14,6 +14,7 @@
 #include<setjmp.h>
 #include<unistd.h>
 #include<errno.h>
+#include<stdlib.h>
 
 #include<ssp/ssp.h>
 
@@ -238,6 +239,7 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	int ret;
 	if (setjmp(exit_jmpbuf) == 0) {
 		ret = main(argc, argv);
+		exit(ret);
 	} else {
 		ret = exit_value;
 	}
