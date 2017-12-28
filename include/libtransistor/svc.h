@@ -5,54 +5,54 @@
 
 typedef struct PACKED {
 	void *base_addr;
-	u64 size;
-	u32 memory_type;
-	u32 memory_attribute;
-	u32 permission;
-	u32 device_ref_count;
-	u32 ipc_ref_count;
-	u32 padding;
+	uint64_t size;
+	uint32_t memory_type;
+	uint32_t memory_attribute;
+	uint32_t permission;
+	uint32_t device_ref_count;
+	uint32_t ipc_ref_count;
+	uint32_t padding;
 } memory_info_t;
 
-result_t svcSetHeapSize(void **outAddr, u32 size);
-result_t svcSetMemoryPermission(void *addr, u64 size, u32 permission);
-result_t svcSetMemoryAttribute(void *addr, u64 size, u32 state0, u32 state1);
-result_t svcMapMemory(void *dest, void *src, u64 size);
-result_t svcUnmapMemory(void *dest, void *src, u64 size);
-result_t svcQueryMemory(memory_info_t *memory_info, u32 *page_info, void *addr);
+result_t svcSetHeapSize(void **outAddr, uint32_t size);
+result_t svcSetMemoryPermission(void *addr, uint64_t size, uint32_t permission);
+result_t svcSetMemoryAttribute(void *addr, uint64_t size, uint32_t state0, uint32_t state1);
+result_t svcMapMemory(void *dest, void *src, uint64_t size);
+result_t svcUnmapMemory(void *dest, void *src, uint64_t size);
+result_t svcQueryMemory(memory_info_t *memory_info, uint32_t *page_info, void *addr);
 void svcExitProcess();
-result_t svcCreateThread(thread_h *out, thread_entry entry, u64 arg, void *stacktop, s32 priority, s32 processor_id);
+result_t svcCreateThread(thread_h *out, thread_entry entry, uint64_t arg, void *stacktop, int32_t priority, int32_t processor_id);
 result_t svcStartThread(thread_h thread);
 void svcExitThread();
-result_t svcSleepThread(u64 nanos);
-result_t svcGetThreadPriority(u32 *priority, thread_h thread);
-result_t svcSetThreadCoreMask(thread_h thread, u32 in, u64 in2);
-u32 svcGetCurrentProcessorNumber();
+result_t svcSleepThread(uint64_t nanos);
+result_t svcGetThreadPriority(uint32_t *priority, thread_h thread);
+result_t svcSetThreadCoreMask(thread_h thread, uint32_t in, uint64_t in2);
+uint32_t svcGetCurrentProcessorNumber();
 result_t svcSignalEvent(handle_t event);
 result_t svcClearEvent(handle_t event);
-result_t svcMapSharedMemory(shared_memory_h block, void *addr, u64 size, u32 permission);
-result_t svcUnmapSharedMemory(shared_memory_h block, void *addr, u64 size);
-result_t svcCreateTransferMemory(transfer_memory_h *out, void *addr, u64 size, u32 permission);
+result_t svcMapSharedMemory(shared_memory_h block, void *addr, uint64_t size, uint32_t permission);
+result_t svcUnmapSharedMemory(shared_memory_h block, void *addr, uint64_t size);
+result_t svcCreateTransferMemory(transfer_memory_h *out, void *addr, uint64_t size, uint32_t permission);
 result_t svcCloseHandle(handle_t handle);
 result_t svcResetSignal(handle_t signal);
-result_t svcWaitSynchronization(u32 *handle_index, handle_t *handles, u32 num_handles, u64 timeout);
+result_t svcWaitSynchronization(uint32_t *handle_index, handle_t *handles, uint32_t num_handles, uint64_t timeout);
 result_t svcCancelSynchronization(handle_t handle);
 void svcArbitrateLock(thread_h current_thread, void *lock, thread_h requesting_thread);
 void svcArbitrateUnlock(void *lock);
-result_t svcWaitProcessWideKeyAtomic(void *ptr0, void *ptr1, thread_h thread, u64 timeout);
-result_t svcSignalProcessWideKey(void *ptr, u32 value);
-u64 svcGetSystemTick();
+result_t svcWaitProcessWideKeyAtomic(void *ptr0, void *ptr1, thread_h thread, uint64_t timeout);
+result_t svcSignalProcessWideKey(void *ptr, uint32_t value);
+uint64_t svcGetSystemTick();
 result_t svcConnectToNamedPort(session_h *out, char name[8]);
 // sendSyncRequestLight
 result_t svcSendSyncRequest(session_h session);
-result_t svcSendSyncRequestWithUserBuffer(void *buffer, u64 size, session_h session);
+result_t svcSendSyncRequestWithUserBuffer(void *buffer, uint64_t size, session_h session);
 // sendAsyncRequestWithUserBuffer
 // getProcessId
 result_t svcGetThreadId(thread_h *handle_out, thread_h handle_in);
 // break
-void svcOutputDebugString(char *str, u64 size);
-void svcReturnFromException(u64 result);
-result_t svcGetInfo(u64 *info, u64 info_id, handle_t handle, u64 info_sub_id);
+void svcOutputDebugString(char *str, uint64_t size);
+void svcReturnFromException(uint64_t result);
+result_t svcGetInfo(uint64_t *info, uint64_t info_id, handle_t handle, uint64_t info_sub_id);
 // flushEntireDataCache
 // flushDataCache
 // mapPhysicalMemory
@@ -69,30 +69,30 @@ result_t svcGetInfo(u64 *info, u64 info_id, handle_t handle, u64 info_sub_id);
 // createSession
 result_t svcAcceptSession(session_h *out, port_h port);
 // replyAndReceiveLight
-result_t svcReplyAndReceive(u32 *handle_idx, session_h *handles, u32 num_handles, session_h reply_session, u64 timeout);
-result_t svcReplyAndReceiveWithUserBuffer(u32 *handle_idx, void *buffer, u64 size, session_h *handles, u32 num_handles, session_h reply_session, u64 timeout);
+result_t svcReplyAndReceive(uint32_t *handle_idx, session_h *handles, uint32_t num_handles, session_h reply_session, uint64_t timeout);
+result_t svcReplyAndReceiveWithUserBuffer(uint32_t *handle_idx, void *buffer, uint64_t size, session_h *handles, uint32_t num_handles, session_h reply_session, uint64_t timeout);
 // createEvent
 // 0x46-0x4E?
 // sleepSystem
-result_t svcReadWriteRegister(u32 *out_value, u64 addr, u32 rw_mask, u32 in_value);
+result_t svcReadWriteRegister(uint32_t *out_value, uint64_t addr, uint32_t rw_mask, uint32_t in_value);
 // setProcessActivity
-result_t svcCreateSharedMemory(shared_memory_h *out, u64 size, u32 self_permissions, u32 foreign_permissions);
-result_t svcMapTransferMemory(transfer_memory_h handle, void *addr, u64 size, u32 perm);
-result_t svcUnmapTransferMemory(transfer_memory_h handle, void *addr, u64 size);
+result_t svcCreateSharedMemory(shared_memory_h *out, uint64_t size, uint32_t self_permissions, uint32_t foreign_permissions);
+result_t svcMapTransferMemory(transfer_memory_h handle, void *addr, uint64_t size, uint32_t perm);
+result_t svcUnmapTransferMemory(transfer_memory_h handle, void *addr, uint64_t size);
 // createInterruptEvent
 // queryPhysicalAddress
-result_t svcQueryIoMapping(void *virt_addr, u64 phys_addr, u64 size);
+result_t svcQueryIoMapping(void *virt_addr, uint64_t phys_addr, uint64_t size);
 // createDeviceAddressSpace
-result_t svcAttachDeviceAddressSpace(u32 device, dev_addr_space_h space);
-result_t svcDetachDeviceAddressSpace(u32 device, dev_addr_space_h space);
-result_t svcMapDeviceAddressSpaceByForce(dev_addr_space_h space, process_h process, u64 dev_addr, u64 dev_size, u64 map_addr, u32 perm);
-result_t svcMapDeviceAddressSpaceAligned(dev_addr_space_h space, process_h process, u64 dev_addr, u64 dev_size, u64 map_addr, u32 perm);
+result_t svcAttachDeviceAddressSpace(uint32_t device, dev_addr_space_h space);
+result_t svcDetachDeviceAddressSpace(uint32_t device, dev_addr_space_h space);
+result_t svcMapDeviceAddressSpaceByForce(dev_addr_space_h space, process_h process, uint64_t dev_addr, uint64_t dev_size, uint64_t map_addr, uint32_t perm);
+result_t svcMapDeviceAddressSpaceAligned(dev_addr_space_h space, process_h process, uint64_t dev_addr, uint64_t dev_size, uint64_t map_addr, uint32_t perm);
 // mapDeviceAddressSpace
-result_t svcUnmapDeviceAddressSpace(dev_addr_space_h space, process_h process, u64 map_addr, u64 map_size, u32 perm);
+result_t svcUnmapDeviceAddressSpace(dev_addr_space_h space, process_h process, uint64_t map_addr, uint64_t map_size, uint32_t perm);
 // invalidateProcessDataCache
 // storeProcessDataCache
 // flushProcessDataCache
-result_t svcDebugActiveprocess(debug_h *out, u64 process_id);
+result_t svcDebugActiveprocess(debug_h *out, uint64_t process_id);
 // breakDebugProcess
 // terminateDebugProcess
 // getDebugEvent
@@ -101,9 +101,9 @@ result_t svcDebugActiveprocess(debug_h *out, u64 process_id);
 // getThreadList
 // getDebugThreadContext
 // setDebugThreadContext
-result_t svcQueryDebugProcessMemory(memory_info_t *memory_info, u32 *page_info, debug_h debug, u64 addr);
-result_t svcReadDebugProcessMemory(void *buffer, debug_h debug, u64 addr, u64 size);
-result_t svcWriteDebugProcessMemory(debug_h debug, void *buffer, u64 addr, u64 size);
+result_t svcQueryDebugProcessMemory(memory_info_t *memory_info, uint32_t *page_info, debug_h debug, uint64_t addr);
+result_t svcReadDebugProcessMemory(void *buffer, debug_h debug, uint64_t addr, uint64_t size);
+result_t svcWriteDebugProcessMemory(debug_h debug, void *buffer, uint64_t addr, uint64_t size);
 // setHardwareBreakPoint
 // getDebugThreadParam
 // 0x6D-0x6F?

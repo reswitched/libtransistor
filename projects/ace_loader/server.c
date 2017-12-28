@@ -107,7 +107,7 @@ void server_loop()
 	uint32_t idx;
 	void *ptr = NULL;
 	uint64_t size = 0;
-	u32 ip;
+	uint32_t ip;
 	result_t r;
 
 	printf("- starting push server ...\n");

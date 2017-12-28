@@ -51,7 +51,7 @@ ipc_response_fmt_t ipc_default_response_fmt = {
 	.pid = NULL
 };
 
-result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
+result_t ipc_marshal(uint32_t *buffer, ipc_request_t *rq, ipc_object_t object) {
 	int h = 0; // h is for HEAD
   
 	ipc_buffer_t *a_descriptors[16];
@@ -199,7 +199,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
 		int counter = i;
 		ipc_buffer_t *buf = x_descriptors[i];
 
-		if((u64) buf->addr >> 39) {
+		if((uint64_t) buf->addr >> 39) {
 			return LIBTRANSISTOR_ERR_INVALID_BUFFER_ADDRESS;
 		}
 
@@ -207,20 +207,20 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
 			return LIBTRANSISTOR_ERR_INVALID_BUFFER_SIZE;
 		}
     
-		buffer[h++] = (u32) (counter
-		                     | (((u64) buf->addr >> 36) & 0b111) << 6
+		buffer[h++] = (uint32_t) (counter
+		                     | (((uint64_t) buf->addr >> 36) & 0b111) << 6
 		                     | ((counter >> 9) & 0b111) << 9
-		                     | (((u64) buf->addr >> 32) & 0b1111) << 12
+		                     | (((uint64_t) buf->addr >> 32) & 0b1111) << 12
 		                     | (buf->size << 16));
 
-		buffer[h++] = (u64) buf->addr & 0xFFFFFFFF;
+		buffer[h++] = (uint64_t) buf->addr & 0xFFFFFFFF;
 	}
 
 	// a & b descriptors
 	for(int i = 0; i < num_a_descriptors + num_b_descriptors; i++) {
 		ipc_buffer_t *buf = ((i < num_a_descriptors) ? a_descriptors : (b_descriptors - num_a_descriptors))[i];
 
-		if((u64) buf->addr >> 39) {
+		if((uint64_t) buf->addr >> 39) {
 			return LIBTRANSISTOR_ERR_INVALID_BUFFER_ADDRESS;
 		}
 
@@ -229,16 +229,16 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
 		}
 
 		buffer[h++] = buf->size & 0xFFFFFFFF;
-		buffer[h++] = (u64) buf->addr & 0xFFFFFFFF;
+		buffer[h++] = (uint64_t) buf->addr & 0xFFFFFFFF;
 
 		if(buf->type >> 8) {
 			return LIBTRANSISTOR_ERR_INVALID_PROTECTION;
 		}
     
-		buffer[h++] = (u32) ((buf->type >> 6) // flags/permissions
-		                     | (((u64) buf->addr >> 36) & 0b111) << 2
+		buffer[h++] = (uint32_t) ((buf->type >> 6) // flags/permissions
+		                     | (((uint64_t) buf->addr >> 36) & 0b111) << 2
 		                     | ((buf->size >> 32) & 0b1111) << 24
-		                     | (((u64) buf->addr >> 32) & 0b1111) << 28);
+		                     | (((uint64_t) buf->addr >> 32) & 0b1111) << 28);
 	}
   
 	// "w" descriptors would go here
@@ -321,7 +321,7 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
 	for(int i = 0; i < num_c_descriptors; i++) {
 		ipc_buffer_t *buf = c_descriptors[i];
 
-		if((u64) buf->addr >> 48) {
+		if((uint64_t) buf->addr >> 48) {
 			return LIBTRANSISTOR_ERR_INVALID_BUFFER_ADDRESS;
 		}
 
@@ -329,15 +329,15 @@ result_t ipc_marshal(u32 *buffer, ipc_request_t *rq, ipc_object_t object) {
 			return LIBTRANSISTOR_ERR_INVALID_BUFFER_SIZE;
 		}
     
-		buffer[h++] = (u64) buf->addr & 0xFFFFFFFF;
-		buffer[h++] = ((u64) buf->addr >> 32)
-			| ((u32) buf->size << 16);
+		buffer[h++] = (uint64_t) buf->addr & 0xFFFFFFFF;
+		buffer[h++] = ((uint64_t) buf->addr >> 32)
+			| ((uint32_t) buf->size << 16);
 	}
 
 	return RESULT_OK;
 }
 
-result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object) {
+result_t ipc_unmarshal(uint32_t *buffer, ipc_response_fmt_t *rs, ipc_object_t object) {
 	if(rs->raw_data_size & 3) {
 		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
 	}
@@ -348,8 +348,8 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
   
 	int h = 0; // h for HEAD
 
-	u32 header0 = buffer[h++];
-	u32 header1 = buffer[h++];
+	uint32_t header0 = buffer[h++];
+	uint32_t header1 = buffer[h++];
 	int response_type = header0 & 0xFFFF;
 
 	if(response_type != 0) {
@@ -378,7 +378,7 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
 		int handle_descriptor = buffer[h++];
 		if(handle_descriptor & 1) {
 			has_pid = true;
-			pid = *(u64*)(buffer + h);
+			pid = *(uint64_t*)(buffer + h);
 			h+= 2;
 		}
 		num_copy_handles = (handle_descriptor >> 1) & 0xF;
@@ -415,7 +415,7 @@ result_t ipc_unmarshal(u32 *buffer, ipc_response_fmt_t *rs, ipc_object_t object)
 	}
 	h++;
 
-	u32 *raw_data = buffer + h;
+	uint32_t *raw_data = buffer + h;
   
 	if((raw_data_section_size
 	    - 4 // SFCI, command id
@@ -495,7 +495,7 @@ result_t ipc_convert_to_domain(ipc_object_t *object, ipc_domain_t *domain) {
 
 result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs) {
 	result_t r;
-	u32 *tls = get_tls();
+	uint32_t *tls = get_tls();
 	memset(tls, 0, 0x1f8);
 	r = ipc_marshal(tls, rq, object); if(r) { return r; }
 	if(ipc_debug_flag) {
@@ -533,7 +533,7 @@ result_t ipc_close(ipc_object_t object) {
 	ipc_request_t rq = ipc_default_request;
 	rq.close_object = true;
 
-	u32 *tls = get_tls();
+	uint32_t *tls = get_tls();
   
 	result_t r;
 	r = ipc_marshal(tls, &rq, object); if(r) { return r; }
