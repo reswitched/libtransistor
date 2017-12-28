@@ -365,6 +365,14 @@ void func_stdout(char *par)
 
 void func_args(char *par)
 {
+	if(!par)
+	{
+		printf("current command line: ");
+		nro_print_args();
+		printf("\n");
+		return;
+	}
+	
 	char *arg = par;
 	// parse name
 	while(*par && *par != ' ')
