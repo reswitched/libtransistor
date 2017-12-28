@@ -365,11 +365,6 @@ void func_stdout(char *par)
 
 void func_args(char *par)
 {
-	if(!par)
-	{
-		par = "unknown"; // func_exec expects us not to fail
-	}
-	
 	char *arg = par;
 	// parse name
 	while(*par && *par != ' ')
