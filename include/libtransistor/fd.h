@@ -42,9 +42,9 @@ struct file_operations {
 	ssize_t (*copy_file_range)(struct file *, loff_t, struct file *,
 			loff_t, size_t, unsigned int);
 	int (*clone_file_range)(struct file *, loff_t, struct file *, loff_t,
-			u64);
-	ssize_t (*dedupe_file_range)(struct file *, u64, u64, struct file *,
-			u64);*/
+			uint64_t);
+	ssize_t (*dedupe_file_range)(struct file *, uint64_t, uint64_t, struct file *,
+			uint64_t);*/
 };
 
 struct file {
