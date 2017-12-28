@@ -431,17 +431,17 @@ pthread_testcancel(void)
 int
 pthread_setcancelstate(int state, int *oldstatep)
 {
-	return ENOSYS;
-#if 0
-	struct tib *tib = TIB_GET();
+	pthread_t self = pthread_self();
 	int oldstate;
 
-	oldstate = tib->tib_cantcancel & CANCEL_DISABLED ?
+	if (self == NULL)
+		return (EINVAL);
+	oldstate = self->tib_cantcancel & CANCEL_DISABLED ?
 	    PTHREAD_CANCEL_DISABLE : PTHREAD_CANCEL_ENABLE;
 	if (state == PTHREAD_CANCEL_ENABLE) {
-		tib->tib_cantcancel &= ~CANCEL_DISABLED;
+		self->tib_cantcancel &= ~CANCEL_DISABLED;
 	} else if (state == PTHREAD_CANCEL_DISABLE) {
-		tib->tib_cantcancel |= CANCEL_DISABLED;
+		self->tib_cantcancel |= CANCEL_DISABLED;
 	} else {
 		return (EINVAL);
 	}
@@ -449,7 +449,6 @@ pthread_setcancelstate(int state, int *oldstatep)
 		*oldstatep = oldstate;
 
 	return (0);
-#endif
 }
 
 int
