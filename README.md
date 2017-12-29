@@ -35,6 +35,23 @@ If some of the cmake CXX tests fail, you may need to install the necessary depen
 sudo dnf -y install libstdc++-devel gcc-c++.x86_64
 ```
 
+### Building with Docker
+The docker image provides a shell that can build libtransistor and other libtransistor projects.
+```
+cd libtransistor
+docker build -t libtransistor_shell .
+docker run -it libtransistor_shell
+```
+
+In order to persist files between docker containers, you might be interested in using [bind mounts](https://docs.docker.com/engine/admin/volumes/bind-mounts/). For instance, to create and share a new directory named `share` to `/build/share` within the container, the following can be done:
+```
+mkdir $(pwd)/share
+docker run -v $(pwd)/share:/build/share -it libtransistor_shell
+```
+
+And it can be observed that any files within `/build/share` within the container will also appear the host machine's filesystem.
+
+
 ## Running
 
 ```
