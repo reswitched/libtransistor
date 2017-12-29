@@ -14,6 +14,7 @@
 #include<setjmp.h>
 #include<unistd.h>
 #include<errno.h>
+#include<stdlib.h>
 
 #include "default_squashfs_image.h"
 #include "squashfs/squashfuse.h"
@@ -160,9 +161,8 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 	return len;
 }
 
-#define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
+#define DEFAULT_NOCONTEXT_HEAP_SIZE 0x4000000
 
-static bool dont_finalize_bsd = false;
 static jmp_buf exit_jmpbuf;
 static int exit_value;
 
@@ -249,9 +249,11 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	bsslog_stdout._flags = __SWR | __SNBF;
 	bsslog_stdout._bf._base = (void*) 1;
 
+	bool initialized_bsd = false;
 	if(libtransistor_context.has_bsd && libtransistor_context.std_socket > 0) {
 		dbg_printf("using socklog stdio");
 		bsd_init(); // borrow bsd object from loader
+		initialized_bsd = true;
 		int fd = socket_from_bsd(libtransistor_context.std_socket);
 		if (fd < 0) {
 			dbg_printf("Error creating socket: %d", errno);
@@ -292,7 +294,7 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		ret = exit_value;
 	}
 
-	if(libtransistor_context.has_bsd && libtransistor_context.std_socket > 0 && !dont_finalize_bsd) {
+	if(initialized_bsd) {
 		bsd_finalize();
 	}
 
@@ -315,8 +317,4 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 void _exit(int ret) {
 	exit_value = ret;
 	longjmp(exit_jmpbuf, 1);
-}
-
-void libtransistor_dont_finalize_bsd() {
-	dont_finalize_bsd = true;
 }

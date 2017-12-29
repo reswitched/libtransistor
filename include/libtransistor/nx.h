@@ -17,13 +17,17 @@ extern "C" {
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
-#include<libtransistor/ipc/nv.h>
 #include<libtransistor/ipc/ro.h>
 #include<libtransistor/ipc/time.h>
 #include<libtransistor/ipc/nifm.h>
-#include<libtransistor/ipc/bpc.h>
 #include<libtransistor/ipc/audio.h>
+#include<libtransistor/ipc/bpc.h>
+#include<libtransistor/ipc/nv.h>
+#include<libtransistor/ipc/vi.h>
+#include<libtransistor/ipc/am.h>
+#include<libtransistor/gpu/gpu.h>
 #include<libtransistor/hid.h>
+#include<libtransistor/gfx/gfx.h>
 #include<libtransistor/audio.h>
 	
 #ifdef __cplusplus

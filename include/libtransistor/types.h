@@ -40,6 +40,9 @@ typedef handle_t port_h;
 typedef handle_t dev_addr_space_h;
 typedef handle_t process_h;
 typedef handle_t debug_h;
+typedef handle_t revent_h;
+typedef handle_t wevent_h;
+typedef handle_t event_h; // either revent_h or wevent_h
 typedef uint32_t result_t;                 ///< Function result.
 typedef void (*thread_entry)(void *); ///< Thread entrypoint function.
 typedef void (*voidfn)(void);

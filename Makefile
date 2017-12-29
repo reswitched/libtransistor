@@ -1,10 +1,10 @@
 include libtransistor.mk
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size sqfs_img audio_output init_fini_arrays
-libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o context.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o ipc/time.o lz4.o squashfs/cache.o squashfs/decompress.o squashfs/dir.o squashfs/file.o squashfs/fs.o squashfs/hash.o squashfs/nonstd-pread.o squashfs/nonstd-stat.o squashfs/stack.o squashfs/swap.o squashfs/table.o squashfs/traverse.o squashfs/util.o squashfs/xattr.o fs/blobfd.o fs/squashfs.o fs/fs.o ipc/bpc.o ipc/audio.o
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl sqfs_img audio_output init_fini_arrays
+libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o context.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o lz4.o squashfs/cache.o squashfs/decompress.o squashfs/dir.o squashfs/file.o squashfs/fs.o squashfs/hash.o squashfs/nonstd-pread.o squashfs/nonstd-stat.o squashfs/stack.o squashfs/swap.o squashfs/table.o squashfs/traverse.o squashfs/util.o squashfs/xattr.o fs/blobfd.o fs/squashfs.o fs/fs.o ipc/audio.o ipc/bpc.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
-# for building newlib
+# for building newlib and sdl
 export LD
 export CC
 export CXX
@@ -46,7 +46,7 @@ run_%_test: $(LIBTRANSISTOR_HOME)/build/test/test_%.nro
 
 $(LIBTRANSISTOR_HOME)/build/test/%.o: $(LIBTRANSISTOR_HOME)/test/%.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(WARNINGS) -c -o $@ $<
 
 $(LIBTRANSISTOR_HOME)/build/test/%.squashfs.o: $(LIBTRANSISTOR_HOME)/build/test/%.squashfs
 	mkdir -p $(@D)
@@ -66,11 +66,11 @@ $(LIBTRANSISTOR_HOME)/build/test/%.squashfs: $(LIBTRANSISTOR_HOME)/build/empty_f
 # Disable stack protector for crt0_common
 $(LIBTRANSISTOR_HOME)/build/lib/crt0_common.o: $(LIBTRANSISTOR_HOME)/lib/crt0_common.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) -fno-stack-protector -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(WARNINGS) -fno-stack-protector -c -o $@ $<
 
 $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(WARNINGS) -c -o $@ $<
 
 $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.S
 	mkdir -p $(@D)
@@ -120,6 +120,14 @@ $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
 		-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
 		-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
 		-DLLVM_CONFIG_PATH=llvm-config$(LLVM_POSTFIX)
+
+$(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a: $(LIBTRANSISTOR_HOME)/build/sdl2/Makefile
+	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl2/
+	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl2/ install
+
+$(LIBTRANSISTOR_HOME)/build/sdl2/Makefile:
+	mkdir -p $(@D)
+	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl2/configure "CFLAGS=$(CFLAGS)" --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --enable-video --prefix=$(LIBTRANSISTOR_HOME)/build/sdl2_install/
 
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*

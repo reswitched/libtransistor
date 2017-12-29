@@ -8,26 +8,33 @@
 
 #include<assert.h>
 
-static bool audio_ipc_initialized = false;
+static int audio_ipc_initializations = 0;
 
 static ipc_object_t iaom_object; // IAudioOutManager
 
 result_t audio_ipc_init() {
-	if(audio_ipc_initialized) {
+	if(audio_ipc_initializations++ > 0) {
 		return RESULT_OK;
 	}
 
 	result_t r;
+	r = sm_init();
+	if(r) {
+		goto fail;
+	}
+	
 	r = sm_get_service(&iaom_object, "audout:u");
 	if(r) {
-		goto fail_no_service;
+		goto fail_sm;
 	}
 
-	audio_ipc_initialized = true;
-
+	sm_finalize();
 	return 0;
 
-fail_no_service:
+fail_sm:
+	sm_finalize();
+fail:
+	audio_ipc_initializations--;
 	return r;
 }
 
@@ -216,5 +223,7 @@ void audio_ipc_output_close(audio_output_t *out) {
 }
 
 void audio_ipc_finalize() {
-	ipc_close(iaom_object);
+	if(--audio_ipc_initializations == 0) {
+		ipc_close(iaom_object);
+	}
 }

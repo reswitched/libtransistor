@@ -15,20 +15,30 @@ result_t nv_result;
 int nv_errno;
 
 static ipc_object_t nv_object;
+static int nv_initializations = 0;
 
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
 static transfer_memory_h transfer_mem;
 
 result_t nv_init() {
+	if(nv_initializations++ > 0) {
+		return RESULT_OK;
+	}
+  
 	result_t r;
+	r = sm_init();
+	if(r) {
+		goto fail;
+	}
+	
 	r = sm_get_service(&nv_object, "nvdrv:a");
 	if(r) {
-		goto fail_no_service;
+		goto fail_sm;
 	}
 
 	r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
 	if(r) {
-		goto fail_no_tmem;
+		goto fail_nvs;
 	}
 
 	uint32_t raw[] = {TRANSFER_MEM_SIZE};
@@ -49,22 +59,26 @@ result_t nv_init() {
 
 	r = ipc_send(nv_object, &rq, &rs);
 	if(r) {
-		goto fail;
+		goto fail_transfer_mem;
 	}
 
 	if(response[0]) {
 		nv_errno = response[0];
 		r = LIBTRANSISTOR_ERR_NV_INITIALIZE_FAILED;
-		goto fail;
+		goto fail_transfer_mem;
 	}
 
+	sm_finalize();
 	return 0;
-  
-fail:
+
+fail_transfer_mem:
 	svcCloseHandle(transfer_mem);
-fail_no_tmem:
+fail_nvs:
 	ipc_close(nv_object);
-fail_no_service:
+fail_sm:
+	sm_finalize();
+fail:
+	nv_initializations--;
 	return r;
 }
 
@@ -169,6 +183,8 @@ int nv_close(int fd) {
 }
 
 void nv_finalize() {
-	svcCloseHandle(transfer_mem);
-	ipc_close(nv_object);
+	if(--nv_initializations == 0) {
+		svcCloseHandle(transfer_mem);
+		ipc_close(nv_object);
+	}
 }

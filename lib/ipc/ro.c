@@ -12,17 +12,27 @@
 #include <netinet/in.h>
 
 static ipc_object_t ro_object;
+static int ro_initializations = 0;
 
 result_t ro_init() {
+	if(ro_initializations++ > 0) {
+		return RESULT_OK;
+	}
+	
 	result_t r;
 	uint64_t raw[] = {0};
 	handle_t handle = 0xffff8001;
 	ipc_request_t rq = ipc_default_request;
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 
+	r = sm_init();
+	if(r) {
+		goto fail;
+	}
+	
 	r = sm_get_service(&ro_object, "ldr:ro");
 	if(r) {
-		return r;
+		goto fail_sm;
 	}
 
 	rq.request_id = 4;
@@ -34,15 +44,25 @@ result_t ro_init() {
 
 	r = ipc_send(ro_object, &rq, &rs);
 	if(r) {
-		ipc_close(ro_object);
-		return r;
+		goto fail_ro_object;
 	}
-	
+
+	sm_finalize();
 	return 0;
+
+fail_ro_object:
+	ipc_close(ro_object);
+fail_sm:
+	sm_finalize();
+fail:
+	ro_initializations--;
+	return r;
 }
 
 void ro_finalize() {
-	ipc_close(ro_object);
+	if(--ro_initializations == 0) {
+		ipc_close(ro_object);
+	}
 }
 
 result_t ro_load_nro(void **nro_base, void *nro_heap, uint64_t nro_size, void *nro_bss, uint64_t bss_size) {

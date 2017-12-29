@@ -1,0 +1,17 @@
+directory tree:
+lib/ - library source code
+include/libtransistor/include files
+test/ - source code for tests
+newlib/ - libc
+test_helpers/ - scripts to help with testing
+tools/ - tools used for creating binaries
+build/ - binaries and build artifacts
+
+informal list of planned components:
+ipc/bsd: 		low-level BSD socket bindings
+ipc/nv:  		low-level NV driver bindings
+ipc/sm:  		low-level SM bindings
+ipc/vi:  		low-level VI services bindings
+display:		mid-level android-related stuff for managing surfaces and such, tightly related to ipc/vi
+gpu:    		mid-level graphics driver stuff, tightly related to ipc/nv
+gfx:    		high-level graphics and display, builds on top of display and gpu
