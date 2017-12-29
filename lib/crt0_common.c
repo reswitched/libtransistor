@@ -161,9 +161,9 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("ctx: %p", ctx);
 
-	char *argv_default[] = {"contextless", "--verbose", "what", NULL};
+	char *argv_default[] = {"contextless", NULL};
 	char **argv = argv_default;
-	int argc = 3;
+	int argc = 1;
   
 	if(ctx != NULL) {
 		dbg_printf("found context");
@@ -180,8 +180,8 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		ctx->log_length = &log_length;
 		ctx->return_flags = 0;
     
-		//argv = ctx->argv;
-		//argc = (int) ctx->argc;
+		argv = ctx->argv;
+		argc = (int) ctx->argc;
 
 		if(ctx->version != LIBTRANSISTOR_CONTEXT_VERSION) {
 			dbg_printf("mismatched context version");
