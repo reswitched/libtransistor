@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <malloc.h>
+#include <string.h>
 
 #include<libtransistor/context.h>
 #include<libtransistor/err.h>
