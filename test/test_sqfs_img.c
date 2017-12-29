@@ -7,6 +7,7 @@
 #include<stdio.h>
 #include<dirent.h>
 #include<fcntl.h>
+#include<unistd.h>
 
 #include"../lib/squashfs/squashfuse.h"
 
