@@ -15,3 +15,4 @@ uint64_t nro_execute(void *load_base, int in_size);
 
 void nro_arg_name(const char *text);
 void nro_add_arg(const char *text);
+void nro_print_args();

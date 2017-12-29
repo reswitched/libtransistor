@@ -21,8 +21,11 @@ extern "C" {
 #include<libtransistor/ipc/ro.h>
 #include<libtransistor/ipc/time.h>
 #include<libtransistor/ipc/nifm.h>
+#include<libtransistor/ipc/bpc.h>
+#include<libtransistor/ipc/audio.h>
 #include<libtransistor/hid.h>
-  
+#include<libtransistor/audio.h>
+	
 #ifdef __cplusplus
 }
 #endif

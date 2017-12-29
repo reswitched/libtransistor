@@ -32,7 +32,8 @@ typedef struct {
 typedef struct {
 	uint64_t timestamp;
 	uint64_t num_entries;
-	uint64_t unknown[2];
+	uint64_t latest_idx;
+	uint64_t max_idx;
 	hid_controller_state_entry_t entries[17];
 } hid_controller_state_t;
 

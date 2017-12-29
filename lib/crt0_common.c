@@ -15,8 +15,6 @@
 #include<unistd.h>
 #include<errno.h>
 
-#include<ssp/ssp.h>
-
 #include "default_squashfs_image.h"
 #include "squashfs/squashfuse.h"
 
@@ -51,6 +49,12 @@ static_assert(sizeof(Elf64_Rela) == 0x18, "Elf64_Rela size should be 0x18");
 // defined in crt0.nxo.S, mostly to avoid using the GOT before we relocate its entries
 extern module_header_t *_get_module_header();
 
+static void (**init_array)(void) = NULL;
+static void (**fini_array)(void) = NULL;
+
+static ssize_t init_array_size = -1;
+static ssize_t fini_array_size = -1;
+
 static bool relocate(uint8_t *aslr_base) {
 	module_header_t *mod_header = _get_module_header();
 	Elf64_Dyn *dynamic = (Elf64_Dyn*) (((uint8_t*) mod_header) + mod_header->dynamic_off);
@@ -59,9 +63,15 @@ static bool relocate(uint8_t *aslr_base) {
 	uint64_t rela_ent = 0;
 	uint64_t rela_count = 0;
 	bool found_rela = false;
-  
+	
 	while(dynamic->d_tag > 0) {
 		switch(dynamic->d_tag) {
+		case 4: // DT_HASH
+			break;
+		case 5: // DT_STRTAB
+			break;
+		case 6: // DT_SYMTAB
+			break;
 		case 7: // DT_RELA
 			if(found_rela) {
 				return true;
@@ -75,11 +85,44 @@ static bool relocate(uint8_t *aslr_base) {
 		case 9: // DT_RELAENT
 			rela_ent = dynamic->d_val;
 			break;
+		case 10: // DT_STRSZ
+			break;
+		case 11: // DT_SYMENT
+			break;
 		case 16: // DT_SYMBOLIC
+			break;
+		case 25: // DT_INIT_ARRAY
+			if(init_array != NULL) {
+				return true;
+			}
+			init_array = (void (**)(void)) (aslr_base + dynamic->d_val);
+			break;
+		case 26: // DT_FINI_ARRAY
+			if(fini_array != NULL) {
+				return true;
+			}
+			fini_array = (void (**)(void)) (aslr_base + dynamic->d_val);
+			break;
+		case 27: // DT_INIT_ARRAYSZ
+			if(init_array_size != -1) {
+				return true;
+			}
+			init_array_size = dynamic->d_val;
+			break;
+		case 28: // DT_FINI_ARRAYSZ
+			if(fini_array_size != -1) {
+				return true;
+			}
+			fini_array_size = dynamic->d_val;
+			break;
+		case 30: // DT_FLAGS
+			// TODO
 			break;
 		case 0x6ffffff9: // DT_RELACOUNT
 			rela_count = dynamic->d_val;
 			break;
+		default:
+			dbg_printf("unknown dynamic tag: %d\n", dynamic->d_tag);
 		}
 		dynamic++;
 	}
@@ -107,7 +150,7 @@ static bool relocate(uint8_t *aslr_base) {
 			return true;
 		}
 	}
-
+	
 	return false;
 }
 
@@ -155,9 +198,7 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	if(relocate(aslr_base)) {
 		return -4;
 	}
-
-	__guard_setup();
-
+	
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("ctx: %p", ctx);
 
@@ -233,10 +274,20 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	dbg_printf("set up stdout");
 
 	setup_fs();
+
+	if(init_array != NULL) {
+		if(init_array_size == -1) {
+			return true;
+		}
+		for(size_t i = 0; i < init_array_size/sizeof(init_array[0]); i++) {
+			init_array[i]();
+		}
+	}
 	
 	int ret;
 	if (setjmp(exit_jmpbuf) == 0) {
 		ret = main(argc, argv);
+		exit(ret);
 	} else {
 		ret = exit_value;
 	}
@@ -245,6 +296,15 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 		bsd_finalize();
 	}
 
+	if(fini_array != NULL) {
+		if(fini_array_size == -1) {
+			return true;
+		}
+		for(size_t i = 0; i < fini_array_size/sizeof(fini_array[0]); i++) {
+			fini_array[i]();
+		}
+	}
+	
 	// If we had a context, copy out parameters in there
 	if (ctx != NULL)
 		memcpy(ctx, &libtransistor_context, ctx->size);
