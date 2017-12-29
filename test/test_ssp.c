@@ -1,6 +1,6 @@
 int main()
 {
-	char buffer[10];
+	char buffer[4];
 	
 	for (int i = 0; i <= 10; i++)
 	{

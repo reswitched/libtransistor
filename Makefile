@@ -1,6 +1,6 @@
 include libtransistor.mk
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size audio_output
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size audio_output init_fini_arrays
 libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o context.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o ipc/time.o ipc/bpc.o ipc/audio.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
@@ -28,7 +28,7 @@ all: $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a \
 	$(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nro.so,$(libtransistor_TESTS))) \
 	$(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .nso.so,$(libtransistor_TESTS)))
 
-run_tests: run_helloworld_test run_hexdump_test run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test run_multiple_set_heap_size_test
+run_tests: run_helloworld_test run_hexdump_test run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test run_multiple_set_heap_size_test run_init_fini_arrays_test
 
 run_bsd_test: $(LIBTRANSISTOR_HOME)/build/test/test_bsd.nro $(LIBTRANSISTOR_HOME)/test_helpers/bsd.rb
 	$(RUBY) $(LIBTRANSISTOR_HOME)/test_helpers/bsd.rb $(MEPHISTO)
@@ -84,9 +84,6 @@ $(LIBTRANSISTOR_HOME)/build/newlib/Makefile:
 $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/build/newlib/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/newlib/
 
-$(LIBTRANSISTOR_HOME)/libssp/libssp.a:
-	$(MAKE) -C $(LIBTRANSISTOR_HOME)/libssp
-
 $(COMPILER_RT_BUILTINS_LIB): $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/compiler-rt/
 
@@ -109,7 +106,6 @@ $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
 
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
-	$(MAKE) -C libssp clean
 
 clean_newlib:
 	rm -rf build/newlib
