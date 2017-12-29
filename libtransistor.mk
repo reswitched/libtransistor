@@ -6,7 +6,7 @@ endif
 
 SYS_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/include/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/include/
 INCLUDES := $(SYS_INCLUDES) -I$(LIBTRANSISTOR_HOME)/include/ -I $(LIBTRANSISTOR_HOME)/build/sdl2_install/include/
-WARNINGS := -Wall -Wextra -Wno-unused-parameter
+WARNINGS := -Wall -Wextra -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-command-line-argument
 
 LD := ld.lld$(LLVM_POSTFIX)
 CC := clang$(LLVM_POSTFIX)
