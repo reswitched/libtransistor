@@ -163,6 +163,11 @@ static result_t trn_sqfs_lookup(void *data, trn_inode_t *out, const char *name, 
 	return RESULT_OK;
 }
 
+static result_t trn_sqfs_release(void *data) {
+	// TODO: implement this
+	return RESULT_OK;
+}
+
 static result_t trn_sqfs_open_as_file(void *data, int mode, int *fd) {
 	trn_sqfs_inode_t *inode = data;
 	
@@ -215,6 +220,7 @@ static result_t trn_sqfs_open_as_dir(void *data, trn_dir_t *out) {
 static trn_inode_ops_t trn_sqfs_inode_ops = {
 	.is_dir = trn_sqfs_is_dir,
 	.lookup = trn_sqfs_lookup,
+	.release = trn_sqfs_release,
 	.open_as_file = trn_sqfs_open_as_file,
 	.open_as_dir = trn_sqfs_open_as_dir,
 };
