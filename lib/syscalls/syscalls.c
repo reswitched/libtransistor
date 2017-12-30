@@ -186,7 +186,7 @@ int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__
 	if(!time_initialized) {
 		time_init();
 		time_initialized = true;
-		atexit(time_finalize());
+		atexit(time_finalize);
 	}
 	
 	if ((res = time_get_current_time(&time)) != RESULT_OK) {
