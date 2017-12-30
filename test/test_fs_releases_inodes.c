@@ -10,6 +10,8 @@
 		goto label; \
 	}
 
+static int global_inode_count = 0;
+
 static result_t dir_is_dir(void *inode, bool *out) {
 	*out = true;
 	return RESULT_OK;
@@ -30,6 +32,7 @@ typedef struct {
 static result_t dummy_inode_release(void *data) {
 	dummy_inode_t *inode = data;
 	printf("releasing %s (%p)\n", inode->path, inode);
+	global_inode_count--;
 	free(inode);
 	return RESULT_OK;
 }
@@ -62,6 +65,7 @@ static result_t dummy_inode_lookup(void *data, trn_inode_t *out, const char *nam
 	strncpy(child_data->path + l + 1, name, name_length);
 
 	printf("opened %s -> %p\n", child_data->path, child_data);
+	global_inode_count++;
 	
 	return RESULT_OK;
 }
@@ -97,10 +101,23 @@ int main(int argc, char *argv[]) {
 	ASSERT_OK(fail, trn_fs_realpath("/foo/bar/../baz", &resolved_path));
 	printf("realpath -> %s\n", resolved_path);
 
+	if(global_inode_count != 0) {
+		printf("resources were leaked\n");
+		return 2;
+	}
+	
 	ASSERT_OK(fail, trn_fs_chdir("/a/b/c/"));
 	printf("chdir'd\n");
+	if(global_inode_count != 3) {
+		printf("resources were leaked\n");
+		return 2;
+	}
 	ASSERT_OK(fail, trn_fs_realpath("../c/foo/bar/../baz", &resolved_path));
 	printf("realpath -> %s\n", resolved_path);
+	if(global_inode_count != 3) {
+		printf("resources were leaked\n");
+		return 2;
+	}
 	
 	return 0;
 fail:
