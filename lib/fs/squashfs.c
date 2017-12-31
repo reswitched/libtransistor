@@ -55,13 +55,14 @@ static result_t trn_sqfs_dir_next(void *data, trn_dirent_t *dirent) {
 	}
 	dirent->inode.ops = &trn_sqfs_inode_ops;
 
-	if(dir->dentry.name_size > sizeof(dirent->name)) {
+	if(dir->dentry.name_size >= sizeof(dirent->name)-1) {
 		free(out_data);
 		return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;
 	}
 	
 	memcpy(dirent->name, dir->dentry.name, dir->dentry.name_size);
 	dirent->name_size = dir->dentry.name_size;
+	dirent->name[dirent->name_size] = 0;
 
 	return RESULT_OK;
 }
