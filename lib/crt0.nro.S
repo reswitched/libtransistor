@@ -33,9 +33,7 @@ _mod_header:
 	.word NORELOC_BSS_END_ - NORELOC__nro_modhdr
 	.word 0, 0 // eh_frame_hdr start/end
 	.word 0 // runtime-generated module object offset
-        .quad log_buffer
-        .quad log_length
-        
+
 .section .text, "e"
 .global start
 start:
@@ -44,12 +42,6 @@ start:
         adrp x1, _start // aslr base
         bl _libtransistor_start
         ldp x29, x30, [sp], 0x10
-        ret
-
-.global _get_module_header
-_get_module_header:
-        adrp x0, _mod_header
-        add x0, x0, #:lo12:_mod_header
         ret
         
 .section .bss

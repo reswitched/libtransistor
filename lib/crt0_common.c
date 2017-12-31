@@ -40,9 +40,6 @@ typedef struct {
 
 static_assert(sizeof(Elf64_Rela) == 0x18, "Elf64_Rela size should be 0x18");
 
-// defined in crt0.nxo.S, mostly to avoid using the GOT before we relocate its entries
-extern module_header_t *_get_module_header();
-
 static void (**init_array)(void) = NULL;
 static void (**fini_array)(void) = NULL;
 
@@ -50,7 +47,7 @@ static ssize_t init_array_size = -1;
 static ssize_t fini_array_size = -1;
 
 static bool relocate(uint8_t *aslr_base) {
-	module_header_t *mod_header = _get_module_header();
+	module_header_t *mod_header = (module_header_t *)&aslr_base[*(uint32_t*) &aslr_base[4]];
 	Elf64_Dyn *dynamic = (Elf64_Dyn*) (((uint8_t*) mod_header) + mod_header->dynamic_off);
 	uint64_t rela_offset = 0;
 	uint64_t rela_size = 0;
