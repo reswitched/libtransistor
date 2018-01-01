@@ -81,7 +81,7 @@ def main(input, output, format='nro'):
 		if len(data) & 0xFFF:
 			data += '\0' * (0x1000 - (len(data) & 0xFFF))
 		
-		bssSize = symbols['NORELOC_BSS_END_'] - symbols['NORELOC_BSS_START_']
+		bssSize = elffile.get_section_by_name('.bss')['sh_size']
 		if bssSize & 0xFFF:
 			bssSize += 0x1000 - (bssSize & 0xFFF)
 
