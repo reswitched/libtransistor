@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdatomic.h>
 #include <errno.h>
+#include <string.h>
 #include "thread_private.h"
 #include "phal.h"
 
@@ -170,12 +171,23 @@ int phal_semaphore_lock(phal_semaphore *sem) {
 
 int phal_semaphore_unlock(phal_semaphore *sem) {
 	_Atomic(uint32_t) *mutex = &sem->lock;
+	dbg_printf("%p Unlocked semaphore\n", sem);
 	uint32_t old = atomic_exchange(mutex, 0);
 	if (old & HAS_LISTENERS)
 		svcArbitrateUnlock(mutex);
+	return 0;
 }
 
 void **phal_get_tls() {
-	return (void**)(((char*)get_tls()) + 0x1F8);
-	// TODO: &get_tls()->ctx;
+	struct tls *tls = get_tls();
+	if (tls == NULL)
+		return NULL;
+	if (tls->ctx != NULL)
+		return &tls->ctx->pthread;
+	tls->ctx = malloc(sizeof(struct thread_ctx));
+	if (tls->ctx == NULL)
+		return NULL;
+	tls->ctx->pthread = NULL;
+	_REENT_INIT_PTR(&tls->ctx->reent);
+	return &tls->ctx->pthread;
 }
