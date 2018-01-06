@@ -10,11 +10,20 @@
 #include <stdlib.h>
 #include <reent.h>
 
+#include <libtransistor/tls.h>
 #include<libtransistor/context.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/ipc/time.h>
 
 void _exit(); // implemented in libtransistor crt0
+
+struct _reent *__getreent() {
+	struct tls *tls = get_tls();
+	if (tls == NULL || tls->ctx == NULL)
+		return NULL;
+	else
+		return &tls->ctx->reent;
+}
 
 int _close_r(struct _reent *reent, int file) {
 	int res = fd_close(file);
