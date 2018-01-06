@@ -116,10 +116,10 @@ _rthread_cond_timedwait(pthread_cond_t cond, pthread_mutex_t *mutexp,
 	   (self->tib_canceled == 0 || (self->tib_cantcancel & CANCEL_DISABLED)));
 
 	/* if timeout or canceled, make note of that */
-	if (error == ETIMEDOUT)
-		rv = ETIMEDOUT;
-	else if (error == EINTR)
+	if (error == EINTR)
 		canceled = 1;
+	else
+		rv = error;
 
 	pthread_mutex_lock(mutexp);
 	phal_semaphore_unlock(&cond->sem);
