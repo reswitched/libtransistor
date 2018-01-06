@@ -67,7 +67,7 @@ int pthread_test_create1()
 
   /* A dirty hack, but we cannot rely on pthread_join in this
      primitive test. */
-  phal_thread_sleep(200000);
+  phal_thread_sleep(2 * 1000);
 
   assert(washere == 1);
 

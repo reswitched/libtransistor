@@ -177,7 +177,7 @@ OBJS = $(MUTEX_TEST_OBJS) $(MISC_OBJS) $(MISC_TEST_OBJS) $(THREAD_TEST_OBJS) $(S
 
 all: $(PROGRAM).nro
 
-CFLAGS += -I../ -I../sys/switch -finstrument-functions
+CFLAGS += -I../ -I../sys/switch
 $(PROGRAM).nro.so: ${OBJS} $(LIBTRANSITOR_NRO_LIB) $(LIBTRANSISTOR_COMMON_LIBS)
 	$(LD) $(LD_FLAGS) -o $@ ${OBJS} $(LIBTRANSISTOR_NRO_LDFLAGS)
 
