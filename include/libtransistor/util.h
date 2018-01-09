@@ -1,3 +1,8 @@
+/**
+ * @file libtransistor/util.h
+ * @brief Various utililty functions
+ */
+
 #pragma once
 
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
