@@ -1,5 +1,5 @@
 /**
- * @file switch.h
+ * @file libtransistor/nx.h
  * @brief Central Switch header. Includes all others.
  */
 
