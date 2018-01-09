@@ -1,3 +1,8 @@
+/**
+ * @file libtransistor/svc.h
+ * @brief Service functions
+ */
+
 #pragma once
 
 #define CURRENT_PROCESS 0xffff8001
