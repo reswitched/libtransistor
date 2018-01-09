@@ -113,7 +113,7 @@ $(LIBTRANSISTOR_HOME)/build/sdl2/Makefile:
 	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl2/configure "CFLAGS=$(CFLAGS)" --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --enable-video --prefix=$(LIBTRANSISTOR_HOME)/build/sdl2_install/
 
 clean:
-	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/*
+	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/* $(LIBTRANSISTOR_HOME)/docs
 
 clean_newlib:
 	rm -rf build/newlib
