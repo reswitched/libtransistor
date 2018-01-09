@@ -1,3 +1,8 @@
+/**
+ * @file libtransistor/audio.h
+ * @brief Audio data structures
+ */
+
 #pragma once
 
 #include<libtransistor/types.h>
