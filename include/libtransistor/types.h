@@ -1,9 +1,9 @@
 /**
- * @file types.h
+ * @file libtransistor/types.h
  * @brief Various system types.
+ *
+ *	Based on ctrulib's types.h
  */
-
-// Based on ctrulib's types.h
 
 #pragma once
 
@@ -14,7 +14,6 @@
 /// The maximum value of a u64.
 #define U64_MAX	UINT64_MAX
 
-/// would be nice if newlib had this already
 #ifndef SSIZE_MAX
 #ifdef SIZE_MAX
 #define SSIZE_MAX ((SIZE_MAX) >> 1)
@@ -31,7 +30,7 @@ typedef volatile int16_t vs16; ///< 16-bit volatile signed integer.
 typedef volatile int32_t vs32; ///< 32-bit volatile signed integer.
 typedef volatile int64_t vs64; ///< 64-bit volatile signed integer.
 
-typedef uint32_t handle_t;                 ///< Resource handle.
+typedef uint32_t handle_t;            ///< Resource handle.
 typedef handle_t thread_h;
 typedef handle_t shared_memory_h;
 typedef handle_t transfer_memory_h;
@@ -42,8 +41,8 @@ typedef handle_t process_h;
 typedef handle_t debug_h;
 typedef handle_t revent_h;
 typedef handle_t wevent_h;
-typedef handle_t event_h; // either revent_h or wevent_h
-typedef uint32_t result_t;                 ///< Function result.
+typedef handle_t event_h;             ///< Either revent_h or wevent_h
+typedef uint32_t result_t;            ///< Function result.
 typedef void (*thread_entry)(void *); ///< Thread entrypoint function.
 typedef void (*voidfn)(void);
 
