@@ -1,3 +1,8 @@
+/**
+ * @file libtransistor/err.h
+ * @brief Error definitions
+ */
+
 #pragma once
 
 #define LIBTRANSISTOR_RESULT(code) (((code) << 8) | 0xDD)
