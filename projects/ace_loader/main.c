@@ -96,6 +96,10 @@ const int static_handles[] =
 	0x348036
 };
 
+#ifdef JOKER
+int joker_main();
+#endif
+
 static int stdout_debug(struct _reent *reent, void *v, const char *ptr, int len)
 {
 	if(std_sck < 0)
@@ -305,12 +309,20 @@ void hook_func(uint64_t arg0)
 		goto crash;
 	}
 
+#ifndef JOKER
 	// release sm; it's not needed anymore
 	sm_finalize();
+#endif
 
 	// debug
 	printf("- got %luB heap block at 0x%016lX\n", heap_size, (uint64_t)heap_base);
 
+#ifdef JOKER
+	// start GUI
+	ret = joker_main();
+	if(ret)
+		printf("- GUI initialization failed %i\n", ret);
+#else
 	// start autorun NRO - if found
 	ret = http_get_file("autorun.nro", heap_base, heap_size);
 	if(ret > 0)
@@ -329,6 +341,7 @@ void hook_func(uint64_t arg0)
 	// start 'push' server
 	if(!server_init())
 		server_loop();
+#endif
 
 crash:
 	exit_loader();

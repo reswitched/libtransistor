@@ -1,0 +1,72 @@
+-= ACE loader GUI =-
+
+This is a simple GUI for ace_loader. It is supposed to mimic original Switch GUI.
+
+!!! This is an early alpha version, expect changes. !!!
+
+GUI and ace_loader expects you to host HTTP server with apps right now.
+It will use same hostname passed from pegaswitch, which will most likely be pegaswitch itself.
+
+Bitmap fonts used:
+https://github.com/kgsws/kgFont
+
+Apps:
+- app list is downloaded from 'http://host/files/app_list', it is a simple new-line (0x0A only) separated directory list
+- every app has its own directory for NRO, INI and BMP
+- at first, INI file is read 'http://host/files/app_dir/app.ini' and parsed
+
+INI format:
+Integrated INI file parser is very simple.
+Variables can only be defined as 'variable=value', no spaces before or after '='.
+Variable value is everything after '=', including any other '='s or spaces, up until newline or EOF.
+String encodings are UTF-8.
+
+INI sections:
+To define basic app info, section '[app]' is required.
+To define execute options (parameters) section '[option]' is optional.
+
+App section:
+Eevery app must define at least 'title' and 'nro', other fields are optional.
+- 'title' app name; max 31 characters
+- 'nro' NRO to start; this NRO is expected to be in same directory as INI file; max 31 characters minus path 'files/app_dir' length
+- 'icon' BMP type image; only 256x256, 8bit paletted images are supported; if not specified, random colors will be used instead; BMP is expected to be in same directory as INI file
+- 'version' only informative, optional; max 31 characters, shared with author
+- 'author' only informative, optional; max 31 characters, shared with version
+- maximum of 16 apps right now
+
+Option section:
+Every option must define at least 'title', 'type' and 'value0'. Apps are not required to have any options.
+Up to 8 option sections are supported right now.
+- 'title' option name in menu; max 15 characters; required
+- 'type' option type; affect selection behaviour in menu; required
+ * 'enum' - only one of provided values can be selected, at least one must be selected
+ * 'enum2' - only one of provided values can be selected, none can be selected
+ * 'boolean' - any of provided values can be enabled
+- 'value*' selection name in menu; replace '*' with value in range 0 - 7
+- 'param*' command line parameter passed to NRO, in case this option is enabled; replace '*' with value in range 0 - 7; optional
+- 'parameter' command line parameter passed to NRO, in case at least one of options is enabled; this parameter is passed first
+- there is a maximum limit of 4096 bytes for all the options (all [option] sections) for all NROs combined
+
+Example INI from kgDoom:
+[app]
+title=kgDoom
+version=Beta
+author=kgsws
+nro=kgdoom.nro
+icon=doom.bmp
+
+[option]
+title=Game
+type=enum
+value0=Shareware
+value1=Doom 1
+param1=-doom
+value2=Doom 2
+param2=-doom2
+value3=Ultimate Doom
+param3=-doomu
+value4=FreeDoom
+param4=-freedoom
+value5=FreeDoom 2
+param5=-freedoom2
+
