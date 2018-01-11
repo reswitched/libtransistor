@@ -1,3 +1,8 @@
+/**
+ * @file libtransistor/ipc/vi.h
+ * @brief Video Services
+ */
+
 #pragma once
 
 #include<libtransistor/types.h>

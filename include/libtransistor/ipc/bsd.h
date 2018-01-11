@@ -1,3 +1,8 @@
+/**
+ * @file libtransistor/ipc/bsd.h
+ * @brief BSD Sockets
+ */
+
 #pragma once
 
 #include<libtransistor/types.h>
