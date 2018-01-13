@@ -5,6 +5,9 @@ Libtransistor is a userland library for the Nintendo Switch. Currently, binaries
 
 If you want to setup a Switch Homebrew Development Environment, go read [The Guide](https://reswitchedweekly.github.io/Development-Setup) !
 
+## Documentation
+The documentation is automatically built and can be found here: http://reswitched.github.io/libtransistor
+
 ## Building
 
 First, clone the repo with
