@@ -30,20 +30,20 @@ typedef volatile int16_t vs16; ///< 16-bit volatile signed integer.
 typedef volatile int32_t vs32; ///< 32-bit volatile signed integer.
 typedef volatile int64_t vs64; ///< 64-bit volatile signed integer.
 
-typedef uint32_t handle_t;            ///< Resource handle.
-typedef handle_t thread_h;
-typedef handle_t shared_memory_h;
-typedef handle_t transfer_memory_h;
-typedef handle_t session_h;
-typedef handle_t port_h;
-typedef handle_t dev_addr_space_h;
-typedef handle_t process_h;
-typedef handle_t debug_h;
-typedef handle_t revent_h;
-typedef handle_t wevent_h;
+typedef uint32_t handle_t;            ///< Resource handle
+typedef handle_t thread_h;            ///< Thread handle
+typedef handle_t shared_memory_h;     ///< Shared Memory handle
+typedef handle_t transfer_memory_h;   ///< Transfer Memory handle
+typedef handle_t session_h;           ///< Session handle
+typedef handle_t port_h;              ///< Port handle
+typedef handle_t dev_addr_space_h;    ///< Dev Address Space handle
+typedef handle_t process_h;           ///< Process handle
+typedef handle_t debug_h;             ///< Debug handle
+typedef handle_t revent_h;            ///< revent handle
+typedef handle_t wevent_h;            ///< wevent handle
 typedef handle_t event_h;             ///< Either revent_h or wevent_h
-typedef uint32_t result_t;            ///< Function result.
-typedef void (*thread_entry)(void *); ///< Thread entrypoint function.
+typedef uint32_t result_t;            ///< Function result
+typedef void (*thread_entry)(void *); ///< Thread entrypoint function
 typedef void (*voidfn)(void);
 
 /// Creates a bitmask from a bit number.
