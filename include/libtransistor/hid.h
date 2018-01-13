@@ -9,8 +9,6 @@
 
 /**
  * @struct hid_touchscreen_t
- *
- * Detailed explanation.
  */
 typedef struct {
 	uint8_t data[0x3000];

@@ -49,10 +49,6 @@ typedef struct {
 	compositor_timing_t compositor_timing;
 } frame_event_history_delta_t;
 
-/**
-* @enum dataspace_t
-* @brief Unknown
-*/
 enum {
 	UNKNOWN = 0x0
 } dataspace_t;
