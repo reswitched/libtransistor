@@ -5,7 +5,7 @@ language: c
 sudo: required
 cache:
   directories:
-    - /home/travis/doxygen/doxygen-1.8.11/bin
+    - ${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
 matrix:
   include:
     - os: linux
