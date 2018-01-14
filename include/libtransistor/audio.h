@@ -27,7 +27,7 @@ typedef enum {
 
 /**
 * @struct audio_output_t
-* @brief Audio output format
+* @brief Audio output
 */
 typedef struct {
 	ipc_object_t object;
