@@ -1,6 +1,7 @@
 #include<libtransistor/context.h>
 #include<libtransistor/util.h>
 #include<libtransistor/svc.h>
+#include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fs/inode.h>
@@ -275,6 +276,17 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 	}
 	dbg_printf("set up stdout");
 
+	/*
+	  Automatically initialize sm, since 99% of applications are going to be using it
+	  and if they don't explicitly initialize it, each ipc module will initialize it,
+	  use it, then immediately finalize it.
+	 */
+	result_t r;
+	if((r = sm_init()) != RESULT_OK) {
+		printf("failed to initialize sm: 0x%x\n", r);
+		goto fail_bsd;
+	}
+
 	setup_fs();
 
 	if(init_array != NULL) {
@@ -285,17 +297,13 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 			init_array[i]();
 		}
 	}
-	
+
 	int ret;
 	if (setjmp(exit_jmpbuf) == 0) {
 		ret = main(argc, argv);
 		exit(ret);
 	} else {
 		ret = exit_value;
-	}
-
-	if(initialized_bsd) {
-		bsd_finalize();
 	}
 
 	if(fini_array != NULL) {
@@ -306,6 +314,16 @@ int _libtransistor_start(libtransistor_context_t *ctx, void *aslr_base) {
 			fini_array[i]();
 		}
 	}
+	
+fail_bsd:
+	/*
+	  at this point, bsd and sm have already been destructed, but just in case we
+	  ever change the destruction logic...
+	 */
+	if(initialized_bsd) {
+		bsd_finalize();
+	}
+	sm_finalize();
 	
 	// If we had a context, copy out parameters in there
 	if (ctx != NULL)
