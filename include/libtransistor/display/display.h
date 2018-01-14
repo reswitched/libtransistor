@@ -10,7 +10,7 @@
 
 /**
 * @struct display_t
-* @brief Description here...
+* @brief Represents a physical display
 */
 typedef struct {
 	uint64_t id;

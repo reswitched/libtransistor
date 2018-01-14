@@ -1,6 +1,6 @@
 /**
  * @file libtransistor/display/parcel.h
- * @brief Display parcel data structures and functions
+ * @brief Data structures and functions for packing/unpacking Android Parcels
  */
 
 #pragma once
@@ -9,7 +9,7 @@
 
 /**
 * @struct parcel_t
-* @brief Description here...
+* @brief Represents a parcel
 *
 *        Bounds checking is the caller's responsibility.
 *        Objects aren't currently supported very well.
@@ -31,7 +31,7 @@ typedef struct {
 struct binder_t;
 
 /**
-* @brief Initialize Parcel
+* @brief Initialize an empty Parcel
 *
 * @param parcel Description
 */
@@ -54,14 +54,14 @@ result_t parcel_load(parcel_t *parcel, uint8_t *flattened);
 uint8_t *parcel_finalize_writing(parcel_t *parcel, size_t *length);
 
 /**
-* @brief Read the remaining Parcel
+* @brief Query how much data is left that can be read
 *
 * @param parcel Description
 */
 size_t parcel_read_remaining(parcel_t *parcel);
 
 /**
-* @brief Read the parcel in place
+* @brief Returns a pointer to the read head, then bumps it `length` bytes
 *
 * @param parcel Description
 * @param length Description
@@ -69,7 +69,7 @@ size_t parcel_read_remaining(parcel_t *parcel);
 void *parcel_read_inplace(parcel_t *parcel, size_t length);
 
 /**
-* @brief Read Parcel binder
+* @brief Read a \ref binder_t from the Parcel
 *
 * @param parcel Description
 * @param binder Description
@@ -91,14 +91,14 @@ uint32_t parcel_read_u32(parcel_t *parcel);
 const char *parcel_read_string16(parcel_t *parcel); // proper char16 support isn't worth my time
 
 /**
-* @brief Write the remaining Parcel
+* @brief Query how much space is left for writing
 *
 * @param parcel Description
 */
 size_t parcel_write_remaining(parcel_t *parcel);
 
 /**
-* @brief Write the Parcel in place
+* @brief Returns a pointer to the write head, them bumps it `length` bytes
 *
 * @param parcel Description
 * @param length Description
