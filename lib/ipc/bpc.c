@@ -3,26 +3,33 @@
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bpc.h>
 
-static bool bpc_initialized = false;
+static int bpc_initializations = 0;
 
 static ipc_object_t ibpcm_object; // IBoardPowerControlManager
 
 result_t bpc_init() {
-	if(bpc_initialized) {
+	if(bpc_initializations++ > 0) {
 		return RESULT_OK;
 	}
 
 	result_t r;
-	r = sm_get_service(&ibpcm_object, "bpc");
+	r = sm_init();
 	if(r) {
 		goto fail;
 	}
+	
+	r = sm_get_service(&ibpcm_object, "bpc");
+	if(r) {
+		goto fail_sm;
+	}
 
-	bpc_initialized = true;
-
+	sm_finalize();
 	return RESULT_OK;
 
+fail_sm:
+	sm_finalize();
 fail:
+	bpc_initializations--;
 	return r;
 }
 
@@ -42,7 +49,19 @@ result_t bpc_reboot_system() {
 	return ipc_send(ibpcm_object, &rq, &ipc_default_response_fmt);
 }
 
-void bpc_finalize() {
+static void bpc_force_finalize() {
 	ipc_close(ibpcm_object);
-	bpc_initialized = false;
+	bpc_initializations = 0;
+}
+
+void bpc_finalize() {
+	if(--bpc_initializations == 0) {
+		bpc_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void bpc_destruct() {
+	if(bpc_initializations > 0) {
+		bpc_force_finalize();
+	}
 }

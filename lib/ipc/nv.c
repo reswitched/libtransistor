@@ -182,9 +182,20 @@ int nv_close(int fd) {
 	return response[0];  
 }
 
+static void nv_force_finalize() {
+	svcCloseHandle(transfer_mem);
+	ipc_close(nv_object);
+	nv_initializations = 0;
+}
+
 void nv_finalize() {
 	if(--nv_initializations == 0) {
-		svcCloseHandle(transfer_mem);
-		ipc_close(nv_object);
+		nv_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void nv_destruct() {
+	if(nv_initializations > 0) {
+		nv_force_finalize();
 	}
 }

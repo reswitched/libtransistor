@@ -710,15 +710,27 @@ int bsd_close(int socket) {
 	return response[0];
 }
 
+static void bsd_force_finalize() {
+	ipc_close(iresolver_object);
+	if(!borrowing_bsd) {
+		svcCloseHandle(transfer_mem);
+		ipc_close(bsd_object);
+		ipc_close_domain(bsd_domain);
+	}
+	borrowing_bsd = false;
+
+	bsd_initializations = 0;
+}
+
 void bsd_finalize() {
 	if(--bsd_initializations == 0) {
-		ipc_close(iresolver_object);
-		if(!borrowing_bsd) {
-			svcCloseHandle(transfer_mem);
-			ipc_close(bsd_object);
-			ipc_close_domain(bsd_domain);
-		}
-		borrowing_bsd = false;
+		bsd_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void bsd_destruct() {
+	if(bsd_initializations > 0) {
+		bsd_force_finalize();
 	}
 }
 

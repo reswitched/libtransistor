@@ -41,9 +41,20 @@ fail:
 	return r;
 }
 
+static void sm_force_finalize() {
+	ipc_close(sm_object);
+	sm_initializations = 0;
+}
+
 void sm_finalize() {
 	if(--sm_initializations == 0) {
-		ipc_close(sm_object);
+		sm_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void sm_destruct() {
+	if(sm_initializations > 0) {
+		sm_force_finalize();
 	}
 }
 

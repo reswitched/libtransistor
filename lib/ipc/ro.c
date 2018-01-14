@@ -59,9 +59,20 @@ fail:
 	return r;
 }
 
+static void ro_force_finalize() {
+	ipc_close(ro_object);
+	ro_initializations = 0;
+}
+
 void ro_finalize() {
 	if(--ro_initializations == 0) {
-		ipc_close(ro_object);
+		ro_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void ro_destruct() {
+	if(ro_initializations > 0) {
+		ro_force_finalize();
 	}
 }
 
