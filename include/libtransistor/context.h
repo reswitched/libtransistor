@@ -22,7 +22,7 @@
 #define RETF_CLOSE_BROWSER	4
 
 /**
- * @brief Add description here
+ * @brief Resources, arguments, and values to be passed between this program and PegaSwitch or another NRO loader.
  */
 typedef struct {
 	uint64_t magic;
@@ -37,7 +37,7 @@ typedef struct {
 	uint64_t argc; /// in
   
 	void *mem_base; /// in, usable contiguous block of free memory
-	uint64_t mem_size; /// in, ^ size
+	uint64_t mem_size; /// in, size of mem_base block
   
 	bool has_bsd; /// in
 	ipc_object_t bsd_object; /// in, bsd object
