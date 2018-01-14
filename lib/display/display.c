@@ -91,8 +91,21 @@ result_t display_get_vsync_event(revent_h *event) {
 	return RESULT_OK;
 }
 
+static void display_force_finalize() {
+	vi_close_display(&display);
+	vi_finalize();
+	gpu_finalize();
+	display_initializations = 0;
+}
+
 void display_finalize() {
 	if(--display_initializations == 0) {
-		vi_close_display(&display);
+		display_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void display_destruct() {
+	if(display_initializations > 0) {
+		display_force_finalize();
 	}
 }

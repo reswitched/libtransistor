@@ -133,12 +133,23 @@ result_t am_iwc_acquire_foreground_rights() {
 	return ipc_send(iwc_object, &rq, &rs);
 }
 
+static void am_force_finalize() {
+	ipc_close(iwc_object);
+	ipc_close(isc_object);
+	ipc_close(proxy_object);
+	ipc_close(proxy_service_object);
+	ipc_close_domain(am_domain);
+	am_initializations = 0;
+}
+
 void am_finalize() {
 	if(--am_initializations == 0) {
-		ipc_close(iwc_object);
-		ipc_close(isc_object);
-		ipc_close(proxy_object);
-		ipc_close(proxy_service_object);
-		ipc_close_domain(am_domain);
+		am_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void am_destruct() {
+	if(am_initializations > 0) {
+		am_force_finalize();
 	}
 }

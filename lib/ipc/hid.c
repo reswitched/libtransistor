@@ -72,9 +72,21 @@ result_t hid_ipc_get_shared_memory_handle(shared_memory_h *handle) {
 	return ipc_send(applet_resource_object, &rq, &rs);
 }
 
+static void hid_ipc_force_finalize() {
+	ipc_close(applet_resource_object);
+	ipc_close(hid_server_object);
+	hid_ipc_initializations = 0;
+}
+
 void hid_ipc_finalize() {
 	if(--hid_ipc_initializations == 0) {
-		ipc_close(applet_resource_object);
-		ipc_close(hid_server_object);
+		hid_ipc_force_finalize();
+	}
+}
+
+
+static __attribute__((destructor)) void hid_ipc_destruct() {
+	if(hid_ipc_initializations > 0) {
+		hid_ipc_force_finalize();
 	}
 }

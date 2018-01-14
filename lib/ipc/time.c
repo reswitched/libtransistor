@@ -66,8 +66,19 @@ result_t time_get_current_time(uint64_t *time) {
 	return ipc_send(isystemclock_object, &rq, &rs);
 }
 
+static void time_force_finalize() {
+	ipc_close(isystemclock_object);
+	time_initializations = 0;
+}
+
 void time_finalize() {
 	if(--time_initializations == 0) {
-		ipc_close(isystemclock_object);
+		time_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void time_destruct() {
+	if(time_initializations > 0) {
+		time_force_finalize();
 	}
 }

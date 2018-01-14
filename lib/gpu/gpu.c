@@ -115,10 +115,21 @@ result_t gpu_buffer_initialize_from_id(gpu_buffer_t *gpu_b, uint32_t id) {
 	return RESULT_OK;
 }
 
+static void gpu_force_finalize() {
+	nv_close(nvmap_fd);
+	nv_close(nvas_fd);
+	nv_finalize();
+	gpu_initializations = 0;
+}
+
 void gpu_finalize() {
 	if(--gpu_initializations == 0) {
-		nv_close(nvmap_fd);
-		nv_close(nvas_fd);
-		nv_finalize();
+		gpu_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void gpu_destruct() {
+	if(gpu_initializations > 0) {
+		gpu_force_finalize();
 	}
 }

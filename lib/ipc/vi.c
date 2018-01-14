@@ -495,12 +495,23 @@ result_t vi_iads_set_layer_scaling_mode(uint32_t scaling_mode, uint64_t layer_id
 	                         NULL, 0);
 }
 
+static void vi_force_finalize() {
+	ipc_close(isds_object);
+	ipc_close(ihosbd_object);
+	ipc_close(iads_object);
+	ipc_close(imrs_object);
+	ipc_close_domain(vi_domain);
+	vi_initializations = 0;
+}
+
 void vi_finalize() {
 	if(--vi_initializations == 0) {
-		ipc_close(isds_object);
-		ipc_close(ihosbd_object);
-		ipc_close(iads_object);
-		ipc_close(imrs_object);
-		ipc_close_domain(vi_domain);
+		vi_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void vi_destruct() {
+	if(vi_initializations > 0) {
+		vi_force_finalize();
 	}
 }

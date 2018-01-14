@@ -60,8 +60,19 @@ result_t nifm_get_ip_address(uint32_t *ip) {
 	return ipc_send(nifm_g_object, &rq, &rs);
 }
 
+static void nifm_force_finalize() {
+	ipc_close(nifm_g_object);
+	nifm_initializations = 0;
+}
+
 void nifm_finalize() {
 	if(--nifm_initializations == 0) {
-		ipc_close(nifm_g_object);
+		nifm_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void nifm_destruct() {
+	if(nifm_initializations > 0) {
+		nifm_force_finalize();
 	}
 }
