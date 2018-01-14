@@ -3,6 +3,8 @@
 
 Libtransistor is a userland library for the Nintendo Switch. Currently, binaries can only be run under [Mephisto](https://github.com/reswitched/Mephisto) or with pegaswitch with ACE on 3.0.0.
 
+If you want to setup a Switch Homebrew Development Environment, go read [The Guide](https://reswitchedweekly.github.io/Development-Setup) !
+
 ## Building
 
 First, clone the repo with
