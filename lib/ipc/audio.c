@@ -222,8 +222,19 @@ void audio_ipc_output_close(audio_output_t *out) {
 	ipc_close(out->object);
 }
 
+static void audio_ipc_force_finalize() {
+	ipc_close(iaom_object);
+	audio_ipc_initializations = 0;
+}
+
 void audio_ipc_finalize() {
 	if(--audio_ipc_initializations == 0) {
-		ipc_close(iaom_object);
+		audio_ipc_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void audio_ipc_destruct() {
+	if(audio_ipc_initializations > 0) {
+		audio_ipc_force_finalize();
 	}
 }

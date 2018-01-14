@@ -60,11 +60,23 @@ hid_shared_memory_t *hid_get_shared_memory() {
 	return shared_memory;
 }
 
+static void hid_force_finalize() {
+	svcUnmapSharedMemory(shared_memory_handle, shared_memory, SHARED_MEMORY_SIZE);
+	shared_memory = NULL;
+	shared_memory_handle = 0;
+	svcCloseHandle(shared_memory_handle);
+	hid_ipc_finalize();
+	hid_initializations = 0;
+}
+
 void hid_finalize() {
 	if(--hid_initializations == 0) {
-		svcUnmapSharedMemory(shared_memory_handle, shared_memory, SHARED_MEMORY_SIZE);
-		shared_memory = NULL;
-		shared_memory_handle = 0;
-		svcCloseHandle(shared_memory_handle);
+		hid_force_finalize();
+	}
+}
+
+static __attribute__((destructor)) void hid_destruct() {
+	if(hid_initializations > 0) {
+		hid_force_finalize();
 	}
 }
