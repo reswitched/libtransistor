@@ -1,6 +1,7 @@
 #include<errno.h>
 #include<stdlib.h>
-#include<libtransistor/nx.h>
+#include<libtransistor/types.h>
+#include<libtransistor/svc.h>
 #include<libtransistor/fd.h>
 
 #define FD_MAX 1024
