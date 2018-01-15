@@ -17,7 +17,8 @@ ipc_buffer_t null_buffer = {
 
 ipc_object_t ipc_null_object = {
 	.session = 0,
-	.object_id = -1
+	.object_id = -1,
+	.is_borrowed = false,
 };
 
 ipc_request_t ipc_default_request = {
@@ -453,6 +454,7 @@ result_t ipc_unmarshal(uint32_t *buffer, ipc_response_fmt_t *rs, ipc_object_t ob
 		for(uint32_t i = 0; i < rs->num_objects; i++) {
 			rs->objects[i].domain = object.domain;
 			rs->objects[i].object_id = domain_ids[i];
+			rs->objects[i].is_borrowed = false;
 		}
 	}
   
@@ -462,6 +464,7 @@ result_t ipc_unmarshal(uint32_t *buffer, ipc_response_fmt_t *rs, ipc_object_t ob
 		for(uint32_t i = 0; i < rs->num_objects; i++) {
 			rs->objects[i].session = move_handles[mhi++];
 			rs->objects[i].object_id = -1;
+			rs->objects[i].is_borrowed = false;
 		}
 	}
 	for(uint32_t i = 0; i < rs->num_move_handles; i++) { rs->move_handles[i] = move_handles[mhi++]; }
@@ -473,6 +476,10 @@ result_t ipc_unmarshal(uint32_t *buffer, ipc_response_fmt_t *rs, ipc_object_t ob
 }
 
 result_t ipc_convert_to_domain(ipc_object_t *object, ipc_domain_t *domain) {
+	if(object->is_borrowed) {
+		return LIBTRANSISTOR_ERR_REFUSAL_TO_CONVERT_BORROWED_OBJECT;
+	}
+	
 	ipc_object_t session = *object;  
 	domain->session = session.session;
 
@@ -526,6 +533,10 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
 }
 
 result_t ipc_close(ipc_object_t object) {
+	if(object.is_borrowed) {
+		return RESULT_OK; // we're not allowed to close borrowed objects, and we would also like to handle this transparently
+	}
+	
 	if(object.object_id < 0) {
 		return svcCloseHandle(object.session);
 	}

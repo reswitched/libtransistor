@@ -1,4 +1,5 @@
 #include<libtransistor/types.h>
+#include<libtransistor/loader_config.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
@@ -59,6 +60,10 @@ static __attribute__((destructor)) void sm_destruct() {
 }
 
 result_t sm_get_service(ipc_object_t *out_object, char *name) {
+	return sm_get_service_ex(out_object, name, false);
+}
+
+result_t sm_get_service_ex(ipc_object_t *out_object, char *name, bool require_override) {
 	if(!sm_object.session) {
 		return LIBTRANSISTOR_ERR_SM_NOT_INITIALIZED;
 	}
@@ -70,6 +75,19 @@ result_t sm_get_service(ipc_object_t *out_object, char *name) {
 	}
 
 	out_object->object_id = -1;
+	out_object->is_borrowed = false;
+	
+	for(int i = 0; i < loader_config.num_service_overrides; i++) {
+		if(loader_config.service_overrides[i].service_name == service_name) {
+			out_object->session = loader_config.service_overrides[i].service_handle;
+			out_object->is_borrowed = true;
+			return RESULT_OK;
+		}
+	}
+
+	if(require_override) {
+		return HOMEBREW_ABI_KEY_NOT_PRESENT(LCONFIG_KEY_OVERRIDE_SERVICE);
+	}
   
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 1;

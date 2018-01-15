@@ -43,7 +43,7 @@ typedef enum {
 } loader_config_socket_service_t;
 
 typedef struct {
-	uint8_t service_name[8];
+	uint64_t service_name;
 	handle_t service_handle;
 } loader_config_service_override_t;
 

@@ -25,6 +25,7 @@ typedef struct {
 		session_h session; ///< object_id = -1
 		ipc_domain_t *domain; ///< object_id >= 0
 	};
+	bool is_borrowed; ///< whether or not this object is being borrowed from a loader or not
 } ipc_object_t;
 
 /**
@@ -159,8 +160,7 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
 
 /**
 * @brief Converts `session` to a domain object and initializes `domain`.
-*  Guarenteed to initialize `domain`, making it valid to call `ipc_close_domain`
-*  on the newly initialized domain if this returns != RESULT_OK
+*  `domain` is only initialized if RESULT_OK is returned.
 *
 * @param session Object to convert to a domain object
 * @param domain Domain to initialize
