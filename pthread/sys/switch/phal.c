@@ -20,24 +20,16 @@ static int result_to_errno(result_t res) {
 // errors.
 
 int phal_thread_create(phal_tid *tid, void (*start_routine)(void*), void *arg) {
-	int ret;
-	tid->stack = malloc(0x2000);
-	if (tid->stack == NULL)
-		return ENOMEM;
-	ret = result_to_errno(svcCreateThread(&tid->id, start_routine, (uint64_t)arg, tid->stack + 0x2000, 0x1F, -2));
-	if (ret)
-		return ret;
-	return result_to_errno(svcStartThread(tid->id));
+	return ENOSYS;
 }
 
 // Noreturn !
 void phal_thread_exit(phal_tid *tid) {
-	svcExitThread();
+	//svcExitThread();
 }
 
 int phal_thread_destroy(phal_tid *tid) {
-	free(tid->stack);
-	return result_to_errno(svcCloseHandle(tid->id));
+	return ENOSYS;
 }
 
 int phal_thread_sleep(uint64_t msec) {
@@ -55,29 +47,11 @@ int phal_semaphore_destroy(phal_semaphore *sem) { return 0; }
 
 /// Wake up one thread waiting for the semaphore.
 int phal_semaphore_signal(phal_semaphore *sem) {
-	int ret;
-	if ((ret = result_to_errno(svcSignalProcessWideKey(&sem->sem, 1))) != 0)
-		return ret;
-
-	// Avoid the kernel's "pre-signaling" support. This should only be
-	// called with the associated mutex locked, so this is safe.
-	sem->sem = 0;
-	return ret;
+	return ENOSYS;
 }
 
 int phal_semaphore_broadcast(phal_semaphore *sem) {
-	int ret;
-	if ((ret = phal_semaphore_lock(sem)) != 0)
-		return ret;
-	if ((ret = result_to_errno(svcSignalProcessWideKey(&sem->sem, 1))) != 0)
-		return ret;
-
-	// Avoid the kernel's "pre-signaling" support. This should only be
-	// called with the associated mutex locked, so this is safe.
-	sem->sem = 0;
-	if ((ret = phal_semaphore_unlock(sem)) != 0)
-		return ret;
-	return ret;
+	return ENOSYS;
 }
 
 static int timespec_subtract (struct timespec *result, const struct timespec *x, struct timespec *y) {
@@ -107,31 +81,7 @@ static int timespec_subtract (struct timespec *result, const struct timespec *x,
 /// Wait for the semaphore to be signaled. Note that we should **not** wake up
 /// if a signal was previously sent. This is not a counting semaphore.
 int phal_semaphore_wait(phal_semaphore *sem, const struct timespec *abstime) {
-	uint64_t nsec = 0;
-	struct timeval curtime;
-	struct timespec curtimespec;
-	struct timespec result;
-
-	if (abstime) {
-		gettimeofday(&curtime, NULL);
-		curtimespec.tv_sec = curtime.tv_sec;
-		curtimespec.tv_nsec = curtime.tv_usec * 1000;
-		if (timespec_subtract(&result, abstime, &curtimespec)) {
-			// Negative result, set nsec to 0
-			nsec = 0;
-		} else {
-			nsec += result.tv_sec * 1000 * 1000 * 1000;
-			nsec += result.tv_nsec;
-		}
-	} else {
-		// No timeout, set nsec to max value.
-		nsec = -1;
-	}
-
-	// Mutex must be locked at this point, otherwise shit stinks.
-	pthread_t self = pthread_self();
-	return result_to_errno(svcWaitProcessWideKeyAtomic(&sem->lock, &sem->sem, self->tib_tid.id, nsec));
-	// At this point, lock is still locked, and still ours !
+	return ENOSYS;
 }
 
 /*int phal_mutex_create(phal_mutex *mutex) {
@@ -144,37 +94,11 @@ int phal_mutex_destroy(phal_mutex *mutex) { return 0; }
 #define HAS_LISTENERS 0x40000000
 
 int phal_semaphore_lock(phal_semaphore *sem) {
-	pthread_t self = pthread_self();
-	_Atomic(uint32_t) *mutex = &sem->lock;
-
-	while (1) {
-		uint32_t cur = 0;
-		if (atomic_compare_exchange_strong(mutex, &cur, self->tib_tid.id)) {
-			// We won the race!
-			return 0;
-		}
-
-		if ((cur &~ HAS_LISTENERS) == self->tib_tid.id) {
-			// Kernel assigned it to us!
-			return 0;
-		}
-
-		if (!(cur & HAS_LISTENERS)) {
-			// The flag is not set, we need to set it.
-			if (!atomic_compare_exchange_strong(mutex, &cur, cur | HAS_LISTENERS)) {
-				continue;
-			}
-		}
-		svcArbitrateLock(cur &~ HAS_LISTENERS, mutex, self->tib_tid.id);
-	}
+	return ENOSYS;
 }
 
 int phal_semaphore_unlock(phal_semaphore *sem) {
-	_Atomic(uint32_t) *mutex = &sem->lock;
-	uint32_t old = atomic_exchange(mutex, 0);
-	if (old & HAS_LISTENERS)
-		svcArbitrateUnlock(mutex);
-	return 0;
+	return ENOSYS;
 }
 
 void **phal_get_tls() {
