@@ -13,8 +13,8 @@ struct thread_ctx {
 };
 
 struct tls {
-	char ipc_buffer[0x100];
-	char _unk1[0xF8];
+	uint8_t ipc_buffer[0x100];
+	uint8_t _unk1[0xF8];
 	struct thread_ctx *ctx;
 };
 

@@ -495,7 +495,7 @@ result_t ipc_convert_to_domain(ipc_object_t *object, ipc_domain_t *domain) {
 
 result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs) {
 	result_t r;
-	uint32_t *tls = get_tls();
+	uint32_t *tls = get_tls()->ipc_buffer;
 	memset(tls, 0, 0x1f8);
 	r = ipc_marshal(tls, rq, object); if(r) { return r; }
 	if(ipc_debug_flag) {
@@ -533,7 +533,7 @@ result_t ipc_close(ipc_object_t object) {
 	ipc_request_t rq = ipc_default_request;
 	rq.close_object = true;
 
-	uint32_t *tls = get_tls();
+	uint32_t *tls = get_tls()->ipc_buffer;
   
 	result_t r;
 	r = ipc_marshal(tls, &rq, object); if(r) { return r; }
