@@ -241,16 +241,16 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		goto fail_bsd;
 	}
 	
-	if(init_array != NULL) {
-		if(init_array_size == -1) {
-			return true;
+	if(setjmp(exit_jmpbuf) == 0) {
+		if(init_array != NULL) {
+			if(init_array_size == -1) {
+				return true;
+			}
+			for(size_t i = 0; i < init_array_size/sizeof(init_array[0]); i++) {
+				init_array[i]();
+			}
 		}
-		for(size_t i = 0; i < init_array_size/sizeof(init_array[0]); i++) {
-			init_array[i]();
-		}
-	}
-
-	if (setjmp(exit_jmpbuf) == 0) {
+		
 		ret = main(loader_config.argc, loader_config.argv);
 		exit(ret);
 	} else {
