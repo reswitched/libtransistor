@@ -172,6 +172,7 @@ bool nso_syscalls[0xFF] = {};
 
 void lconfig_init_default(uint64_t thread_handle);
 void lconfig_parse(loader_config_entry_t *config);
+void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
 	if(relocate(aslr_base)) {
@@ -205,41 +206,34 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	bsslog_stdout._bf._base = (void*) 1;
 
 	/*
-	bool initialized_bsd = false;
-	if(libtransistor_context.has_bsd && libtransistor_context.std_socket > 0) {
-		dbg_printf("using socklog stdio");
-		bsd_init(); // borrow bsd object from loader
-		initialized_bsd = true;
-		int fd = socket_from_bsd(libtransistor_context.std_socket);
-		if (fd < 0) {
-			dbg_printf("Error creating socket: %d", errno);
-		} else {
-			if (dup2(fd, STDIN_FILENO) < 0)
-				dbg_printf("Error setting up stdin: %d", errno);
-			if (dup2(fd, STDOUT_FILENO) < 0)
-				dbg_printf("Error setting up stdout: %d", errno);
-			if (dup2(fd, STDERR_FILENO) < 0)
-				dbg_printf("Error setting up stderr: %d", errno);
+	  Automatically initialize sm, since 99% of applications are going to be using it
+	  and if they don't explicitly initialize it, each ipc module will initialize it,
+	  use it, then immediately finalize it.
+	 */
+	if((ret = sm_init()) != RESULT_OK) {
+		dbg_printf("failed to initialize sm: 0x%x", ret);
+		loader_config.return_func(ret);
+	}
+	
+	if(loader_config.has_stdio_sockets) {
+		if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
+			sm_finalize();
+			loader_config.return_func(ret);
 		}
-		} else {*/
+
+		dbg_printf("using socklog stdio");
+		setup_stdio_socket("stdout", loader_config.socket_stdout, STDOUT_FILENO);
+		setup_stdio_socket("stdin",  loader_config.socket_stdin,  STDIN_FILENO);
+		setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
+	} else {
 		// TODO: Create a fake FD for bsslog
 		dbg_printf("using bsslog stdout");
 		printf("_"); // init stdout
 		getchar(); // init stdin
 		stdout = &bsslog_stdout;
 		stderr = &bsslog_stdout;
-		//}
-	dbg_printf("set up stdout");
-
-	/*
-	  Automatically initialize sm, since 99% of applications are going to be using it
-	  and if they don't explicitly initialize it, each ipc module will initialize it,
-	  use it, then immediately finalize it.
-	 */
-	if((ret = sm_init()) != RESULT_OK) {
-		printf("failed to initialize sm: 0x%x\n", ret);
-		goto fail_bsd;
 	}
+	dbg_printf("set up stdout");
 	
 	if(setjmp(exit_jmpbuf) == 0) {
 		if(init_array != NULL) {
@@ -271,9 +265,9 @@ fail_bsd:
 	  at this point, bsd and sm have already been destructed, but just in case we
 	  ever change the destruction logic...
 	 */
-	/*if(initialized_bsd) {
+	if(loader_config.has_stdio_sockets) {
 		bsd_finalize();
-		}*/
+	}
 	sm_finalize();
 
 	loader_config.return_func(ret);
@@ -283,6 +277,17 @@ fail_bsd:
 void _exit(int ret) {
 	exit_value = ret;
 	longjmp(exit_jmpbuf, 1);
+}
+
+void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
+	int fd = socket_from_bsd(socket_fd);
+	if (fd < 0) {
+		dbg_printf("Error creating socket: %d", errno);
+	} else {
+		if (dup2(fd, target_fd) < 0) {
+			dbg_printf("Error setting up %s: %d", name, errno);
+		}
+	}
 }
 
 void lconfig_init_default(uint64_t thread_handle) {
