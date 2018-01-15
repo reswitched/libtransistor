@@ -7,8 +7,6 @@
 
 #include<libtransistor/types.h>
 
-typedef uint64_t aruid_t; ///< Applet resource user id
-
 /**
  * @brief Initialize Applet Manager
  */

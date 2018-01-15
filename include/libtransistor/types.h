@@ -43,6 +43,7 @@ typedef handle_t revent_h;            ///< revent handle
 typedef handle_t wevent_h;            ///< wevent handle
 typedef handle_t event_h;             ///< Either revent_h or wevent_h
 typedef uint32_t result_t;            ///< Function result
+typedef uint64_t aruid_t;             ///< Applet resource user id
 typedef void (*thread_entry)(void *); ///< Thread entrypoint function
 typedef void (*voidfn)(void);
 
