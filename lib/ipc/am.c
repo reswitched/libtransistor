@@ -1,4 +1,5 @@
 #include<libtransistor/types.h>
+#include<libtransistor/loader_config.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
@@ -8,6 +9,7 @@
 
 #include<string.h>
 
+static bool using_workaround = false;
 static ipc_domain_t am_domain;
 static ipc_object_t proxy_service_object; // nn::am::service::I{ApplicationProxy,AllSystemAppletProxies}Service
 static ipc_object_t proxy_object;
@@ -31,6 +33,11 @@ result_t am_init() {
 		return RESULT_OK;
 	}
 
+	using_workaround = loader_config.applet_workaround_active;
+	if(using_workaround) {
+		return RESULT_OK;
+	}
+	
 	result_t r;
 	r = sm_init();
 	if(r) {
@@ -93,7 +100,11 @@ fail:
 	return r;
 }
 
+#define NO_WORKAROUND if(using_workaround) { return LIBTRANSISTOR_ERR_AM_WORKAROUND_ACTIVE; }
+
 result_t am_isc_create_managed_display_layer(uint64_t *layer_id) {
+	NO_WORKAROUND;
+	
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 40;
 
@@ -105,6 +116,8 @@ result_t am_isc_create_managed_display_layer(uint64_t *layer_id) {
 }
 
 result_t am_isc_approve_to_display() {
+	NO_WORKAROUND;
+	
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 51;
 
@@ -114,6 +127,11 @@ result_t am_isc_approve_to_display() {
 }
 
 result_t am_iwc_get_applet_resource_user_id(aruid_t *aruid) {
+	if(using_workaround) {
+		*aruid = loader_config.applet_workaround_aruid;
+		return RESULT_OK;
+	}
+	
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 1;
 
@@ -125,6 +143,8 @@ result_t am_iwc_get_applet_resource_user_id(aruid_t *aruid) {
 }
 
 result_t am_iwc_acquire_foreground_rights() {
+	NO_WORKAROUND;
+	
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 10;
 
@@ -134,11 +154,13 @@ result_t am_iwc_acquire_foreground_rights() {
 }
 
 static void am_force_finalize() {
-	ipc_close(iwc_object);
-	ipc_close(isc_object);
-	ipc_close(proxy_object);
-	ipc_close(proxy_service_object);
-	ipc_close_domain(am_domain);
+	if(!using_workaround) {
+		ipc_close(iwc_object);
+		ipc_close(isc_object);
+		ipc_close(proxy_object);
+		ipc_close(proxy_service_object);
+		ipc_close_domain(am_domain);
+	}
 	am_initializations = 0;
 }
 
