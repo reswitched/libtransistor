@@ -167,12 +167,12 @@ static void __attribute__((__noreturn__)) default_exit(int result_code) {
 
 loader_config_t loader_config;
 
-bool nro_syscalls[0xFF] = {};
-bool nso_syscalls[0xFF] = {};
+static bool nro_syscalls[0xFF] = {};
+static bool nso_syscalls[0xFF] = {};
 
-void lconfig_init_default(uint64_t thread_handle);
-void lconfig_parse(loader_config_entry_t *config);
-void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
+static void lconfig_init_default(uint64_t thread_handle);
+static void lconfig_parse(loader_config_entry_t *config);
+static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
 	if(relocate(aslr_base)) {
@@ -279,7 +279,7 @@ void _exit(int ret) {
 	longjmp(exit_jmpbuf, 1);
 }
 
-void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
+static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 	int fd = socket_from_bsd(socket_fd);
 	if (fd < 0) {
 		dbg_printf("Error creating socket: %d", errno);
@@ -290,7 +290,7 @@ void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 	}
 }
 
-void lconfig_init_default(uint64_t thread_handle) {
+static void lconfig_init_default(uint64_t thread_handle) {
 	loader_config.main_thread = thread_handle;
 	loader_config.return_func = default_exit;
 	loader_config.heap_overridden = false;
@@ -311,7 +311,7 @@ void lconfig_init_default(uint64_t thread_handle) {
 	loader_config.has_stdio_sockets = false;
 }
 
-void lconfig_parse(loader_config_entry_t *config) {
+static void lconfig_parse(loader_config_entry_t *config) {
 	result_t ret;
 	
 	for(loader_config_entry_t *entry = config; entry->key != LCONFIG_KEY_END_OF_LIST; entry++) {
