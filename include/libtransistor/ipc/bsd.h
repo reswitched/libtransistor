@@ -6,6 +6,7 @@
 #pragma once
 
 #include<libtransistor/types.h>
+#include<libtransistor/loader_config.h>
 #include<sys/types.h>
 #include<sys/socket.h>
 #include<netinet/in.h>
@@ -21,6 +22,7 @@ struct addrinfo_fixed {
 };
 
 result_t bsd_init();
+result_t bsd_init_ex(bool require_override, loader_config_socket_service_t service);
 ipc_object_t bsd_get_object();
 int bsd_socket(int domain, int type, int protocol);
 int bsd_recv(int socket, void *message, size_t length, int flags);

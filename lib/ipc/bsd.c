@@ -3,7 +3,6 @@
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
-#include<libtransistor/context.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 
@@ -17,10 +16,7 @@
 result_t bsd_result;
 int      bsd_errno;
 
-static bool borrowing_bsd; // true if we're borrowing bsd object from our loader
-static ipc_domain_t bsd_domain;
 static ipc_object_t bsd_object;
-
 static ipc_object_t iresolver_object;
 
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
@@ -29,6 +25,10 @@ static transfer_memory_h transfer_mem;
 static int bsd_initializations = 0;
 
 result_t bsd_init() {
+	return bsd_init_ex(false, LCONFIG_SOCKET_SERVICE_UNSPECIFIED);
+}
+
+result_t bsd_init_ex(bool require_override, loader_config_socket_service_t service) {
 	result_t r;
 
 	if(bsd_initializations++ > 0) {
@@ -39,32 +39,24 @@ result_t bsd_init() {
 	if(r) {
 		goto fail;
 	}
-	
-	if(libtransistor_context.has_bsd) {
-		borrowing_bsd = true;
-		bsd_object = libtransistor_context.bsd_object;
-	} else {
-		borrowing_bsd = false;
-		r = sm_get_service(&bsd_object, "bsd:u");
-		if(r) {
-			r = sm_get_service(&bsd_object, "bsd:s");
-			if(r) {
-				goto fail_sm;
-			}
-		}
-  
-		r = ipc_convert_to_domain(&bsd_object, &bsd_domain);
-		if(r) {
-			goto fail_bsd_domain;
-		}
+
+	r = LIBTRANSISTOR_ERR_BSD_UNRECOGNIZED_SOCKET_SERVICE;
+	if(service == LCONFIG_SOCKET_SERVICE_BSD_U || service == LCONFIG_SOCKET_SERVICE_UNSPECIFIED) {
+		r = sm_get_service_ex(&bsd_object, "bsd:u", require_override);
 	}
-  
+	if(service == LCONFIG_SOCKET_SERVICE_BSD_S || (r != RESULT_OK && service == LCONFIG_SOCKET_SERVICE_UNSPECIFIED)) {
+		r = sm_get_service_ex(&bsd_object, "bsd:s", require_override);
+	}
+	if(r != RESULT_OK) {
+		goto fail_sm;
+	}
+	
 	r = sm_get_service(&iresolver_object, "sfdnsres");
 	if(r) {
-		goto fail_bsd_domain;
+		goto fail_bsd;
 	}
 
-	if(!borrowing_bsd) {
+	if(!bsd_object.is_borrowed) {
 		r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
 		if(r) {
 			goto fail_iresolver;
@@ -122,10 +114,8 @@ fail_transfer_memory:
 	svcCloseHandle(transfer_mem);
 fail_iresolver:
 	ipc_close(iresolver_object);
-fail_bsd_domain:
-	if(!borrowing_bsd) {
-		ipc_close_domain(bsd_domain);
-	}
+fail_bsd:
+	ipc_close(bsd_object);
 fail_sm:
 	sm_finalize();
 fail:
@@ -712,12 +702,10 @@ int bsd_close(int socket) {
 
 static void bsd_force_finalize() {
 	ipc_close(iresolver_object);
-	if(!borrowing_bsd) {
+	if(!bsd_object.is_borrowed) {
 		svcCloseHandle(transfer_mem);
-		ipc_close(bsd_object);
-		ipc_close_domain(bsd_domain);
 	}
-	borrowing_bsd = false;
+	ipc_close(bsd_object);
 
 	bsd_initializations = 0;
 }
