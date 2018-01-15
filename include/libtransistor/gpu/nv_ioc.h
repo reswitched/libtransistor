@@ -51,7 +51,7 @@ typedef struct {
 
 /**
 * @struct nvmap_ioc_param_args
-* @brief Info about a nvmap object. 
+* @brief Info query args structure for an nvmap object.
 *
 *        Identical to Linux driver, but extended with further params.
 */
@@ -63,7 +63,7 @@ typedef struct {
 
 /**
 * @struct nvmap_ioc_get_id_args
-* @brief An id for a nvmap object. 
+* @brief ID query args structure for an nvmap object.
 *
 *        Identical to Linux driver.
 */

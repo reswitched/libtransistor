@@ -28,28 +28,28 @@ result_t gpu_initialize();
 * @brief Initializes a GPU buffer with the args provided
 *
 * @param gpu_b GPU buffer
-* @param addr Description here...
-* @param size Buffer size
-* @param heapmask Description here...
-* @param flags Description here...
-* @param alignment Description here...
-* @param kind Description here...
+* @param addr Address of backing memory
+* @param size Size of buffer to create
+* @param heapmask Heapmask for buffer
+* @param flags Flags for buffer
+* @param alignment Alignment of buffer
+* @param kind Kind of buffer
 */
 result_t gpu_buffer_initialize(gpu_buffer_t *gpu_b, void *addr, size_t size, uint32_t heapmask, uint32_t flags, uint32_t alignment, uint8_t kind);
 
 /**
-* @brief Get a GPU buffer
+* @brief Get a GPU buffer's ID
 *
 * @param gpu_b GPU buffer
-* @param id Description here...
+* @param id ID of GPU buffer
 */
 result_t gpu_buffer_get_id(gpu_buffer_t *gpu_b, uint32_t *id);
 
 /**
-* @brief Set up the GPU buffer with some defaults
+* @brief Create a structure to access an existing GPU buffer from a given ID
 *
-* @param gpu_b GPU buffer
-* @param id Description here...
+* @param gpu_b GPU buffer structure to initialize
+* @param id ID of gpu buffer
 */
 result_t gpu_buffer_initialize_from_id(gpu_buffer_t *gpu_b, uint32_t id);
 

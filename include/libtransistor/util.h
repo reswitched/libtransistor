@@ -27,18 +27,20 @@ char nybble2hex(uint8_t nybble);
  *
  * @param rawbuf The buffer you want to dump
  * @param size The size of the buffer
+ *
+ * Hexdump is written to standard output.
  */
 void hexdump(const void *rawbuf, size_t size);
 
 /**
- * @brief Convert an int number to hex
+ * @brief Convert an int number to hex and prints it to stdout
  *
  * @param num The int that you want converted
  */
 void hexnum(int num);
 
 /**
- * @brief Log a string
+ * @brief Log a string to the bss log
  *
  * @param string The string to log
  * @param len Length of the string

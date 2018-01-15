@@ -16,26 +16,27 @@ extern int nv_errno;
 result_t nv_init();
 
 /**
-* @brief Description here...
+* @brief Open a device
 *
-* @param path Description here...
+* @param path Path of device to open
+* @returns File descriptor of device or -1 upon error
 */
 int nv_open(const char *path);
 
 /**
-* @brief Description here...
+* @brief Issues an ioctl on the device
 *
-* @param fd Description here...
-* @param rq Description here...
-* @param arg Description here...
-* @param size Description here...
+* @param fd Device file descriptor
+* @param rq Ioctl ID
+* @param arg Arguments struct
+* @param size Size of arguments struct
 */
 int nv_ioctl(int fd, uint32_t rq, void *arg, size_t size);
 
 /**
-* @brief Description here...
+* @brief Close the device
 *
-* @param fd Description here...
+* @param fd Device file descriptor
 */
 int nv_close(int fd);
 

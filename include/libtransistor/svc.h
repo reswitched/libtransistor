@@ -23,17 +23,19 @@ typedef struct PACKED {
 /**
  * @brief Sets the size of the heap
  *
- * @param outAddr Description
- * @param size Description
+ * @param outAddr Output for address of the heap
+ * @param size Size of the heap
  */
 result_t svcSetHeapSize(void **outAddr, uint32_t size);
 
 /**
  * @brief Sets memory permissions
  *
- * @param addr Description
- * @param size Description
- * @param permission Description
+ * @param addr Adress of region to reprotect
+ * @param size Size of region to reprotect
+ * @param permission Permissions
+ *
+ * addr and size must be page-aligned, and execute bit is not allowed.
  */
 result_t svcSetMemoryPermission(void *addr, uint64_t size, uint32_t permission);
 

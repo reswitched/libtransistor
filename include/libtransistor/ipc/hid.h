@@ -1,6 +1,6 @@
 /**
  * @file libtransistor/ipc/hid.h
- * @brief Human Interface Device
+ * @brief Human Interface Device IPC bindings
  */
 
 #pragma once
@@ -8,7 +8,7 @@
 #include<libtransistor/types.h>
 
 /**
-* @brief Initialize HID
+* @brief Initialize HID IPC bindings
 */
 result_t hid_ipc_init();
 
@@ -18,6 +18,6 @@ result_t hid_ipc_init();
 result_t hid_ipc_get_shared_memory_handle(shared_memory_h *handle);
 
 /**
-* @brief Finalize HID
+* @brief Finalize HID IPC bindings
 */
 void hid_ipc_finalize();

@@ -5,4 +5,7 @@
 
 #pragma once
 
+/**
+ * @brief Gets the address of the thread-local storage
+ */
 void *get_tls();

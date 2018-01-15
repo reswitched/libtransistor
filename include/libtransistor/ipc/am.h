@@ -15,7 +15,7 @@ typedef uint64_t aruid_t; ///< Applet resource user id
 result_t am_init();
 
 /**
- * @brief Creates a new display layer
+ * @brief Creates a new managed display layer
  */
 result_t am_isc_create_managed_display_layer(uint64_t *layer_id);
 

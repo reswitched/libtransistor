@@ -15,7 +15,7 @@ result_t sm_init();
 /**
 * @brief Get a service by name
 *
-* @param session Description here...
+* @param session Acquired service
 * @param name The name of the service to get
 */
 result_t sm_get_service(ipc_object_t *session, char *name);

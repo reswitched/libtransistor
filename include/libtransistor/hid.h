@@ -9,6 +9,8 @@
 
 /**
  * @struct hid_touchscreen_t
+ *
+ * Currently a placeholder
  */
 typedef struct {
 	uint8_t data[0x3000];
@@ -16,6 +18,8 @@ typedef struct {
 
 /**
  * @struct hid_mouse_t
+ *
+ * Currently a placeholder
  */
 typedef struct {
 	uint8_t data[0x400];
@@ -23,6 +27,8 @@ typedef struct {
 
 /**
  * @struct hid_keyboard_t
+ *
+ * Currently a placeholder
  */
 typedef struct {
 	uint8_t data[0x400];
@@ -30,6 +36,8 @@ typedef struct {
 
 /**
  * @struct hid_mac
+ *
+ * MAC address of a controller
  */
 typedef struct {
 	uint8_t mac[0x10];
