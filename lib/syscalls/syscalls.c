@@ -9,7 +9,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include<libtransistor/context.h>
+#include<libtransistor/loader_config.h>
+#include<libtransistor/svc.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/ipc/time.h>
 
@@ -113,17 +114,37 @@ finalize:
 }
 
 static size_t data_size = 0;
+static size_t actual_data_size = 0; // used if not overriding heap
+static void *heap_addr = NULL;
+#define HEAP_SIZE_INCREMENT 0x2000000
 
 caddr_t _sbrk_r(struct _reent *reent, int incr) {
-	if(data_size + incr > libtransistor_context.mem_size) {
-		reent->_errno = ENOMEM;
-		return (void*) -1;
+	void *addr;
+	if(loader_config.heap_overridden) {
+		if(data_size + incr > loader_config.heap_size) {
+			reent->_errno = ENOMEM;
+			return (void*) -1;
+		}
+		
+		addr = loader_config.heap_base + data_size;
+		data_size+= incr;
+		return addr;
+	} else {
+		if(data_size + incr > actual_data_size || heap_addr == NULL) {
+			size_t corrected_incr = data_size + incr - actual_data_size;
+			size_t rounded_incr = (corrected_incr + HEAP_SIZE_INCREMENT - 1) & ~(HEAP_SIZE_INCREMENT-1);
+			result_t r = svcSetHeapSize(&heap_addr, actual_data_size + rounded_incr);
+			if(r != RESULT_OK) {
+				reent->_errno = ENOMEM;
+				return (void*) -1;
+			}
+			actual_data_size+= rounded_incr;
+		}
+		
+		addr = heap_addr + data_size;
+		data_size+= incr;
+		return addr;
 	}
-
-	void *addr = libtransistor_context.mem_base + data_size;
-	data_size+= incr;
-	
-	return addr;
 }
 
 int _stat_r(struct _reent *reent, const char *file, struct stat *st) {
