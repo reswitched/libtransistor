@@ -35,13 +35,16 @@ _mod_header:
 	.word 0 // runtime-generated module object offset
         .quad log_buffer
         .quad log_length
+.global IS_NRO
+IS_NRO: 
+        .word 1
         
 .section .text, "e"
 .global start
 start:
         sub sp, sp, 0x10
         stp x29, x30, [sp]
-        adrp x1, _start // aslr base
+        adrp x2, _start // aslr base
         bl _libtransistor_start
         ldp x29, x30, [sp], 0x10
         ret

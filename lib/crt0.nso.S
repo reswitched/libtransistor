@@ -34,7 +34,9 @@ _mod_header:
 	.word NORELOC_BSS_END_ - NORELOC__nro_modhdr
 	.word 0, 0 // eh_frame_hdr start/end
 	.word 0 // runtime-generated module object offset
-
+.global IS_NRO
+IS_NRO: 
+        .word 0
 .section .text, "e"
 start:
         adrp x1, _start // aslr base

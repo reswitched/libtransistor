@@ -79,7 +79,7 @@ result_t svcQueryMemory(memory_info_t *memory_info, uint32_t *page_info, void *a
 /**
  * @brief Exit the process
  */
-void svcExitProcess();
+void __attribute__((__noreturn__)) svcExitProcess();
 
 /**
  * @brief Create a new thread
@@ -103,7 +103,7 @@ result_t svcStartThread(thread_h thread);
 /**
  * @brief Exit thread
  */
-void svcExitThread();
+void __attribute__((__noreturn__)) svcExitThread();
 
 /**
  * @brief Sleep thread for specified time

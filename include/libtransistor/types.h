@@ -64,3 +64,4 @@ typedef void (*voidfn)(void);
 #endif
 
 #define RESULT_OK 0
+#define INVALID_HANDLE 0xFFFFFFFF
