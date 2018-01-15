@@ -4,6 +4,10 @@ libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexd
 libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o context.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o ipc/audio.o ipc/bpc.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
 
+pthread_SRCS=	rthread_attr.c rthread_barrier.c rthread_barrier_attr.c rthread_cond.c rthread_condattr.c rthread_debug.c rthread_getcpuclockid.c rthread_internal.c rthread_mutex.c rthread_mutex_prio.c rthread_mutexattr.c rthread_once.c rthread_rwlock.c rthread_rwlockattr.c rthread_sched.c rthread_sem.c rthread_sig.c rthread_spin_lock.c rthread_thread.c rthread_tls.c sched_prio.c sys/switch/phal.c
+pthread_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/pthread/,$(pthread_SRCS:.c=.o))
+pthread_CC_FLAGS := -I$(LIBTRANSISTOR_HOME)/pthread -I$(LIBTRANSISTOR_HOME)/pthread/sys/switch
+
 # for building newlib and sdl
 export LD
 export CC
@@ -16,9 +20,6 @@ export AS_FOR_TARGET = $(AS) -arch=aarch64 -mattr=+neon
 export AR_FOR_TARGET = $(AR)
 export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
 export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument
-
-# Everyone needs their cflags.
-export CC_FLAGS
 
 .SUFFIXES: # disable built-in rules
 
@@ -62,6 +63,11 @@ $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.S
 	mkdir -p $(@D)
 	$(AS) $(AS_FLAGS) $< -filetype=obj -o $@
 
+# Pthread rules
+$(LIBTRANSISTOR_HOME)/build/pthread/%.o: $(LIBTRANSISTOR_HOME)/pthread/%.c
+	mkdir -p $(@D)
+	$(CC) $(CC_FLAGS) $(pthread_CC_FLAGS) $(WARNINGS) -c -o $@ $<
+
 $(LIBTRANSISTOR_HOME)/build/test/%.nro.so: $(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_NRO_LIB) $(LIBTRANSISTOR_COMMON_LIBS)
 	mkdir -p $(@D)
 	$(LD) $(LD_FLAGS) -o $@ $< $(LIBTRANSISTOR_NRO_LDFLAGS) -lm
@@ -87,10 +93,10 @@ $(LIBTRANSISTOR_HOME)/build/newlib/Makefile:
 $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/build/newlib/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/newlib/
 
-$(LIBTRANSISTOR_HOME)/pthread/libpthread.a:
-	$(MAKE) -C $(LIBTRANSISTOR_HOME)/pthread
-
-.PHONY: $(LIBTRANSISTOR_HOME)/pthread/libpthread.a
+$(LIBTRANSISTOR_HOME)/pthread/libpthread.a: $(pthread_OBJECT_FILES)
+	mkdir -p $(@D)
+	rm -f $@
+	$(AR) $(AR_FLAGS) $@ $+
 
 $(COMPILER_RT_BUILTINS_LIB): $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/compiler-rt/
