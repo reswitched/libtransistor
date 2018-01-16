@@ -81,7 +81,8 @@ def main(input, output, format='nro'):
 		if format == 'nro':
 			#text = text[0x80:]
 			with file(output, 'wb') as fp:
-				fp.write(struct.pack('<IIII', 0, len(text) + len(rodata) + 8, 0, 0))
+				fp.write(text[:0x4]) # first branch instruction
+				fp.write(struct.pack('<III', len(text) + len(rodata) + 8, 0, 0))
 				fp.write('NRO0')
 				fp.write(struct.pack('<III', 0, len(text) + len(rodata) + len(data), 0))
 				fp.write(struct.pack('<IIII', 0, len(text), len(text), len(rodata)))

@@ -20,7 +20,8 @@
 NORELOC__filestart:
 .global _start
 _start:
-	.fill 0x80, 1, 0
+        b start
+	.fill 0x7c, 1, 0
 
 .section .data, "e"
 	.word 0, 8
