@@ -274,6 +274,14 @@ result_t svcSendSyncRequest(session_h session);
  */
 result_t svcSendSyncRequestWithUserBuffer(void *buffer, uint64_t size, session_h session);
 // sendAsyncRequestWithUserBuffer
+
+/**
+ * @brief Get a process's ID
+ *
+ * @param pid Output PID
+ * @param thread_or_process_handle Thread or process to query PID of
+ */
+result_t svcGetProcessId(uint32_t *pid, handle_t thread_or_process_handle);
 // getProcessId
 
 /**
@@ -322,6 +330,7 @@ result_t svcGetInfo(uint64_t *info, uint64_t info_id, handle_t handle, uint64_t 
 // 0x34-0x3B?
 // dumpInfo
 // 0x3D-0x3F?
+result_t svcCreateSession(session_h *server, session_h *client, bool is_light, uint32_t unknown);
 // createSession
 
 /**
