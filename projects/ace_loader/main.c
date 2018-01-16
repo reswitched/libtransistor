@@ -410,8 +410,5 @@ int main(int argc, char **argv)
 	}
 
 	printf("- ready to exit\n");
-
-	libtransistor_set_close_browser();
 	return 0;
 }
-

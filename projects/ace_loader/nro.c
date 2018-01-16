@@ -15,7 +15,7 @@ int nro_load_count;
 int nro_unload_fail;
 int nro_loaded_count;
 
-static libtransistor_context_t loader_context;
+static loader_config_entry_t nro_config[64];
 static void *nro_base;
 static void *nro_load_base;
 
@@ -28,7 +28,7 @@ extern thread_h aceloader_main_thread_handle;
 
 uint64_t nro_start()
 {
-	uint64_t (*entry)(libtransistor_context_t*) = nro_base + 0x80;
+	uint64_t (*entry)(loader_config_entry_t*, thread_h) = nro_base + 0x80;
 	uint64_t ret;
 
 	// generate memory block
@@ -37,53 +37,72 @@ uint64_t nro_start()
 		printf("- failed to map memory block\n");
 		return -1;
 	}
-	// always refill context
-	loader_context.magic = LIBTRANSISTOR_CONTEXT_MAGIC;
-	loader_context.version = LIBTRANSISTOR_CONTEXT_VERSION;
-	loader_context.size = sizeof(loader_context);
 
-	loader_context.log_buffer = NULL; // out
-	loader_context.log_length = 0; // out
+	printf("- writing NRO config\n");
+	
+	int ent_no = 0;
+	nro_config[ent_no].key = LCONFIG_KEY_MAIN_THREAD_HANDLE;
+	nro_config[ent_no].flags = LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
+	nro_config[ent_no].main_thread_handle.main_thread_handle = aceloader_main_thread_handle;
+	ent_no++;
 
-	if(nro_argc)
-		loader_context.argv = nro_argv;
-	else
-		loader_context.argv = NULL;
-	loader_context.argc = nro_argc;
+	nro_config[ent_no].key = LCONFIG_KEY_OVERRIDE_HEAP;
+	nro_config[ent_no].flags = LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
+	nro_config[ent_no].override_heap.heap_base = map_base;
+	nro_config[ent_no].override_heap.heap_size = map_size;
+	ent_no++;
 
-	loader_context.mem_base = map_base;
-	loader_context.mem_size = map_size;
+	nro_config[ent_no].key = LCONFIG_KEY_OVERRIDE_SERVICE;
+	nro_config[ent_no].flags = 0;
+	nro_config[ent_no].override_service.override.service_name = str2u64(bsd_get_socket_service_name());
+	nro_config[ent_no].override_service.override.service_handle = bsd_get_socket_service_handle();
+	ent_no++;
 
-	loader_context.has_bsd = true;
-	loader_context.bsd_object = bsd_get_object();
-	loader_context.std_socket = std_sck;
+	nro_config[ent_no].key = LCONFIG_KEY_STDIO_SOCKETS;
+	nro_config[ent_no].flags = 0;
+	nro_config[ent_no].stdio_sockets.s_stdout = std_sck;
+	nro_config[ent_no].stdio_sockets.s_stdin  = std_sck;
+	nro_config[ent_no].stdio_sockets.s_stderr = std_sck;
+	nro_config[ent_no].stdio_sockets.socket_service = bsd_get_socket_service();
+	ent_no++;
 
-	loader_context.has_ro = false; // true;
-	//loader_context.ro_handle = ro_object; // TODO: check if correct and make ro_object accessible
+	if(nro_argc) {
+		nro_config[ent_no].key = LCONFIG_KEY_ARGV;
+		nro_config[ent_no].flags = 0;
+		nro_config[ent_no].argv.argc = nro_argc;
+		nro_config[ent_no].argv.argv = nro_argv;
+		ent_no++;
+	}
 
-	http_paste_ip(&loader_context.workstation_addr);
+	if(loader_config.applet_workaround_active) {
+		nro_config[ent_no].key = LCONFIG_KEY_APPLET_WORKAROUND;
+		nro_config[ent_no].flags = LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
+		// TODO: determine this ourselves?
+		nro_config[ent_no].applet_workaround.aruid = loader_config.applet_workaround_aruid;
+		ent_no++;
+	}
 
-	loader_context.return_flags = 0; // out
-
-	loader_context.main_thread = aceloader_main_thread_handle;
-
+	if(loader_config.has_applet_type) {
+		nro_config[ent_no].key = LCONFIG_KEY_APPLET_TYPE;
+		nro_config[ent_no].flags = 0;
+		nro_config[ent_no].applet_type.applet_type = loader_config.applet_type;
+		ent_no++;
+	}
+	
+	nro_config[ent_no].key = LCONFIG_KEY_END_OF_LIST;
+	nro_config[ent_no].flags = LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
+	ent_no++;
+	
 	// Backup and clean main thread TLS pointer
 	void **tls_userspace_pointer = (void**)(get_tls() + 0x1F8);
 	void *tls_backup = *tls_userspace_pointer;
 	*(void**)(get_tls() + 0x1f8) = NULL;
 
 	// run NRO
-	ret = entry(&loader_context);
+	ret = entry(nro_config, aceloader_main_thread_handle);
 
 	// Restore TLS
 	*tls_userspace_pointer = tls_backup;
-
-	// show log buffer if requested
-	if(loader_context.log_buffer != NULL && *loader_context.log_length > 0)
-	{
-		loader_context.log_buffer[*loader_context.log_length] = 0;
-		printf("- NRO output LOG (%lub):\n%s\n", *loader_context.log_length, loader_context.log_buffer);
-	}
 
 	// release memory block
 	if(mem_destroy_block())
@@ -169,24 +188,14 @@ result_t nro_unload()
 {
 	result_t r = 0;
 
-	// unload by default, do not if requested
-	if(loader_context.return_flags & RETF_KEEP_LOADED)
-		printf("- NRO left loaded\n");
-	else
-	{
-		// unload NRO
-		r = ro_unload_nro(nro_base, nro_load_base);
-		if(r)
-		{
-			nro_unload_fail++;
-			printf("- NRO unload error 0x%06X\n", r);
-		} else
-			nro_loaded_count--;
+	// unload NRO
+	r = ro_unload_nro(nro_base, nro_load_base);
+	if(r) {
+		nro_unload_fail++;
+		printf("- NRO unload error 0x%06X\n", r);
+	} else {
+		nro_loaded_count--;
 	}
-
-	// show memory if requested
-	if(loader_context.return_flags & RETF_RUN_MEMINFO)
-		mem_info();
 
 	// rescan for free heap block now
 	if(mem_get_heap())
