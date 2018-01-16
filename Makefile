@@ -22,6 +22,7 @@ export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
 export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument
 
 .SUFFIXES: # disable built-in rules
+.SECONDARY: # don't delete intermediate files
 
 .PHONY: clean, clean_newlib, clean_compiler-rt, distclean 
 
