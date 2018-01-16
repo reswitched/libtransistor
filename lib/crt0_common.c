@@ -158,11 +158,15 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 
 #define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
 
+// this is used to implement the default termination behaviour
+// if a LoaderReturnAddr key is not specified
+static jmp_buf default_terminate_jmpbuf;
+
 static jmp_buf exit_jmpbuf;
 static int exit_value;
 
-static void __attribute__((__noreturn__)) default_exit(int result_code) {
-	svcExitProcess(result_code);
+static void __attribute__((__noreturn__)) default_terminate(int result_code) {
+	longjmp(default_terminate_jmpbuf, 1);
 }
 
 loader_config_t loader_config;
@@ -180,6 +184,11 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	}
 
 	int ret;
+
+	// crt0 assembly sets up LR to point to svcExitProcess if it would be NULL otherwise
+	if(setjmp(default_terminate_jmpbuf) != 0) {
+		return ret;
+	}
 	
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("config: %p", config);
@@ -237,11 +246,10 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	
 	if(setjmp(exit_jmpbuf) == 0) {
 		if(init_array != NULL) {
-			if(init_array_size == -1) {
-				return true;
-			}
-			for(size_t i = 0; i < init_array_size/sizeof(init_array[0]); i++) {
-				init_array[i]();
+			if(init_array_size != -1) {
+				for(size_t i = 0; i < init_array_size/sizeof(init_array[0]); i++) {
+					init_array[i]();
+				}
 			}
 		}
 		
@@ -252,11 +260,10 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	}
 
 	if(fini_array != NULL) {
-		if(fini_array_size == -1) {
-			return true;
-		}
-		for(size_t i = 0; i < fini_array_size/sizeof(fini_array[0]); i++) {
-			fini_array[i]();
+		if(fini_array_size != -1) {
+			for(size_t i = 0; i < fini_array_size/sizeof(fini_array[0]); i++) {
+				fini_array[i]();
+			}
 		}
 	}
 	
@@ -292,7 +299,7 @@ static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 
 static void lconfig_init_default(uint64_t thread_handle) {
 	loader_config.main_thread = thread_handle;
-	loader_config.return_func = default_exit;
+	loader_config.return_func = default_terminate;
 	loader_config.heap_overridden = false;
 	loader_config.num_service_overrides = 0;
 	

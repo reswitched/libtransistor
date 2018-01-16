@@ -42,9 +42,15 @@ IS_NRO:
 .section .text, "e"
 .global start
 start:
+        adrp x2, _start // aslr base
+
+        // set LR to svcExitProcess if it's null
+        adrp x3, svcExitProcess
+        cmp x30, xzr
+        csel x30, x3, x30, eq
+
         sub sp, sp, 0x10
         stp x29, x30, [sp]
-        adrp x2, _start // aslr base
         bl _libtransistor_start
         ldp x29, x30, [sp], 0x10
         ret
@@ -54,8 +60,3 @@ _get_module_header:
         adrp x0, _mod_header
         add x0, x0, #:lo12:_mod_header
         ret
-        
-.section .bss
-__crt0_exit_frame:       
-        .quad 0
-        .quad 0

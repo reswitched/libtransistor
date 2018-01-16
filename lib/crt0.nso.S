@@ -37,12 +37,21 @@ _mod_header:
 .global IS_NRO
 IS_NRO: 
         .word 0
+
 .section .text, "e"
 start:
-        adrp x1, _start // aslr base
-	bl _libtransistor_start
-loop:
-	b loop
+        adrp x2, _start // aslr base
+
+        // set LR to svcExitProcess if it's null
+        adrp x3, svcExitProcess
+        cmp x30, xzr
+        csel x30, x3, x30, eq
+
+        sub sp, sp, 0x10
+        stp x29, x30, [sp]
+        bl _libtransistor_start
+        ldp x29, x30, [sp], 0x10
+        ret
 
 .global _get_module_header
 _get_module_header:
