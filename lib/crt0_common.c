@@ -182,7 +182,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	if(relocate(aslr_base)) {
 		return -4;
 	}
-
+	
 	int ret;
 
 	// crt0 assembly sets up LR to point to svcExitProcess if it would be NULL otherwise
@@ -259,13 +259,13 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		ret = exit_value;
 	}
 
-	if(fini_array != NULL) {
+	/*if(fini_array != NULL) {
 		if(fini_array_size != -1) {
 			for(size_t i = 0; i < fini_array_size/sizeof(fini_array[0]); i++) {
 				fini_array[i]();
 			}
 		}
-	}
+		}*/
 	
 fail_bsd:
 	/*
@@ -337,7 +337,7 @@ static void lconfig_parse(loader_config_entry_t *config) {
 			loader_config.heap_base = entry->override_heap.heap_base;
 			loader_config.heap_size = entry->override_heap.heap_size;
 
-			memory_info_t mem_info;
+			/*memory_info_t mem_info;
 			uint32_t page_info;
 
 			void *validation_head = loader_config.heap_base;
@@ -360,7 +360,7 @@ static void lconfig_parse(loader_config_entry_t *config) {
 				}
 					
 				validation_head+= mem_info.size;
-			}
+				}*/
 				
 			break; }
 				
