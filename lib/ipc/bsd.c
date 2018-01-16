@@ -16,6 +16,7 @@
 result_t bsd_result;
 int      bsd_errno;
 
+static loader_config_socket_service_t bsd_service;
 static ipc_object_t bsd_object;
 static ipc_object_t iresolver_object;
 
@@ -42,12 +43,15 @@ result_t bsd_init_ex(bool require_override, loader_config_socket_service_t servi
 
 	r = LIBTRANSISTOR_ERR_BSD_UNRECOGNIZED_SOCKET_SERVICE;
 	if(service == LCONFIG_SOCKET_SERVICE_BSD_U || service == LCONFIG_SOCKET_SERVICE_UNSPECIFIED) {
+		bsd_service = LCONFIG_SOCKET_SERVICE_BSD_U;
 		r = sm_get_service_ex(&bsd_object, "bsd:u", require_override);
 	}
 	if(service == LCONFIG_SOCKET_SERVICE_BSD_S || (r != RESULT_OK && service == LCONFIG_SOCKET_SERVICE_UNSPECIFIED)) {
+		bsd_service = LCONFIG_SOCKET_SERVICE_BSD_S;
 		r = sm_get_service_ex(&bsd_object, "bsd:s", require_override);
 	}
 	if(r != RESULT_OK) {
+		bsd_service = LCONFIG_SOCKET_SERVICE_UNSPECIFIED;
 		goto fail_sm;
 	}
 	
@@ -123,8 +127,23 @@ fail:
 	return r;
 }
 
-ipc_object_t bsd_get_object() {
-	return bsd_object;
+const char *bsd_get_socket_service_name() {
+	switch(bsd_service) {
+	case LCONFIG_SOCKET_SERVICE_BSD_U:
+		return "bsd:u";
+	case LCONFIG_SOCKET_SERVICE_BSD_S:
+		return "bsd:s";
+	default:
+		return NULL;
+	}
+}
+
+handle_t bsd_get_socket_service_handle() {
+	return bsd_object.session;
+}
+
+loader_config_socket_service_t bsd_get_socket_service() {
+	return bsd_service;
 }
 
 // def tested via PS

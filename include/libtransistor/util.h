@@ -16,6 +16,13 @@
 void *find_empty_memory_block(size_t len);
 
 /**
+ * @brief Converts a string to a u64
+ *
+ * @param str String to convert to u64
+ */
+uint64_t str2u64(const char *str);
+
+/**
  * @brief Convert a uint8 nybble to a hex char
  *
  * @param nybble The uint8 that you want converted

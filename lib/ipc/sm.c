@@ -11,19 +11,6 @@
 static ipc_object_t sm_object;
 static int sm_initializations = 0;
 
-static uint64_t str2u64(const char *str) {
-	char buf[8];
-	int i = 0;
-	for(; i < 8; i++) {
-		if(str[i] == 0) { break; }
-		buf[i] = str[i];
-	}
-	for(; i < 8; i++) {
-		buf[i] = 0;
-	}
-	return *(uint64_t*) buf;
-}
-
 result_t sm_init() {
 	if(sm_initializations++ > 0) {
 		return RESULT_OK;
