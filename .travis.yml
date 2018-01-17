@@ -57,10 +57,10 @@ before_script:
   - cd ..
   - git clone https://github.com/reswitched/Mephisto.git
   - cd Mephisto
-  - sudo pip2 install -r  requirements.txt
+  - sudo pip3 install -r  requirements.txt
   - make
   - cd ..
-  - sudo pip2 install -r  requirements.txt
+  - sudo pip3 install -r  requirements.txt
 script:  make LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make -C projects/ace_loader LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make run_tests MEPHISTO=./Mephisto/ctu
 
 after_success:
