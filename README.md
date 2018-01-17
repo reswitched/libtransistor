@@ -16,7 +16,7 @@ First, clone the repo with
 git clone --recursive https://github.com/reswitched/libtransistor
 ```
 
-You will need Python 2 and the python packages listed in [`requirements.txt`](https://github.com/reswitched/libtransistor/blob/master/requirements.txt). You'll also need clang and lld >=5.0 (llvm linker).
+You will need Python 3 and the python packages listed in [`requirements.txt`](https://github.com/reswitched/libtransistor/blob/master/requirements.txt). You'll also need clang and lld >=5.0 (llvm linker).
 
 You *should* just be able to run `make`. If that doesn't work, submit an issue (or pull request). This will produce a number of `nro` and `nso` files in `build/test/`. These are binaries for the Nintendo Switch. NRO files are relocatable shared objects suitable for use with [ROhan](https://reswitched.tech/rohan). Both NRO and NSO binaries can be run under Mephisto, but NSO binaries don't get relocated properly at the moment and will crash pretty quickly.
 
