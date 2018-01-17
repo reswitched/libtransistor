@@ -27,6 +27,8 @@ addons:
       - lld-5.0
       - liblz4-dev
       - graphviz
+      - python3
+      - python3-pip
 
 install:
     # Download and install recent cmake
