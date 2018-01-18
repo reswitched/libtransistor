@@ -8,13 +8,23 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <reent.h>
 
 #include<libtransistor/loader_config.h>
 #include<libtransistor/svc.h>
+#include<libtransistor/tls.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/ipc/time.h>
 
 void _exit(); // implemented in libtransistor crt0
+
+struct _reent *__getreent() {
+	struct tls *tls = get_tls();
+	if (tls == NULL || tls->ctx == NULL)
+		return NULL;
+	else
+		return &tls->ctx->reent;
+}
 
 int _close_r(struct _reent *reent, int file) {
 	int res = fd_close(file);
@@ -27,7 +37,7 @@ int _close_r(struct _reent *reent, int file) {
 
 char *_environ[] = {NULL};
 
-int _execve_r(struct _reent *reent, char *name, char **argv, char **env) {
+int _execve_r(struct _reent *reent, const char *name, char *const *argv, char *const *env) {
 	reent->_errno = ENOSYS;
 	return -1;
 }
@@ -57,12 +67,12 @@ int _kill_r(struct _reent *reent, int pid, int sig) {
 	return -1;
 }
 
-int _link_r(struct _reent *reent, char *old, char *new) {
+int _link_r(struct _reent *reent, const char *old, const char *new) {
 	reent->_errno = ENOSYS;
 	return -1;
 }
 
-int _lseek_r(struct _reent *reent, int file, int pos, int whence) {
+off_t _lseek_r(struct _reent *reent, int file, off_t pos, int whence) {
 	ssize_t res = 0;
 
 	struct file *f = fd_file_get(file);
@@ -85,12 +95,12 @@ finalize:
 	return res;
 }
 
-int _open_r(struct _reent *reent, const char *name, int flags, ...) {
+int _open_r(struct _reent *reent, const char *name, int flags, int mode) {
 	reent->_errno = ENOSYS;
 	return -1;
 }
 
-int _read_r(struct _reent *reent, int file, char *ptr, int len) {
+ssize_t _read_r(struct _reent *reent, int file, void *ptr, size_t len) {
 	ssize_t res = 0;
 
 	struct file *f = fd_file_get(file);
@@ -103,7 +113,7 @@ int _read_r(struct _reent *reent, int file, char *ptr, int len) {
 		res = -ENOSYS;
 		goto finalize;
 	}
-	res = f->ops->read(f->data, ptr, len);
+	res = f->ops->read(f->data, (char*)ptr, len);
 finalize:
 	fd_file_put(f);
 	if (res < 0) {
@@ -118,7 +128,7 @@ static size_t actual_data_size = 0; // used if not overriding heap
 static void *heap_addr = NULL;
 #define HEAP_SIZE_INCREMENT 0x2000000
 
-caddr_t _sbrk_r(struct _reent *reent, int incr) {
+void *_sbrk_r(struct _reent *reent, ptrdiff_t incr) {
 	void *addr;
 	if(loader_config.heap_overridden) {
 		if(data_size + incr > loader_config.heap_size) {
@@ -131,8 +141,8 @@ caddr_t _sbrk_r(struct _reent *reent, int incr) {
 		return addr;
 	} else {
 		if(data_size + incr > actual_data_size || heap_addr == NULL) {
-			size_t corrected_incr = data_size + incr - actual_data_size;
-			size_t rounded_incr = (corrected_incr + HEAP_SIZE_INCREMENT - 1) & ~(HEAP_SIZE_INCREMENT-1);
+			ptrdiff_t corrected_incr = data_size + incr - actual_data_size;
+			ptrdiff_t rounded_incr = (corrected_incr + HEAP_SIZE_INCREMENT - 1) & ~(HEAP_SIZE_INCREMENT-1);
 			result_t r = svcSetHeapSize(&heap_addr, actual_data_size + rounded_incr);
 			if(r != RESULT_OK) {
 				reent->_errno = ENOMEM;
@@ -157,7 +167,7 @@ clock_t _times_r(struct _reent *reent, struct tms *buf) {
 	return (clock_t) -1;
 }
 
-int _unlink_r(struct _reent *reent, char *name) {
+int _unlink_r(struct _reent *reent, const char *name) {
 	reent->_errno = ENOSYS;
 	return -1;
 }
@@ -167,7 +177,7 @@ int _wait_r(struct _reent *reent, int *status) {
 	return -1;
 }
 
-int _write_r(struct _reent *reent, int file, char *ptr, int len) {
+ssize_t _write_r(struct _reent *reent, int file, const void *ptr, size_t len) {
 	ssize_t res = 0;
 
 	struct file *f = fd_file_get(file);
@@ -180,7 +190,7 @@ int _write_r(struct _reent *reent, int file, char *ptr, int len) {
 		res = -ENOSYS;
 		goto finalize;
 	}
-	res = f->ops->write(f->data, ptr, len);
+	res = f->ops->write(f->data, (char*)ptr, len);
 finalize:
 	fd_file_put(f);
 	if (res < 0) {

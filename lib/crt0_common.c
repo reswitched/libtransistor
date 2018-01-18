@@ -13,6 +13,7 @@
 #include<unistd.h>
 #include<errno.h>
 #include<stdlib.h>
+#include<rthread.h>
 
 int main(int argc, char **argv);
 
@@ -42,9 +43,6 @@ typedef struct {
 
 static_assert(sizeof(Elf64_Rela) == 0x18, "Elf64_Rela size should be 0x18");
 
-// defined in crt0.nxo.S, mostly to avoid using the GOT before we relocate its entries
-extern module_header_t *_get_module_header();
-
 static void (**init_array)(void) = NULL;
 static void (**fini_array)(void) = NULL;
 
@@ -52,7 +50,7 @@ static ssize_t init_array_size = -1;
 static ssize_t fini_array_size = -1;
 
 static bool relocate(uint8_t *aslr_base) {
-	module_header_t *mod_header = _get_module_header();
+	module_header_t *mod_header = (module_header_t *)&aslr_base[*(uint32_t*) &aslr_base[4]];
 	Elf64_Dyn *dynamic = (Elf64_Dyn*) (((uint8_t*) mod_header) + mod_header->dynamic_off);
 	uint64_t rela_offset = 0;
 	uint64_t rela_size = 0;
@@ -197,9 +195,15 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		}
 	} else {
 		dbg_printf("no loader config");
+		// Temporary fix to run this in Mephisto.
+		loader_config.main_thread = 0xde00;
 	}
 
-	dbg_printf("init bsslogger stdio");
+	dbg_printf("init threads");
+	phal_tid tid = { .id = loader_config.main_thread, .stack = NULL };
+	_rthread_internal_init(tid);
+
+	dbg_printf("init stdio");
 	bsslog_stdout._write = bsslog_write;
 	bsslog_stdout._flags = __SWR | __SNBF;
 	bsslog_stdout._bf._base = (void*) 1;
@@ -242,7 +246,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 				}
 			}
 		}
-		
+
 		ret = main(loader_config.argc, loader_config.argv);
 		exit(ret);
 	} else {

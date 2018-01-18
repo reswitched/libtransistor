@@ -1,8 +1,12 @@
 include libtransistor.mk
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl audio_output init_fini_arrays ipc_server
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl audio_output init_fini_arrays ipc_server pthread
 libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o ipc/audio.o ipc/bpc.o ipcserver.o
 libtransistor_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/lib/,$(libtransistor_OBJECT_NAMES))
+
+pthread_SRCS=	rthread_attr.c rthread_barrier.c rthread_barrier_attr.c rthread_cond.c rthread_condattr.c rthread_debug.c rthread_getcpuclockid.c rthread_internal.c rthread_mutex.c rthread_mutex_prio.c rthread_mutexattr.c rthread_once.c rthread_rwlock.c rthread_rwlockattr.c rthread_sched.c rthread_sem.c rthread_sig.c rthread_spin_lock.c rthread_thread.c rthread_tls.c sched_prio.c sys/switch/phal.c
+pthread_OBJECT_FILES := $(addprefix $(LIBTRANSISTOR_HOME)/build/pthread/,$(pthread_SRCS:.c=.o))
+pthread_CC_FLAGS := -I$(LIBTRANSISTOR_HOME)/pthread -I$(LIBTRANSISTOR_HOME)/pthread/sys/switch -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-variable -Wno-unused-function -Wno-unused-label
 
 # for building newlib and sdl
 export LD
@@ -18,8 +22,9 @@ export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
 export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument -Wno-error-implicit-function-declaration
 
 .SUFFIXES: # disable built-in rules
+.SECONDARY: # don't delete intermediate files
 
-.PHONY: clean, clean_newlib, clean_compiler-rt, distclean
+.PHONY: clean, clean_newlib, clean_compiler-rt, distclean 
 
 all: $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a \
 	$(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nso.a \
@@ -49,7 +54,7 @@ $(LIBTRANSISTOR_HOME)/build/test/%.o: $(LIBTRANSISTOR_HOME)/test/%.c
 # Disable stack protector for crt0_common
 $(LIBTRANSISTOR_HOME)/build/lib/crt0_common.o: $(LIBTRANSISTOR_HOME)/lib/crt0_common.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) $(WARNINGS) -fno-stack-protector -c -o $@ $<
+	$(CC) $(CC_FLAGS) -I$(LIBTRANSISTOR_HOME)/pthread/ -I$(LIBTRANSISTOR_HOME)/pthread/sys/switch/ $(WARNINGS) -fno-stack-protector -c -o $@ $<
 
 $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.c
 	mkdir -p $(@D)
@@ -58,6 +63,11 @@ $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.c
 $(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.S
 	mkdir -p $(@D)
 	$(AS) $(AS_FLAGS) $< -filetype=obj -o $@
+
+# Pthread rules
+$(LIBTRANSISTOR_HOME)/build/pthread/%.o: $(LIBTRANSISTOR_HOME)/pthread/%.c
+	mkdir -p $(@D)
+	$(CC) $(CC_FLAGS) $(WARNINGS) $(pthread_CC_FLAGS) -c -o $@ $<
 
 $(LIBTRANSISTOR_HOME)/build/test/%.nro.so: $(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_NRO_LIB) $(LIBTRANSISTOR_COMMON_LIBS)
 	mkdir -p $(@D)
@@ -83,6 +93,11 @@ $(LIBTRANSISTOR_HOME)/build/newlib/Makefile:
 
 $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/build/newlib/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/newlib/
+
+$(LIBTRANSISTOR_HOME)/pthread/libpthread.a: $(pthread_OBJECT_FILES)
+	mkdir -p $(@D)
+	rm -f $@
+	$(AR) $(AR_FLAGS) $@ $+
 
 $(COMPILER_RT_BUILTINS_LIB): $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/compiler-rt/
@@ -115,10 +130,13 @@ $(LIBTRANSISTOR_HOME)/build/sdl2/Makefile:
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/* $(LIBTRANSISTOR_HOME)/docs
 
+clean_pthread:
+	rm -fr build/pthread
+
 clean_newlib:
 	rm -rf build/newlib
 
 clean_compiler-rt:
 	rm -rf build/compiler-rt
 
-distclean: clean clean_newlib clean_compiler-rt
+distclean: clean clean_newlib clean_compiler-rt clean_pthread

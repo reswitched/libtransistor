@@ -52,9 +52,3 @@ start:
         bl _libtransistor_start
         ldp x29, x30, [sp], 0x10
         ret
-
-.global _get_module_header
-_get_module_header:
-        adrp x0, _mod_header
-        add x0, x0, #:lo12:_mod_header
-        ret

@@ -4,7 +4,7 @@ else
     LIBTRANSISTOR_HOME := $(realpath $(LIBTRANSISTOR_HOME))
 endif
 
-SYS_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/include/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/include/
+SYS_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/pthread/include -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/sys/switch/include/ -isystem $(LIBTRANSISTOR_HOME)/newlib/newlib/libc/include/
 INCLUDES := $(SYS_INCLUDES) -I$(LIBTRANSISTOR_HOME)/include/ -I $(LIBTRANSISTOR_HOME)/build/sdl2_install/include/
 WARNINGS := -Wall -Wextra -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-command-line-argument
 
@@ -19,18 +19,18 @@ AR_FLAGS := rcs
 # for compatiblity
 CFLAGS := $(CC_FLAGS)
 AS_FLAGS := -arch=aarch64 -triple aarch64-none-switch
-PYTHON2 := python2
+PYTHON3 := python3
 MEPHISTO := ctu
 RUBY := ruby
 COMPILER_RT_BUILTINS_LIB := $(LIBTRANSISTOR_HOME)/build/compiler-rt/lib/linux/libclang_rt.builtins-aarch64.a
-LIBTRANSISTOR_COMMON_LIBS := $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a $(COMPILER_RT_BUILTINS_LIB) $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a
+LIBTRANSISTOR_COMMON_LIBS := $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a $(COMPILER_RT_BUILTINS_LIB) $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a $(LIBTRANSISTOR_HOME)/pthread/libpthread.a
 LIBTRANSISTOR_NRO_LIB := $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a
 LIBTRANSISTOR_NSO_LIB := $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nso.a
 LIBTRANSISTOR_NRO_LDFLAGS := --whole-archive $(LIBTRANSISTOR_NRO_LIB) --no-whole-archive $(LIBTRANSISTOR_COMMON_LIBS)
 LIBTRANSISTOR_NSO_LDFLAGS := --whole-archive $(LIBTRANSISTOR_NSO_LIB) --no-whole-archive $(LIBTRANSISTOR_COMMON_LIBS)
 
 %.nro: %.nro.so
-	$(PYTHON2) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py $< $@ nro
+	$(PYTHON3) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py $< $@ nro
 
 %.nso: %.nso.so
-	$(PYTHON2) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py $< $@ nso
+	$(PYTHON3) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py $< $@ nso
