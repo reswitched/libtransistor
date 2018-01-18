@@ -1,5 +1,7 @@
 #pragma once
 
+// homebrew ABI as of http://switchbrew.org/index.php?title=Homebrew_ABI&oldid=3461
+
 #include<libtransistor/types.h>
 #include<libtransistor/ipc.h>
 
@@ -14,7 +16,7 @@ typedef enum {
 typedef enum {
 	LCONFIG_KEY_END_OF_LIST = 0,
 	LCONFIG_KEY_MAIN_THREAD_HANDLE = 1,
-	LCONFIG_KEY_LOADER_RETURN_ADDR = 2,
+	LCONFIG_KEY_NEXT_LOAD_PATH = 2,
 	LCONFIG_KEY_OVERRIDE_HEAP = 3,
 	LCONFIG_KEY_OVERRIDE_SERVICE = 4,
 	LCONFIG_KEY_ARGV = 5,
@@ -58,8 +60,9 @@ typedef struct {
 			handle_t main_thread_handle;
 		} main_thread_handle;
 		struct {
-			void (*return_func)(int result_code);
-		} loader_return_addr;
+			char (*nro_path)[512];
+			char (*argv_str)[2048];
+		} next_load_path;
 		struct {
 			void *heap_base;
 			size_t heap_size;
@@ -92,8 +95,8 @@ typedef struct {
 	// MainThreadHandle
 	handle_t main_thread;
 	
-	// LoaderReturnAddr
-	void (*return_func)(int result_code);
+	// NextLoadPath
+	//   ignored
 
 	// OverrideHeap
 	bool heap_overridden;

@@ -158,16 +158,8 @@ static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len)
 
 #define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
 
-// this is used to implement the default termination behaviour
-// if a LoaderReturnAddr key is not specified
-static jmp_buf default_terminate_jmpbuf;
-
 static jmp_buf exit_jmpbuf;
 static int exit_value;
-
-static void __attribute__((__noreturn__)) default_terminate(int result_code) {
-	longjmp(default_terminate_jmpbuf, 1);
-}
 
 loader_config_t loader_config;
 
@@ -175,7 +167,7 @@ static bool nro_syscalls[0xFF] = {};
 static bool nso_syscalls[0xFF] = {};
 
 static void lconfig_init_default(uint64_t thread_handle);
-static void lconfig_parse(loader_config_entry_t *config);
+static result_t lconfig_parse(loader_config_entry_t *config);
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
@@ -185,11 +177,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	
 	int ret;
 
-	// crt0 assembly sets up LR to point to svcExitProcess if it would be NULL otherwise
-	if(setjmp(default_terminate_jmpbuf) != 0) {
-		return ret;
-	}
-	
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("config: %p", config);
 
@@ -200,10 +187,13 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	if(config != NULL) {
 		dbg_printf("found loader config");
 
-		lconfig_parse(config);
+		ret = lconfig_parse(config);
+		if(ret != RESULT_OK) {
+			return ret;
+		}
 		
 		if(loader_config.main_thread == INVALID_HANDLE) {
-			loader_config.return_func(HOMEBREW_ABI_KEY_NOT_PRESENT(LCONFIG_KEY_MAIN_THREAD_HANDLE));
+			return HOMEBREW_ABI_KEY_NOT_PRESENT(LCONFIG_KEY_MAIN_THREAD_HANDLE);
 		}
 	} else {
 		dbg_printf("no loader config");
@@ -221,13 +211,13 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	 */
 	if((ret = sm_init()) != RESULT_OK) {
 		dbg_printf("failed to initialize sm: 0x%x", ret);
-		loader_config.return_func(ret);
+		return ret;
 	}
 	
 	if(loader_config.has_stdio_sockets) {
 		if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
 			sm_finalize();
-			loader_config.return_func(ret);
+			return ret;
 		}
 
 		dbg_printf("using socklog stdio");
@@ -277,7 +267,6 @@ fail_bsd:
 	}
 	sm_finalize();
 
-	loader_config.return_func(ret);
 	return ret;
 }
 
@@ -299,7 +288,6 @@ static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 
 static void lconfig_init_default(uint64_t thread_handle) {
 	loader_config.main_thread = thread_handle;
-	loader_config.return_func = default_terminate;
 	loader_config.heap_overridden = false;
 	loader_config.num_service_overrides = 0;
 	
@@ -318,9 +306,7 @@ static void lconfig_init_default(uint64_t thread_handle) {
 	loader_config.has_stdio_sockets = false;
 }
 
-static void lconfig_parse(loader_config_entry_t *config) {
-	result_t ret;
-	
+static result_t lconfig_parse(loader_config_entry_t *config) {
 	for(loader_config_entry_t *entry = config; entry->key != LCONFIG_KEY_END_OF_LIST; entry++) {
 		switch(entry->key) {
 				
@@ -328,8 +314,8 @@ static void lconfig_parse(loader_config_entry_t *config) {
 			loader_config.main_thread = entry->main_thread_handle.main_thread_handle;
 			break;
 				
-		case LCONFIG_KEY_LOADER_RETURN_ADDR:
-			loader_config.return_func = entry->loader_return_addr.return_func;
+		case LCONFIG_KEY_NEXT_LOAD_PATH:
+			// ignored
 			break;
 
 		case LCONFIG_KEY_OVERRIDE_HEAP: {
@@ -344,19 +330,19 @@ static void lconfig_parse(loader_config_entry_t *config) {
 
 			while(validation_head < loader_config.heap_base + loader_config.heap_size) {
 				if((ret = svcQueryMemory(&mem_info, &page_info, validation_head)) != RESULT_OK) {
-					loader_config.return_func(ret);
+					return ret;
 				}
 					
 				if(!(mem_info.memory_type == 4 || mem_info.memory_type == 5 || mem_info.memory_type == 9)) {
-					loader_config.return_func(HOMEBREW_ABI_KEY_INVALID(LCONFIG_KEY_OVERRIDE_HEAP));
+					return HOMEBREW_ABI_KEY_INVALID(LCONFIG_KEY_OVERRIDE_HEAP);
 				}
 
 				if(mem_info.permission != 3) {
-					loader_config.return_func(HOMEBREW_ABI_KEY_INVALID(LCONFIG_KEY_OVERRIDE_HEAP));
+					return HOMEBREW_ABI_KEY_INVALID(LCONFIG_KEY_OVERRIDE_HEAP);
 				}
 
 				if(mem_info.device_ref_count != 0 || mem_info.ipc_ref_count != 0) {
-					loader_config.return_func(HOMEBREW_ABI_KEY_INVALID(LCONFIG_KEY_OVERRIDE_HEAP));
+					return HOMEBREW_ABI_KEY_INVALID(LCONFIG_KEY_OVERRIDE_HEAP);
 				}
 					
 				validation_head+= mem_info.size;
@@ -366,7 +352,7 @@ static void lconfig_parse(loader_config_entry_t *config) {
 				
 		case LCONFIG_KEY_OVERRIDE_SERVICE:
 			if(loader_config.num_service_overrides >= 32) {
-				loader_config.return_func(HOMEBREW_ABI_KEY_INVALID(LCONFIG_KEY_OVERRIDE_SERVICE));
+				return HOMEBREW_ABI_KEY_INVALID(LCONFIG_KEY_OVERRIDE_SERVICE);
 			}
 			loader_config.service_overrides[loader_config.num_service_overrides++] = entry->override_service.override;
 			break;
@@ -403,7 +389,7 @@ static void lconfig_parse(loader_config_entry_t *config) {
 			loader_config.socket_service = entry->stdio_sockets.socket_service;
 
 			if(loader_config.socket_service >= LCONFIG_SOCKET_SERVICE_MAX) {
-				loader_config.return_func(HOMEBREW_ABI_KEY_INVALID(entry->key));
+				return HOMEBREW_ABI_KEY_INVALID(entry->key);
 			}
 			// TODO: initialize bsd
 			break;
@@ -421,9 +407,11 @@ static void lconfig_parse(loader_config_entry_t *config) {
 			dbg_printf("  value[1]: 0x%x\n", entry->value[1]);
 				
 			if(recognition_mandatory) {
-				loader_config.return_func(HOMEBREW_ABI_UNRECOGNIZED_KEY(entry->key));
+				return HOMEBREW_ABI_UNRECOGNIZED_KEY(entry->key);
 			}
 			break; }
 		}
 	}
+
+	return RESULT_OK;
 }
