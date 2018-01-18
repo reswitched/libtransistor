@@ -7,9 +7,3 @@
 [submodule "sdl"]
 	path = sdl2
 	url = https://github.com/reswitched/sdl-libtransistor.git
-[submodule "projects/ace_loader/libdsm"]
-	path = projects/ace_loader/libdsm
-	url = git@github.com:videolabs/libdsm.git
-[submodule "projects/ace_loader/libssh2"]
-	path = projects/ace_loader/libssh2
-	url = https://github.com/libssh2/libssh2.git
