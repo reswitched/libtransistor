@@ -30,9 +30,9 @@ def main(input, output, format='nro'):
 				symbols[sym.name] = sectaddr + sym['st_value']
 				symbolList.append(sym.name)
 
-		textCont, rodataCont, relaDynCont, dataCont, dynamicCont = [elffile.get_section_by_name(x).data() for x in (
-		'.text', '.rodata', '.rela.dyn', '.data', '.dynamic')]
-		csec = dict(text=textCont, rodata=rodataCont, relaDyn=relaDynCont, data=dataCont, dynamic=dynamicCont)
+		textCont, rodataCont, relaDynCont, dataCont, dynamicCont, dynstrCont, dynsymCont = [elffile.get_section_by_name(x).data() for x in (
+		        '.text', '.rodata', '.rela.dyn', '.data', '.dynamic', '.dynstr', '.dynsym')]
+		csec = dict(text=textCont, rodata=rodataCont, relaDyn=relaDynCont, data=dataCont, dynamic=dynamicCont, dynstr=dynstrCont, dynsym=dynsymCont)
 
 		def replace(tgt, offset, data):
 			orig = csec[tgt]
@@ -68,16 +68,23 @@ def main(input, output, format='nro'):
 		if len(data) & 0x7:
 			data += '\0'.encode() * (0x8 - (len(data) & 0x7))
 
-		data += csec['dynamic']
-
 		if len(text) & 0xFFF:
 			text += '\0'.encode() * (0x1000 - (len(text) & 0xFFF))
 		if len(rodata) & 0xFFF:
 			rodata += '\0'.encode() * (0x1000 - (len(rodata) & 0xFFF))
+
+		data += csec['dynamic']
 		if len(data) & 0xFFF:
 			data += '\0'.encode() * (0x1000 - (len(data) & 0xFFF))
+		data += csec['dynsym']
+		if len(data) & 0x7:
+			data += '\0'.encode() * (0x8 - (len(data) & 0x7))
+		data += csec['dynstr']
 
-		bssSize = symbols['NORELOC_BSS_END_'] - symbols['NORELOC_BSS_START_']
+		if len(data) & 0xFFF:
+			data += '\0'.encode() * (0x1000 - (len(data) & 0xFFF))
+		
+		bssSize = elffile.get_section_by_name('.bss')['sh_size']
 		if bssSize & 0xFFF:
 			bssSize += 0x1000 - (bssSize & 0xFFF)
 
@@ -87,8 +94,10 @@ def main(input, output, format='nro'):
 				fp.write(struct.pack('<IIII', 0, len(text) + len(rodata) + 8, 0, 0))
 				fp.write('NRO0'.encode())
 				fp.write(struct.pack('<III', 0, len(text) + len(rodata) + len(data), 0))
-				fp.write(struct.pack('<IIII', 0, len(text), len(text), len(rodata)))
-				fp.write(struct.pack('<IIII', len(text) + len(rodata), len(data), bssSize, 0))
+				fp.write(struct.pack('<II', 0, len(text)))	# exec segment
+				fp.write(struct.pack('<II', len(text), len(rodata))) # read only segment
+				fp.write(struct.pack('<II', len(text) + len(rodata), len(data))) # rw segment
+				fp.write(struct.pack('<II', bssSize, 0))
 				fp.write('\0'.encode() * 0x40)
 				fp.write(text[0x80:])
 				fp.write(rodata)

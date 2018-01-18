@@ -40,6 +40,18 @@ NORELOC_DYNAMIC_START_ = .;
 NORELOC_DYNAMIC_END_ = .;
   }
 
+  .dynsym : ALIGN(0x1000) {
+NORELOC_DYNSYM_START_ = .;
+    *(.dynsym .dynsym*)
+NORELOC_DYNSYM_END_ = .;
+  }
+
+  .dynstr : ALIGN(0x8) {
+NORELOC_DYNSTR_START_ = .;
+    *(.dynstr .dynstr*)
+NORELOC_DYNSTR_END_ = .;
+  }
+
   .bss : ALIGN(0x1000) {
 NORELOC_BSS_START_ = .;
     *(.bss)
@@ -49,18 +61,6 @@ NORELOC_BSS_END_ = .;
 
   .hash : {
     *(.hash)
-  }
-
-  .dynstr : {
-NORELOC_DYNSTR_START_ = .;
-    *(.dynstr .dynstr*)
-NORELOC_DYNSTR_END_ = .;
-  }
-
-  .dynsym : {
-NORELOC_DYNSYM_START_ = .;
-    *(.dynsym .dynsym*)
-NORELOC_DYNSYM_END_ = .;
   }
 
   /DISCARD/ : {
