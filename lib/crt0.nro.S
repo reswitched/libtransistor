@@ -45,6 +45,7 @@ start:
 
         // set LR to svcExitProcess if it's null
         adrp x3, svcExitProcess
+        add x3, x3, #:lo12:svcExitProcess
         cmp x30, xzr
         csel x30, x3, x30, eq
 
