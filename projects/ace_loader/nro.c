@@ -94,9 +94,10 @@ uint64_t nro_start()
 	ent_no++;
 	
 	// Backup and clean main thread TLS pointer
-	void **tls_userspace_pointer = (void**)(get_tls() + 0x1F8);
+	uint8_t *tls = (uint8_t*) get_tls();
+	void **tls_userspace_pointer = (void**)(tls + 0x1f8);
 	void *tls_backup = *tls_userspace_pointer;
-	*(void**)(get_tls() + 0x1f8) = NULL;
+	*(void**)(tls + 0x1f8) = NULL;
 
 	// run NRO
 	ret = entry(nro_config, aceloader_main_thread_handle);
