@@ -4,6 +4,7 @@
 #include<libtransistor/err.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
+#include<libtransistor/fd.h>
 
 #include<sys/socket.h>
 #include<assert.h>
@@ -148,13 +149,10 @@ static bool relocate(uint8_t *aslr_base) {
 	return false;
 }
 
-static FILE bsslog_stdout;
-static int bsslog_write(struct _reent *reent, void *v, const char *ptr, int len) {
+static int dbg_log_write(void *v, const char *ptr, size_t len) {
 	log_string(ptr, len);
 	return len;
 }
-
-#define DEFAULT_NOCONTEXT_HEAP_SIZE 0x400000
 
 static jmp_buf exit_jmpbuf;
 static int exit_value;
@@ -168,7 +166,9 @@ static uint8_t tls_backup[0x200];
 
 static void lconfig_init_default(uint64_t thread_handle);
 static result_t lconfig_parse(loader_config_entry_t *config);
+
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
+static int make_dbg_log_fd();
 
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
 	if(relocate(aslr_base)) {
@@ -209,11 +209,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	phal_tid tid = { .id = loader_config.main_thread, .stack = NULL };
 	_rthread_internal_init(tid);
 
-	dbg_printf("init stdio");
-	bsslog_stdout._write = bsslog_write;
-	bsslog_stdout._flags = __SWR | __SNBF;
-	bsslog_stdout._bf._base = (void*) 1;
-
 	/*
 	  Automatically initialize sm, since 99% of applications are going to be using it
 	  and if they don't explicitly initialize it, each ipc module will initialize it,
@@ -237,10 +232,13 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	} else {
 		// TODO: Create a fake FD for bsslog
 		dbg_printf("using bsslog stdout");
-		printf("_"); // init stdout
-		getchar(); // init stdin
-		stdout = &bsslog_stdout;
-		stderr = &bsslog_stdout;
+		int fd = make_dbg_log_fd();
+		if(fd < 0) {
+			dbg_printf("error making debug log fd");
+		} else {
+			dup2(fd, STDOUT_FILENO);
+			dup2(fd, STDERR_FILENO);
+		}
 	}
 	dbg_printf("set up stdout");
 	
@@ -296,6 +294,13 @@ static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 			dbg_printf("Error setting up %s: %d", name, errno);
 		}
 	}
+}
+
+static int make_dbg_log_fd() {
+	static struct file_operations fops = {
+		.write = dbg_log_write
+	};
+	return fd_create_file(&fops, NULL);
 }
 
 static void lconfig_init_default(uint64_t thread_handle) {
