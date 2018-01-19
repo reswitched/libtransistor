@@ -209,12 +209,18 @@ void close_handles()
 	}
 }
 
+// we need to restore webkit's TLS before returning back to it,
+// but needs ours back when we go back to hook_func
+static uint8_t preserve_tls[0x200];
+
 void hook_func(uint64_t arg0)
 {
 	uint64_t (*funcA)(uint64_t);
 	void *ptr;
 	int ret;
 
+	memcpy(get_tls(), preserve_tls, 0x200);
+	
 	printf("** EXIT HOOK **\n");
 
 	// do some webkit cleanup
@@ -407,6 +413,7 @@ int main(int argc, char **argv)
 	}
 
 	_crt0_kludge_skip_cleanup = true; // TODO: remove this ASAP
+	memcpy(preserve_tls, get_tls(), 0x200);
 	printf("- ready to exit\n");
 	return 0;
 }
