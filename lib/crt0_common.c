@@ -164,6 +164,10 @@ static bool nso_syscalls[0xFF] = {};
 
 static uint8_t tls_backup[0x200];
 
+bool _crt0_kludge_skip_cleanup = false; // TODO: REMOVE THIS ASAP
+
+
+
 static void lconfig_init_default(uint64_t thread_handle);
 static result_t lconfig_parse(loader_config_entry_t *config);
 
@@ -257,13 +261,17 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		ret = exit_value;
 	}
 
-	/*if(fini_array != NULL) {
-		if(fini_array_size != -1) {
-			for(size_t i = 0; i < fini_array_size/sizeof(fini_array[0]); i++) {
-				fini_array[i]();
+	if(!_crt0_kludge_skip_cleanup) { // TODO: remove cleanup kludge ASAP
+		if(fini_array != NULL) {
+			if(fini_array_size != -1) {
+				for(size_t i = 0; i < fini_array_size/sizeof(fini_array[0]); i++) {
+					fini_array[i]();
+				}
 			}
 		}
-		}*/
+	} else {
+		printf("crt0: cleanup kludge active, please fix this ASAP\n");
+	}
 	
 fail_bsd:
 	/*

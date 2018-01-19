@@ -132,3 +132,5 @@ typedef struct {
 extern loader_config_t loader_config;
 
 static_assert(sizeof(loader_config_entry_t) == 0x18, "loader config entry size should be 0x18 bytes");
+
+extern bool _crt0_kludge_skip_cleanup; // TODO: REMOVE THIS ASAP

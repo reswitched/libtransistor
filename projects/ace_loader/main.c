@@ -1,5 +1,6 @@
 #include <libtransistor/nx.h>
 #include <libtransistor/ipc.h>
+#include <libtransistor/loader_config.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -405,6 +406,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	_crt0_kludge_skip_cleanup = true; // TODO: remove this ASAP
 	printf("- ready to exit\n");
 	return 0;
 }
