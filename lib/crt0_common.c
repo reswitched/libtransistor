@@ -164,6 +164,8 @@ loader_config_t loader_config;
 static bool nro_syscalls[0xFF] = {};
 static bool nso_syscalls[0xFF] = {};
 
+static uint8_t tls_backup[0x200];
+
 static void lconfig_init_default(uint64_t thread_handle);
 static result_t lconfig_parse(loader_config_entry_t *config);
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
@@ -199,6 +201,10 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		loader_config.main_thread = 0xde00;
 	}
 
+	dbg_printf("backup tls");
+	memcpy(tls_backup, get_tls(), 0x200);
+	memset(get_tls(), 0, 0x200);
+	
 	dbg_printf("init threads");
 	phal_tid tid = { .id = loader_config.main_thread, .stack = NULL };
 	_rthread_internal_init(tid);
@@ -215,13 +221,13 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	 */
 	if((ret = sm_init()) != RESULT_OK) {
 		dbg_printf("failed to initialize sm: 0x%x", ret);
-		return ret;
+		goto restore_tls;
 	}
 	
 	if(loader_config.has_stdio_sockets) {
 		if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
 			sm_finalize();
-			return ret;
+			goto restore_tls;
 		}
 
 		dbg_printf("using socklog stdio");
@@ -271,6 +277,8 @@ fail_bsd:
 	}
 	sm_finalize();
 
+restore_tls:
+	memcpy(get_tls(), tls_backup, 0x200);
 	return ret;
 }
 
