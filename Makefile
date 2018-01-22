@@ -18,13 +18,13 @@ export LD_FOR_TARGET = $(LD)
 export CC_FOR_TARGET = $(CC)
 export AS_FOR_TARGET = $(AS) -arch=aarch64 -mattr=+neon
 export AR_FOR_TARGET = $(AR)
-export RANLIB_FOR_TARGET = llvm-ranlib$(LLVM_POSTFIX)
+export RANLIB_FOR_TARGET = $(RANLIB)
 export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument -Wno-error-implicit-function-declaration
 
 .SUFFIXES: # disable built-in rules
 .SECONDARY: # don't delete intermediate files
 
-.PHONY: clean, clean_newlib, clean_compiler-rt, distclean 
+.PHONY: clean clean_newlib clean_compiler-rt clean_sdl distclean
 
 all: $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a \
 	$(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nso.a \
@@ -47,7 +47,7 @@ run_ssp_test: $(LIBTRANSISTOR_HOME)/build/test/test_ssp.nro
 run_%_test: $(LIBTRANSISTOR_HOME)/build/test/test_%.nro
 	$(MEPHISTO) --load-nro $<
 
-$(LIBTRANSISTOR_HOME)/build/test/%.o: $(LIBTRANSISTOR_HOME)/test/%.c
+$(LIBTRANSISTOR_HOME)/build/test/%.o: $(LIBTRANSISTOR_HOME)/test/%.c $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) $(WARNINGS) -c -o $@ $<
 
@@ -71,11 +71,11 @@ $(LIBTRANSISTOR_HOME)/build/pthread/%.o: $(LIBTRANSISTOR_HOME)/pthread/%.c
 
 $(LIBTRANSISTOR_HOME)/build/test/%.nro.so: $(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_NRO_LIB) $(LIBTRANSISTOR_COMMON_LIBS)
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< $(LIBTRANSISTOR_NRO_LDFLAGS) -lm
+	$(LD) $(LD_FLAGS) -o $@ $< $(LIBTRANSISTOR_NRO_LDFLAGS)
 
 $(LIBTRANSISTOR_HOME)/build/test/%.nso.so: $(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_NSO_LIB) $(LIBTRANSISTOR_COMMON_LIBS)
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< $(LIBTRANSISTOR_NSO_LDFLAGS) -lm
+	$(LD) $(LD_FLAGS) -o $@ $< $(LIBTRANSISTOR_NSO_LDFLAGS)
 
 $(LIBTRANSISTOR_NRO_LIB): $(LIBTRANSISTOR_HOME)/build/lib/crt0.nro.o $(libtransistor_OBJECT_FILES)
 	mkdir -p $(@D)
@@ -91,7 +91,7 @@ $(LIBTRANSISTOR_HOME)/build/newlib/Makefile:
 	mkdir -p $(@D)
 	cd $(@D); $(LIBTRANSISTOR_HOME)/newlib/configure --disable-multilib --target=aarch64-none-switch --without-rdimon
 
-$(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/build/newlib/Makefile
+$(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libm.a $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a: $(LIBTRANSISTOR_HOME)/build/newlib/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/newlib/
 
 $(LIBTRANSISTOR_HOME)/pthread/libpthread.a: $(pthread_OBJECT_FILES)
@@ -111,21 +111,25 @@ $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
 		-DCOMPILER_RT_BUILD_XRAY=OFF \
 		-DCOMPILER_RT_BUILD_XRAY=OFF \
 		-DCOMPILER_RT_BUILD_PROFILE=OFF \
-		-DCMAKE_C_COMPILER=$(CC) \
+		-DCMAKE_C_COMPILER="$(CC)" \
 		-DCMAKE_C_FLAGS="$(CC_FLAGS)" \
 		-DCMAKE_C_COMPILER_TARGET="aarch64-none-linux-gnu" \
-		-DCMAKE_CXX_COMPILER=$(CXX) \
+		-DCMAKE_CXX_COMPILER="$(CXX)" \
+		-DCMAKE_CXX_FLAGS="$(CC_FLAGS)" \
+		-DCMAKE_CXX_COMPILER_TARGET="aarch64-none-linux-gnu" \
+		-DCMAKE_AR="$(AR)" \
 		-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
 		-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
-		-DLLVM_CONFIG_PATH=llvm-config$(LLVM_POSTFIX)
+		-DLLVM_CONFIG_PATH=llvm-config$(LLVM_POSTFIX) \
+		-DCMAKE_SYSTEM_NAME=Linux
 
 $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a: $(LIBTRANSISTOR_HOME)/build/sdl2/Makefile
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl2/
 	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl2/ install
 
-$(LIBTRANSISTOR_HOME)/build/sdl2/Makefile:
+$(LIBTRANSISTOR_HOME)/build/sdl2/Makefile: $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libm.a $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a
 	mkdir -p $(@D)
-	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl2/configure "CFLAGS=$(CFLAGS)" --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --enable-timers --enable-video --prefix=$(LIBTRANSISTOR_HOME)/build/sdl2_install/
+	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl2/configure "CFLAGS=$(CFLAGS)" "CC=$(CC)" "AR=$(AR)" "RANLIB=$(RANLIB)" "LDFLAGS=-L$(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/ -lc -lm" --host=aarch64-none-switch --disable-audio --disable-joystick --disable-power --disable-filesystem --disable-threads --disable-cpuinfo --enable-timers --enable-video --disable-shared --enable-static --prefix=$(LIBTRANSISTOR_HOME)/build/sdl2_install/
 
 clean:
 	rm -rf $(LIBTRANSISTOR_HOME)/build/lib/* $(LIBTRANSISTOR_HOME)/build/test/* $(LIBTRANSISTOR_HOME)/docs
@@ -139,4 +143,7 @@ clean_newlib:
 clean_compiler-rt:
 	rm -rf build/compiler-rt
 
-distclean: clean clean_newlib clean_compiler-rt clean_pthread
+clean_sdl:
+	rm -rf build/sdl2 build/sdl2_install
+
+distclean: clean clean_newlib clean_compiler-rt clean_pthread clean_sdl
