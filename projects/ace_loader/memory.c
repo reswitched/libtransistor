@@ -66,10 +66,10 @@ int mem_make_block()
 			   minfo.base_addr <= loader_config.heap_base &&
 			   minfo.base_addr + minfo.size >= loader_config.heap_base + loader_config.heap_size) {
 				printf("- splitting this block around our overridden heap...\n");
-				printf("- overridden heap @ %p, size 0x%x\n", loader_config.heap_base, loader_config.heap_size);
+				printf("- overridden heap @ %p, size 0x%zx\n", loader_config.heap_base, loader_config.heap_size);
 				heap_map[heap_map_cur].src = minfo.base_addr;
 				heap_map[heap_map_cur].size = loader_config.heap_base - minfo.base_addr;
-				printf("- block before: %p, 0x%x\n", heap_map[heap_map_cur].src, heap_map[heap_map_cur].size);
+				printf("- block before: %p, 0x%lx\n", heap_map[heap_map_cur].src, heap_map[heap_map_cur].size);
 				heap_map_cur++;
 				if(heap_map_cur == HEAP_MAP_SIZE) {
 					printf("- out of map storage space\n");
@@ -78,10 +78,10 @@ int mem_make_block()
 				
 				heap_map[heap_map_cur].src = loader_config.heap_base + loader_config.heap_size;
 				heap_map[heap_map_cur].size = (minfo.base_addr + minfo.size) - (loader_config.heap_base + loader_config.heap_size);
-				printf("- block after: %p, 0x%x\n", heap_map[heap_map_cur].src, heap_map[heap_map_cur].size);
+				printf("- block after: %p, 0x%lx\n", heap_map[heap_map_cur].src, heap_map[heap_map_cur].size);
 				heap_map_cur++;
 			} else {
-				printf("- found suitable block at %p, size 0x%x\n", minfo.base_addr, minfo.size);
+				printf("- found suitable block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
 				heap_map[heap_map_cur].src = minfo.base_addr;
 				heap_map[heap_map_cur].size = minfo.size;
 				heap_map_cur++;
