@@ -149,7 +149,7 @@ static bool relocate(uint8_t *aslr_base) {
 	return false;
 }
 
-static int dbg_log_write(void *v, const char *ptr, size_t len) {
+static size_t dbg_log_write(void *v, const char *ptr, size_t len) {
 	log_string(ptr, len);
 	return len;
 }
