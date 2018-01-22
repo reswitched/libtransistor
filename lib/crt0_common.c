@@ -189,8 +189,18 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	
 	// parse loader config, if present
 	if(config != NULL) {
-		dbg_printf("found loader config");
+		if(*((uint64_t*) config) == 0x007874635f656361) {
+			dbg_printf("found libtransistor context-- please update ace_loader/pegaswitch!");
 
+			// write log_buffer and log_size
+			*((uint64_t*) (((uint8_t*) config) + 0x18)) = log_buffer;
+			*((uint64_t*) (((uint8_t*) config) + 0x20)) = &log_length;
+			
+			return LIBTRANSISTOR_ERR_LEGACY_CONTEXT;
+		}
+		
+		dbg_printf("found loader config");
+		
 		ret = lconfig_parse(config);
 		if(ret != RESULT_OK) {
 			return ret;
