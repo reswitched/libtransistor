@@ -1,6 +1,12 @@
+/**
+ * @file libtransistor/ipc/bsd.h
+ * @brief BSD Sockets
+ */
+
 #pragma once
 
 #include<libtransistor/types.h>
+#include<libtransistor/loader_config.h>
 #include<sys/types.h>
 #include<sys/socket.h>
 #include<netinet/in.h>
@@ -16,7 +22,12 @@ struct addrinfo_fixed {
 };
 
 result_t bsd_init();
-ipc_object_t bsd_get_object();
+result_t bsd_init_ex(bool require_override, loader_config_socket_service_t service);
+
+const char *bsd_get_socket_service_name();
+handle_t bsd_get_socket_service_handle();
+loader_config_socket_service_t bsd_get_socket_service();
+
 int bsd_socket(int domain, int type, int protocol);
 int bsd_recv(int socket, void *message, size_t length, int flags);
 int bsd_send(int socket, const void *data, size_t length, int flags);

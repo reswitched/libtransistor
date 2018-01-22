@@ -3,6 +3,9 @@ env:
     - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
 language: c
 sudo: required
+cache:
+  directories:
+    - ${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
 matrix:
   include:
     - os: linux
@@ -24,6 +27,9 @@ addons:
       - lld-5.0
       - liblz4-dev
       - squashfs-tools
+      - graphviz
+      - python3
+      - python3-pip
 install:
     # Download and install recent cmake
     - |
@@ -33,6 +39,13 @@ install:
         travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${DEPS_DIR}/cmake
         export PATH=${DEPS_DIR}/cmake/bin:${PATH}
       fi
+
+    # Travis has an OLD doxygen build, so we fetch a recent one
+    - export DOXY_BINPATH=${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
+    - if [ ! -e "$DOXY_BINPATH/doxygen" ]; then mkdir -p ${DEPS_DIR}/doxygen; fi
+    - if [ ! -e "$DOXY_BINPATH/doxygen" ]; then wget http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.linux.bin.tar.gz; fi
+    - if [ ! -e "$DOXY_BINPATH/doxygen" ]; then tar xzf doxygen-1.8.11.linux.bin.tar.gz -C ${DEPS_DIR}/doxygen/; fi
+    - export PATH=$PATH:$DOXY_BINPATH
 before_script:
   # macos specific stuff
   - "if [ ${TRAVIS_OS_NAME} = 'osx' ]; then brew install llvm qemu lz4; 
@@ -49,5 +62,18 @@ before_script:
   - sudo pip2 install -r  requirements.txt
   - make
   - cd ..
-  - sudo pip2 install -r  requirements.txt
+  - sudo pip3 install -r  requirements.txt
 script:  make LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make -C projects/ace_loader LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make run_tests MEPHISTO=./Mephisto/ctu
+
+after_success:
+  #Once the build has passed, build the docs
+  - doxygen Doxyfile
+
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN
+  local-dir: docs
+  target-branch: gh-pages
+  on:
+    branch: master

@@ -164,7 +164,7 @@ void server_loop()
 			// check for command
 			if(size == heap_size)
 			{
-				if(ret < 0x14 || *(uint32_t*)ptr || *(uint32_t*)(ptr+0x10) != NRO_MAGIC)
+				if(ret < 0x14 || *(uint32_t*)(ptr+0x10) != NRO_MAGIC)
 					// it's not NRO, enable command mode
 					size = 0xFFFFFFFF;
 			}

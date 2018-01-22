@@ -1,3 +1,10 @@
+/**
+ * @file libtransistor/fd.h
+ * @brief File operations
+ *
+ *        Taken straight from the linux kernel
+ */
+
 #pragma once
 
 #include <sys/types.h>
@@ -6,7 +13,9 @@
 
 struct file;
 
-// Taken straight from the linux kernel
+/**
+* @struct file_operations
+*/
 struct file_operations {
 	off_t (*llseek) (void *, off_t, int);
 	ssize_t (*read) (void *, char *, size_t);
@@ -47,24 +56,45 @@ struct file_operations {
 			uint64_t);*/
 };
 
+/**
+* @struct file
+*/
 struct file {
 	atomic_int refcount;
 	struct file_operations *ops;
 	void *data;
 };
 
-// Create a file from fops and data. Data will be sent to the various functions
-// in fops. Data will usually contain the underlying handle (like the fd for bsd)
+/**
+* @brief Create a file from fops and data
+*		
+*        Data will be sent to the various functions in fops. Data will usually 
+*        contain the underlying handle (like the fd for bsd)
+*/
 int fd_create_file(struct file_operations *fops, void *data);
 
-// Get the file structure from a given fd, and increment its rc. Any call to
-// this function needs an equivalent call to `fd_file_put`.
+/**
+* @brief Get the file structure from a given fd, and increment its rc
+*		
+*        Any call to this function needs an equivalent call to `fd_file_put`.
+*/
 struct file *fd_file_get(int fd);
-// Decrease the fd_file refcount, and release it if this is the last one.
+
+/**
+* @brief Decrease the fd_file refcount, and release it if this is the last one
+*/
 void fd_file_put(struct file*);
-// Close the file descriptor.
+
+/**
+* @brief Close the file descriptor
+*/
 int fd_close(int fd);
 
 // Duplicates oldfd, and all its associated locks, into newfd. Newfd is closed
 // if necessary
+/**
+* @brief Duplicates oldfd, and all its associated locks, into newfd
+*
+*        Newfd is closed if necessary.
+*/
 int fd_dup2(int oldfd, int newfd);

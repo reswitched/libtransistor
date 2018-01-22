@@ -1,5 +1,8 @@
 #include <libtransistor/nx.h>
 #include <libtransistor/ipc.h>
+#include <libtransistor/loader_config.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -95,14 +98,6 @@ const int static_handles[] =
 	0x338034,
 	0x348036
 };
-
-static int stdout_debug(struct _reent *reent, void *v, const char *ptr, int len)
-{
-	if(std_sck < 0)
-		return len;
-	bsd_send(std_sck, ptr, len, 0);
-	return len;
-}
 
 void locate_threads(void *base, uint64_t size, int simple)
 {
@@ -214,12 +209,18 @@ void close_handles()
 	}
 }
 
+// we need to restore webkit's TLS before returning back to it,
+// but needs ours back when we go back to hook_func
+static uint8_t preserve_tls[0x200];
+
 void hook_func(uint64_t arg0)
 {
 	uint64_t (*funcA)(uint64_t);
 	void *ptr;
 	int ret;
 
+	memcpy(get_tls(), preserve_tls, 0x200);
+	
 	printf("** EXIT HOOK **\n");
 
 	// do some webkit cleanup
@@ -388,15 +389,17 @@ int main(int argc, char **argv)
 		{
 			bsd_close(std_sck);
 			std_sck = -1; // invalidate
+		} else {
+			// redirect stdout and stderr
+			int fd = socket_from_bsd(std_sck);
+			if(fd < 0) {
+				printf("error creating fd\n");
+			} else {
+				dup2(fd, STDOUT_FILENO);
+				dup2(fd, STDERR_FILENO);
+			}
 		}
 	}
-
-	// this exact sequence will redirect stdout to socket
-	custom_stdout._write = stdout_debug;
-	custom_stdout._flags = __SWR | __SNBF;
-	custom_stdout._bf._base = (void*)1;
-	stdout = &custom_stdout;
-	stderr = &custom_stdout;
 
 	// locate and hook webkit
 	printf("searching for webkit ...\n");
@@ -409,9 +412,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	_crt0_kludge_skip_cleanup = true; // TODO: remove this ASAP
+	memcpy(preserve_tls, get_tls(), 0x200);
 	printf("- ready to exit\n");
-
-	libtransistor_set_close_browser();
 	return 0;
 }
-

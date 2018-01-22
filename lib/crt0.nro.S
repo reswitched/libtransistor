@@ -20,7 +20,8 @@
 NORELOC__filestart:
 .global _start
 _start:
-	.fill 0x80, 1, 0
+        b start
+	.fill 0x7c, 1, 0
 
 .section .data, "e"
 	.word 0, 8
@@ -33,26 +34,23 @@ _mod_header:
 	.word NORELOC_BSS_END_ - NORELOC__nro_modhdr
 	.word 0, 0 // eh_frame_hdr start/end
 	.word 0 // runtime-generated module object offset
-        .quad log_buffer
-        .quad log_length
+.global IS_NRO
+IS_NRO: 
+        .word 1
         
 .section .text, "e"
 .global start
 start:
+        adrp x2, _start // aslr base
+
+        // set LR to svcExitProcess if it's null
+        adrp x3, svcExitProcess
+        add x3, x3, #:lo12:svcExitProcess
+        cmp x30, xzr
+        csel x30, x3, x30, eq
+
         sub sp, sp, 0x10
         stp x29, x30, [sp]
-        adrp x1, _start // aslr base
         bl _libtransistor_start
         ldp x29, x30, [sp], 0x10
         ret
-
-.global _get_module_header
-_get_module_header:
-        adrp x0, _mod_header
-        add x0, x0, #:lo12:_mod_header
-        ret
-        
-.section .bss
-__crt0_exit_frame:       
-        .quad 0
-        .quad 0

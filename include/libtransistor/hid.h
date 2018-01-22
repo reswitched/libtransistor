@@ -1,23 +1,51 @@
+/**
+ * @file libtransistor/hid.h
+ * @brief Controller input data structures and functions
+ */
+
 #pragma once
 
 #include<libtransistor/types.h>
 
+/**
+ * @struct hid_touchscreen_t
+ *
+ * Currently a placeholder
+ */
 typedef struct {
 	uint8_t data[0x3000];
 } hid_touchscreen_t;
 
+/**
+ * @struct hid_mouse_t
+ *
+ * Currently a placeholder
+ */
 typedef struct {
 	uint8_t data[0x400];
 } hid_mouse_t;
 
+/**
+ * @struct hid_keyboard_t
+ *
+ * Currently a placeholder
+ */
 typedef struct {
 	uint8_t data[0x400];
 } hid_keyboard_t;
 
+/**
+ * @struct hid_mac
+ *
+ * MAC address of a controller
+ */
 typedef struct {
 	uint8_t mac[0x10];
 } hid_mac;
 
+/**
+ * @struct hid_controller_state_entry_t
+ */
 typedef struct {
 	uint64_t timestamp;
 	uint64_t timestamp2;
@@ -29,6 +57,9 @@ typedef struct {
 	uint64_t controller_state;
 } hid_controller_state_entry_t;
 
+/**
+ * @struct hid_controller_state_t
+ */
 typedef struct {
 	uint64_t timestamp;
 	uint64_t num_entries;
@@ -37,11 +68,17 @@ typedef struct {
 	hid_controller_state_entry_t entries[17];
 } hid_controller_state_t;
 
+/**
+ * @struct hid_controller_color_t
+ */
 typedef struct {
 	uint32_t body;
 	uint32_t buttons;
 } hid_controller_color_t;
 
+/**
+ * @struct hid_controller_t
+ */
 typedef struct {
 	uint32_t status;
 	uint32_t is_joycon_half;
@@ -66,6 +103,9 @@ typedef struct {
 	uint8_t pad2[0xe10];
 } hid_controller_t;
 
+/**
+ * @struct hid_shared_memory_t
+ */
 typedef struct {
 	uint8_t pad1[0x400];
 	hid_touchscreen_t touchscreen;
@@ -84,6 +124,17 @@ typedef struct {
 	uint8_t unknown8[0x4600];
 } hid_shared_memory_t;
 
+/**
+ * @brief Initialize input
+ */
 result_t hid_init();
+
+/**
+ * @brief Get HID shared memory
+ */
 hid_shared_memory_t *hid_get_shared_memory();
+
+/**
+ * @brief Finalize HID
+ */
 void hid_finalize();

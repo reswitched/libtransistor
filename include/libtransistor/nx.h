@@ -1,5 +1,5 @@
 /**
- * @file switch.h
+ * @file libtransistor/nx.h
  * @brief Central Switch header. Includes all others.
  */
 
@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #include<libtransistor/types.h>
-#include<libtransistor/context.h>
+#include<libtransistor/loader_config.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/tls.h>

@@ -25,6 +25,19 @@ void *find_empty_memory_block(size_t len) {
 	return (void*)addr;
 }
 
+uint64_t str2u64(const char *str) {
+	char buf[8];
+	int i = 0;
+	for(; i < 8; i++) {
+		if(str[i] == 0) { break; }
+		buf[i] = str[i];
+	}
+	for(; i < 8; i++) {
+		buf[i] = 0;
+	}
+	return *(uint64_t*) buf;
+}
+
 char nybble2hex(uint8_t nybble) {
 	if(nybble < 10) {
 		return '0' + nybble;
