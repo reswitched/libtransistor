@@ -87,6 +87,10 @@
  */
 #define PTHREAD_BARRIER_SERIAL_THREAD -1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Forward structure definitions.
  *
@@ -308,6 +312,10 @@ int		pthread_spin_unlock(pthread_spinlock_t *);
 
 #if __POSIX_VISIBLE >= 200112
 int		pthread_getcpuclockid(pthread_t, clockid_t *);
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #endif /* _PTHREAD_H_ */
