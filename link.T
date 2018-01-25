@@ -63,9 +63,22 @@ NORELOC_BSS_END_ = .;
     *(.hash)
   }
 
+  .eh_frame_hdr : {
+    __eh_frame_hdr_start = .;
+    __eh_frame_hdr_start2 = ALIGN(0x10);
+    *(.eh_frame_hdr)
+    __eh_frame_hdr_end = .;
+    __eh_frame_hdr_end2 = ALIGN(0x10);
+  }
+
+  .eh_frame : {
+    __eh_frame_start = .;
+    *(.eh_frame)
+    __eh_frame_end = .;
+  }
+
   /DISCARD/ : {
     *(.comment)
     *(.note.GNU-stack)
-    *(.eh_frame)
   }
 }
