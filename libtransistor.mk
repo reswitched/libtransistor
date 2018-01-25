@@ -23,6 +23,7 @@ CXX_FLAGS := $(CC_FLAGS) -std=c++11 -stdlib=libc++ -nodefaultlibs -nostdinc++ $(
 AR_FLAGS := rcs
 # for compatiblity
 CFLAGS := $(CC_FLAGS)
+CXXFLAGS := $(CXX_FLAGS)
 AS_FLAGS := -arch=aarch64 -triple aarch64-none-switch
 PYTHON3 := python3
 MEPHISTO := ctu
