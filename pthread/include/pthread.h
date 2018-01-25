@@ -182,7 +182,7 @@ enum pthread_mutextype {
 /*
  * Thread function prototype definitions:
  */
-int		pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
+//int		pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
 int		pthread_attr_destroy(pthread_attr_t *);
 int		pthread_attr_getstack(const pthread_attr_t *,
 			void **, size_t *);
