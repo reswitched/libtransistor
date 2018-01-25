@@ -23,11 +23,13 @@ def main(input, output, format='nro'):
 		elffile.iter_sections_by_type = lambda type: (x for x in elffile.iter_sections() if isinstance(x, type))
 
 		symbols = {}
+		symbolValues = {}
 		symbolList = []
 		for x in elffile.iter_sections_by_type(SymbolTableSection):
 			for i, sym in enumerate(x.iter_symbols()):
 				sectaddr = elffile.get_section(sym['st_shndx'])['sh_addr'] if isinstance(sym['st_shndx'], int) else 0
 				symbols[sym.name] = sectaddr + sym['st_value']
+				symbolValues[sym.name] = sym['st_value']
 				symbolList.append(sym.name)
 
 		textCont, rodataCont, relaDynCont, dataCont, dynamicCont, dynstrCont, dynsymCont = [elffile.get_section_by_name(x).data() for x in (
@@ -55,7 +57,7 @@ def main(input, output, format='nro'):
 				elif reloc_type == R_AARCH64_ABS32:
 					replace(tgt, iter['r_offset'], struct.pack('<I', symbols[symname] + iter['r_addend']))
 				else:
-					print('Unknown relocation type!', reloc_type)
+					print('Unknown relocation type! offset = %x, info = %x, info_sym = %d, info_type = %s, symvalue = %x, symname = %s' % (iter['r_offset'], iter['r_info'], iter['r_info_sym'], reloc_type, symbolValues[symname], symname + " + " + str(iter['r_addend'])))
 					assert False
 
 		text, rodata, data = csec['text'], csec['rodata'], csec['data']
