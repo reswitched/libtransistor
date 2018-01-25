@@ -57,9 +57,7 @@ def main(input, output, format='nro'):
 				elif reloc_type == R_AARCH64_ABS32:
 					replace(tgt, iter['r_offset'], struct.pack('<I', symbols[symname] + iter['r_addend']))
 				else:
-					print(iter)
-					print(iter['r_info_sym'])
-					print('Unknown relocation type! offset = %x, info = %x, type = %s, symvalue = %x, symname = %s' % (iter['r_offset'], iter['r_info'], reloc_type, symbolValues[symname], symname + " + " + str(iter['r_addend'])))
+					print('Unknown relocation type! offset = %x, info = %x, info_sym = %d, info_type = %s, symvalue = %x, symname = %s' % (iter['r_offset'], iter['r_info'], iter['r_info_sym'], reloc_type, symbolValues[symname], symname + " + " + str(iter['r_addend'])))
 					assert False
 
 		text, rodata, data = csec['text'], csec['rodata'], csec['data']
