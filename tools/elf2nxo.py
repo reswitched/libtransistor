@@ -32,12 +32,15 @@ def main(input, output, format='nro'):
 				symbolValues[sym.name] = sym['st_value']
 				symbolList.append(sym.name)
 
-		textCont, rodataCont, relaDynCont, dataCont, dynamicCont, dynstrCont, dynsymCont = [elffile.get_section_by_name(x).data() for x in (
+		textCont, rodataCont, relaDynCont, dataCont, dynamicCont, dynstrCont, dynsymCont = [elffile.get_section_by_name(x) for x in (
 		        '.text', '.rodata', '.rela.dyn', '.data', '.dynamic', '.dynstr', '.dynsym')]
-		csec = dict(text=textCont, rodata=rodataCont, relaDyn=relaDynCont, data=dataCont, dynamic=dynamicCont, dynstr=dynstrCont, dynsym=dynsymCont)
+		sec = dict(text=textCont, rodata=rodataCont, relaDyn=relaDynCont, data=dataCont, dynamic=dynamicCont, dynstr=dynstrCont, dynsym=dynsymCont)
+		csec = {n: s.data() for n, s in sec.items()}
+		asec = {n: s.header['sh_addr'] for n, s in sec.items()}
 
 		def replace(tgt, offset, data):
 			orig = csec[tgt]
+			offset -= asec[tgt]
 			csec[tgt] = orig[:offset] + data + orig[offset + len(data):]
 
 		for x in elffile.iter_sections_by_type(RelocationSection):
@@ -56,6 +59,8 @@ def main(input, output, format='nro'):
 							tgtsect['sh_addr'] + iter['r_offset'])))
 				elif reloc_type == R_AARCH64_ABS32:
 					replace(tgt, iter['r_offset'], struct.pack('<I', symbols[symname] + iter['r_addend']))
+				elif reloc_type == R_AARCH64_ABS64:
+					replace(tgt, iter['r_offset'], struct.pack('<Q', symbols[symname] + iter['r_addend']))
 				else:
 					print('Unknown relocation type! offset = %x, info = %x, info_sym = %d, info_type = %s, symvalue = %x, symname = %s' % (iter['r_offset'], iter['r_info'], iter['r_info_sym'], reloc_type, symbolValues[symname], symname + " + " + str(iter['r_addend'])))
 					assert False
