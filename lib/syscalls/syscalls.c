@@ -251,7 +251,7 @@ int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__
 		atexit(time_finalize);
 	}
 	
-	if ((res = time_get_current_time(&time)) != RESULT_OK) {
+	if ((res = time_system_clock_get_current_time(time_system_clock_user, &time)) != RESULT_OK) {
 		reent->_errno = -EINVAL;
 		return -1;
 	}
