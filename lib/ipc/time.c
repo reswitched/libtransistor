@@ -103,17 +103,6 @@ result_t time_systemclock_set_current_time(ipc_object_t systemclock, uint64_t *t
 	return ipc_send(systemclock, &rq, &rs);
 }
 
-//result_t time_get_current_time(uint64_t *time) {
-//	ipc_request_t rq = ipc_default_request;
-//	ipc_response_fmt_t rs = ipc_default_response_fmt;
-//
-//	rq.request_id = 0;
-//	rs.raw_data = time;
-//	rs.raw_data_size = sizeof(*time);
-//
-//	return ipc_send(time_systemclock_user, &rq, &rs);
-//}
-
 static void time_force_finalize() {
 	ipc_close(time_systemclock_user);
 	ipc_close(time_systemclock_network);
