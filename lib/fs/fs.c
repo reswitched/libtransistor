@@ -5,6 +5,7 @@
 
 #include<stdio.h>
 #include<string.h>
+#include<sys/stat.h>
 
 #define MAX_RECURSION 256
 
@@ -210,4 +211,28 @@ result_t trn_fs_chdir(const char *path) {
 	cwd_recursion = traverse_recursion;
 	memcpy(cwd, traverse, (cwd_recursion + 1) * sizeof(cwd[0]));
 	printf("chdir, cwd_recursion is now %d\n", cwd_recursion);
+
+	return RESULT_OK;
+}
+
+result_t trn_fs_stat(const char *path, struct stat *st) {
+	result_t r;
+	trn_traverse_t traverse[MAX_RECURSION];
+	int borrowed_recursion = 0;
+	int traverse_recursion = 0;
+	if((r = trn_fs_traverse(path, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+		return r;
+	}
+
+	bool is_dir;
+	r = traverse[traverse_recursion].inode.ops->is_dir(traverse[traverse_recursion].inode.data, &is_dir);
+
+	printf("stat is_dir: %d\n", is_dir);
+	st->st_mode = is_dir ? S_IFDIR : S_IFREG;
+	
+	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
+		traverse[i].inode.ops->release(traverse[i].inode.data);
+	}
+	
+	return r;
 }

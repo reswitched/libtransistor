@@ -115,8 +115,8 @@ int _open_r(struct _reent *reent, const char *name, int flags, int mode) {
 		break;
 	default:
 		reent->_errno = ENOSYS;
-		return -1;
 	}
+	return -1;
 }
 
 ssize_t _read_r(struct _reent *reent, int file, void *ptr, size_t len) {
@@ -177,7 +177,19 @@ void *_sbrk_r(struct _reent *reent, ptrdiff_t incr) {
 }
 
 int _stat_r(struct _reent *reent, const char *file, struct stat *st) {
-	reent->_errno = ENOSYS;
+	switch(trn_fs_stat(file, st)) {
+	case RESULT_OK:
+		return 0;
+	case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
+		reent->_errno = ENOTDIR;
+		break;
+	case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
+		reent->_errno = ENOENT;
+		break;
+	default:
+		reent->_errno = ENOSYS;
+		break;
+	}
 	return -1;
 }
 

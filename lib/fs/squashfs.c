@@ -124,7 +124,8 @@ static struct file_operations trn_sqfs_file_ops = {
 
 static result_t trn_sqfs_is_dir(void *data, bool *out) {
 	trn_sqfs_inode_t *inode = data;
-	return S_ISDIR(inode->inode.base.mode);
+	*out = S_ISDIR(inode->inode.base.mode);
+	return RESULT_OK;
 }
 
 static result_t trn_sqfs_lookup(void *data, trn_inode_t *out, const char *name, size_t name_length) {
