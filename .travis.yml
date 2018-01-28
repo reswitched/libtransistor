@@ -31,13 +31,24 @@ addons:
       - python3-pip
 
 install:
-    # Download and install recent cmake
+    # Set postfix variable
+    - export LLVM_POSTFIX=-5.0
+
+    # Download and install recent cmake (linux only)
     - |
       if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
         CMAKE_URL="http://www.cmake.org/files/v3.4/cmake-3.4.3-Linux-x86_64.tar.gz"
         mkdir -p ${DEPS_DIR}/cmake
         travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${DEPS_DIR}/cmake
         export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+      fi
+      
+    # Setup Mac packages (no brew plugin) and remove -5.0 postfix
+    - |
+      if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
+        export LLVM_POSTFIX="";
+        brew install llvm qemu lz4 python3
+        export PATH="/usr/local/opt/llvm/bin:$PATH";
       fi
 
     # Travis has an OLD doxygen build, so we fetch a recent one
@@ -46,12 +57,8 @@ install:
     - if [ ! -e "$DOXY_BINPATH/doxygen" ]; then wget http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.linux.bin.tar.gz; fi
     - if [ ! -e "$DOXY_BINPATH/doxygen" ]; then tar xzf doxygen-1.8.11.linux.bin.tar.gz -C ${DEPS_DIR}/doxygen/; fi
     - export PATH=$PATH:$DOXY_BINPATH
+
 before_script:
-  # macos specific stuff
-  - "if [ ${TRAVIS_OS_NAME} = 'osx' ]; then brew install llvm qemu lz4; 
-      export PATH=\"/usr/local/opt/llvm/bin:$PATH\";
-	  ln -s /usr/local/opt/llvm/bin/clang++ /usr/local/opt/llvm/bin/clang++-5.0;
-	  ln -s /usr/local/opt/llvm/bin/ld.lld /usr/local/opt/llvm/bin/ld.lld-5.0; fi"
   - git clone https://github.com/reswitched/unicorn.git
   - cd unicorn
   - UNICORN_ARCHS="aarch64" ./make.sh
@@ -60,14 +67,15 @@ before_script:
   - git clone https://github.com/reswitched/Mephisto.git
   - cd Mephisto
   - sudo pip2 install -r  requirements.txt
-  - make
+  - make CC=clang++$LLVM_POSTFIX LD=ld.lld$LLVM_POSTFIX
   - cd ..
   - sudo pip3 install -r  requirements.txt
-script:  make LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make -C projects/ace_loader LLVM_POSTFIX=-5.0 LD=ld.lld-5.0 && make run_tests MEPHISTO=./Mephisto/ctu
+  
+script:  make LD=ld.lld$LLVM_POSTFIX && LD=ld.lld$LLVM_POSTFIX make -C projects/ace_loader && make run_tests MEPHISTO=./Mephisto/ctu
 
 after_success:
-  #Once the build has passed, build the docs
-  - doxygen Doxyfile
+  # Once the build has passed, build the docs
+  - if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then doxygen Doxyfile; fi
 
 deploy:
   provider: pages
