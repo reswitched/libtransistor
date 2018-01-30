@@ -100,7 +100,7 @@ uint64_t nro_start()
 	*(void**)(tls + 0x1f8) = NULL;
 
 	// run NRO
-	ret = entry(nro_config, aceloader_main_thread_handle);
+	ret = entry(nro_config, -1);
 
 	// Restore TLS
 	*tls_userspace_pointer = tls_backup;
