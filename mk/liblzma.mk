@@ -10,7 +10,7 @@ $(LIBTRANSISTOR_HOME)/build/xz/Makefile: $(LIBTRANSISTOR_HOME)/xz/configure
 		"CC=$(CC)" "AR=$(AR)" \
 		"RANLIB=$(RANLIB)" \
 		"LDFLAGS=-L$(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/ -lc -lm" \
-		--host=aarch64-none-switch \
+		--host=aarch64-none-none \
 		--disable-xz \
 		--disable-xzdec \
 		--disable-lzmadec \
