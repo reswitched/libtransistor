@@ -125,7 +125,9 @@ result_t nro_load(void *load_base, int in_size)
 	uint32_t nro_id = *(uint32_t*)(load_base + 0x10);
 	uint32_t *nrru32 = (uint32_t*)(load_base + nro_size + bss_size);
 
-	if(in_size < 0x1000 || nro_id != NRO_MAGIC || nro_size != in_size || nro_size & 0xFFF)
+	// If nro_size < in_size, it means we have some extra data appended to the
+	// NRO, probably meant for the launcher.
+	if(in_size < 0x1000 || nro_id != NRO_MAGIC || nro_size > in_size || nro_size & 0xFFF)
 	{
 		printf("- NRO is invalid\n");
 		return 1;
