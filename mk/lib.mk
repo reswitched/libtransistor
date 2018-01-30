@@ -20,17 +20,20 @@ $(LIBTRANSISTOR_NSO_DEP): $(LIBTRANSISTOR_HOME)/build/lib/crt0.nso.o $(libtransi
 # BUILD RULES
 
 # Disable stack protector for crt0_common
-$(LIBTRANSISTOR_HOME)/build/lib/crt0_common.o: $(LIBTRANSISTOR_HOME)/lib/crt0_common.c
+$(LIBTRANSISTOR_HOME)/build/lib/crt0_common.o $(LIBTRANSISTOR_HOME)/build/lib/crt0_common.d: $(LIBTRANSISTOR_HOME)/lib/crt0_common.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) -I$(LIBTRANSISTOR_HOME)/pthread/ -I$(LIBTRANSISTOR_HOME)/pthread/sys/switch/ $(WARNINGS) -fno-stack-protector -c -o $@ $<
+	$(CC) $(CC_FLAGS) -I$(LIBTRANSISTOR_HOME)/pthread/ -I$(LIBTRANSISTOR_HOME)/pthread/sys/switch/ $(libtransistor_WARNINGS) -MMD -MP -fno-stack-protector -c -o $(LIBTRANSISTOR_HOME)/build/lib/crt0_common.o $<
 
-$(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.c
+$(LIBTRANSISTOR_HOME)/build/lib/%.o $(LIBTRANSISTOR_HOME)/build/lib/%.d: $(LIBTRANSISTOR_HOME)/lib/%.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(LIBTRANSISTOR_HOME)/build/lib/$*.o $<
 
-$(LIBTRANSISTOR_HOME)/build/lib/%.o: $(LIBTRANSISTOR_HOME)/lib/%.S
+include $(libtransistor_OBJECT_FILES:.o=.d)
+
+$(LIBTRANSISTOR_HOME)/build/lib/%.o $(LIBTRANSISTOR_HOME)/build/lib/%.d: $(LIBTRANSISTOR_HOME)/lib/%.S
 	mkdir -p $(@D)
-	$(AS) $(AS_FLAGS) $< -filetype=obj -o $@
+	$(AS) $(AS_FLAGS) $< -filetype=obj -o $(LIBTRANSISTOR_HOME)/build/lib/$*.o
+	touch $(LIBTRANSISTOR_HOME)/build/lib/$*.d
 
 # CLEAN RULES
 

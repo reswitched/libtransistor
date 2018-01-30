@@ -30,9 +30,13 @@ $(LIBTRANSISTOR_HOME)/build/test/%.nso.so: $(LIBTRANSISTOR_HOME)/build/test/%.o 
 
 # BUILD RULES
 
-$(LIBTRANSISTOR_HOME)/build/test/%.o: $(LIBTRANSISTOR_HOME)/test/%.c $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a
+$(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_HOME)/build/test/%.d: $(LIBTRANSISTOR_HOME)/test/%.c
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(LIBTRANSISTOR_HOME)/build/test/$*.o $<
+
+include $(addprefix $(LIBTRANSISTOR_HOME)/build/test/test_,$(addsuffix .d,$(libtransistor_TESTS)))
+
+# SQUASHFS RULES
 
 $(LIBTRANSISTOR_HOME)/build/test/%.squashfs.o: $(LIBTRANSISTOR_HOME)/build/test/%.squashfs
 	mkdir -p $(@D)
