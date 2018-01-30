@@ -30,6 +30,7 @@ addons:
       - graphviz
       - python3
       - python3-pip
+      - autopoint
 install:
     # Download and install recent cmake
     - |
