@@ -30,7 +30,7 @@ $(LIBTRANSISTOR_HOME)/build/test/%.nso.so: $(LIBTRANSISTOR_HOME)/build/test/%.o 
 
 # BUILD RULES
 
-$(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_HOME)/build/test/%.d: $(LIBTRANSISTOR_HOME)/test/%.c
+$(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_HOME)/build/test/%.d: $(LIBTRANSISTOR_HOME)/test/%.c $(LIBTRANSISTOR_COMMON_LIB_DEPS)
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(LIBTRANSISTOR_HOME)/build/test/$*.o $<
 
