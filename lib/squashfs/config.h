@@ -36,10 +36,10 @@
 /* #undef HAVE_LINUX_TYPES_LE16 */
 
 /* Define to 1 if you have the <lz4.h> header file. */
-#define HAVE_LZ4_H 1
+/* #undef HAVE_LZ4_H */
 
 /* Define to 1 if you have the <lzma.h> header file. */
-/* #undef HAVE_LZMA_H */
+#define HAVE_LZMA_H 1
 
 /* Define to 1 if you have the <lzo/lzo1x.h> header file. */
 /* #undef HAVE_LZO_LZO1X_H */

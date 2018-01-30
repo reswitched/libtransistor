@@ -47,11 +47,11 @@ $(LIBTRANSISTOR_HOME)/build/empty_file:
 
 $(LIBTRANSISTOR_HOME)/build/test/%.squashfs: $(LIBTRANSISTOR_HOME)/test/fs_%/*
 	mkdir -p $(@D)
-	mksquashfs $^ $@ -comp lz4 -nopad -noappend
+	mksquashfs $^ $@ -comp xz -nopad -noappend
 
 $(LIBTRANSISTOR_HOME)/build/test/%.squashfs: $(LIBTRANSISTOR_HOME)/build/empty_file
 	mkdir -p $(@D)
-	mksquashfs $^ $@ -comp lz4 -nopad -noappend
+	mksquashfs $^ $@ -comp xz -nopad -noappend
 
 # CLEAN RULES
 

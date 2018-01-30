@@ -26,6 +26,7 @@ include mk/pthread.mk
 include mk/newlib.mk
 include mk/compiler-rt.mk
 include mk/sdl2.mk
+include mk/liblzma.mk
 
 clean: clean_lib clean_test
 	rm -rf $(LIBTRANSISTOR_HOME)/docs
