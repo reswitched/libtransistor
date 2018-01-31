@@ -85,3 +85,4 @@ deploy:
   target-branch: gh-pages
   on:
     branch: master
+    condition: $TRAVIS_OS_NAME = linux
