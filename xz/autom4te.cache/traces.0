@@ -7170,7 +7170,7 @@ m4trace:configure.ac:603: -1- m4_pattern_allow([^COND_SHARED_TRUE$])
 m4trace:configure.ac:603: -1- m4_pattern_allow([^COND_SHARED_FALSE$])
 m4trace:configure.ac:603: -1- _AM_SUBST_NOTMAKE([COND_SHARED_TRUE])
 m4trace:configure.ac:603: -1- _AM_SUBST_NOTMAKE([COND_SHARED_FALSE])
-m4trace:configure.ac:612: -1- AM_GNU_GETTEXT_VERSION([0.18])
+m4trace:configure.ac:612: -1- AM_GNU_GETTEXT_VERSION([0.19])
 m4trace:configure.ac:613: -1- AM_GNU_GETTEXT([external])
 m4trace:configure.ac:613: -1- AM_GNU_GETTEXT_NEED([])
 m4trace:configure.ac:613: -1- AM_PO_SUBDIRS

@@ -8,7 +8,6 @@
 *.la
 *.lo
 *.o
-Makefile.in
 
 /src/liblzma/liblzma.pc
 /src/lzmainfo/lzmainfo
