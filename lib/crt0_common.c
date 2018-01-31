@@ -166,7 +166,7 @@ static blob_file sqfs_blob;
 static sqfs fs;
 static trn_inode_t root_inode;
 
-void setup_fs() { // TODO: error handling
+bool setup_fs() {
 	size_t sqfs_size = ((uint8_t*) &_libtransistor_squashfs_image_end) - ((uint8_t*) &_libtransistor_squashfs_image); // TODO: not this
 	int sqfs_img_fd = blobfd_create(&sqfs_blob, &_libtransistor_squashfs_image, sqfs_size);
 	sqfs_err err = SQFS_OK;
@@ -174,19 +174,21 @@ void setup_fs() { // TODO: error handling
 	err = sqfs_init(&fs, sqfs_img_fd, 0);
 	if(err != SQFS_OK) {
 		printf("failed to open SquashFS image\n");
-		return;
+		return true;
 	}
 
 	result_t r;
 	if((r = trn_sqfs_open_root(&root_inode, &fs)) != RESULT_OK) {
 		printf("failed to open SquashFS root\n");
-		return;
+		return true;
 	}
 
 	if((r = trn_fs_set_root(&root_inode)) != RESULT_OK) {
 		printf("failed to set SquashFS root\n");
-		return;
+		return true;
 	}
+
+	return false;
 }
 
 static jmp_buf exit_jmpbuf;
@@ -290,7 +292,10 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	}
 	dbg_printf("set up stdout");
 
-	setup_fs();
+	if(setup_fs()) {
+		ret = -14;
+		goto fail_bsd;
+	}
 	
 	if(setjmp(exit_jmpbuf) == 0) {
 		if(init_array != NULL) {
