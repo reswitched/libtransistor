@@ -1,8 +1,5 @@
 # LIBLZMA
 
-$(LIBTRANSISTOR_HOME)/xz/configure:
-	cd $(@D); autoreconf -fi
-
 $(LIBTRANSISTOR_HOME)/build/xz/Makefile: $(LIBTRANSISTOR_HOME)/xz/configure
 	mkdir -p $(@D)
 	cd $(@D); $(LIBTRANSISTOR_HOME)/xz/configure \
