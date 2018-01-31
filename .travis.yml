@@ -47,7 +47,7 @@ install:
     - |
       if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
         export LLVM_POSTFIX="";
-        brew install llvm qemu lz4 python3
+        brew install llvm qemu lz4 python3 squashfs
         export PATH="/usr/local/opt/llvm/bin:$PATH";
       fi
 
