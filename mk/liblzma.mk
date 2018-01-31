@@ -2,7 +2,7 @@
 
 $(LIBTRANSISTOR_HOME)/build/xz/Makefile: $(LIBTRANSISTOR_HOME)/xz/configure
 	mkdir -p $(@D)
-	cd $(@D); touch configure.ac aclocal.m4 Makefile.am configure Makefile.in # these are up to date
+	cd $(LIBTRANSISTOR_HOME)/xz/ && touch configure.ac aclocal.m4 Makefile.am configure Makefile.in # these are up to date
 	cd $(@D); $(LIBTRANSISTOR_HOME)/xz/configure \
 		"CFLAGS=$(CFLAGS)" \
 		"CC=$(CC)" "AR=$(AR)" \
