@@ -26,10 +26,10 @@ addons:
       - llvm-5.0-dev
       - lld-5.0
       - liblz4-dev
+      - squashfs-tools
       - graphviz
       - python3
       - python3-pip
-
 install:
     # Set postfix variable
     - export LLVM_POSTFIX=-5.0
@@ -47,7 +47,7 @@ install:
     - |
       if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
         export LLVM_POSTFIX="";
-        brew install llvm qemu lz4 python3
+        brew install llvm qemu lz4 python3 squashfs
         export PATH="/usr/local/opt/llvm/bin:$PATH";
       fi
 

@@ -4,6 +4,10 @@
 #include<libtransistor/err.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
+#include<libtransistor/fs/blobfd.h>
+#include<libtransistor/fs/inode.h>
+#include<libtransistor/fs/squashfs.h>
+#include<libtransistor/fs/fs.h>
 #include<libtransistor/fd.h>
 
 #include<sys/socket.h>
@@ -15,6 +19,9 @@
 #include<errno.h>
 #include<stdlib.h>
 #include<rthread.h>
+
+#include "default_squashfs_image.h"
+#include "squashfs/squashfuse.h"
 
 int main(int argc, char **argv);
 
@@ -154,6 +161,36 @@ static size_t dbg_log_write(void *v, const char *ptr, size_t len) {
 	return len;
 }
 
+// filesystem stuff
+static blob_file sqfs_blob;
+static sqfs fs;
+static trn_inode_t root_inode;
+
+bool setup_fs() {
+	size_t sqfs_size = ((uint8_t*) &_libtransistor_squashfs_image_end) - ((uint8_t*) &_libtransistor_squashfs_image); // TODO: not this
+	int sqfs_img_fd = blobfd_create(&sqfs_blob, &_libtransistor_squashfs_image, sqfs_size);
+	sqfs_err err = SQFS_OK;
+
+	err = sqfs_init(&fs, sqfs_img_fd, 0);
+	if(err != SQFS_OK) {
+		printf("failed to open SquashFS image\n");
+		return true;
+	}
+
+	result_t r;
+	if((r = trn_sqfs_open_root(&root_inode, &fs)) != RESULT_OK) {
+		printf("failed to open SquashFS root\n");
+		return true;
+	}
+
+	if((r = trn_fs_set_root(&root_inode)) != RESULT_OK) {
+		printf("failed to set SquashFS root\n");
+		return true;
+	}
+
+	return false;
+}
+
 static jmp_buf exit_jmpbuf;
 static int exit_value;
 
@@ -165,7 +202,6 @@ static bool nso_syscalls[0xFF] = {};
 static uint8_t tls_backup[0x200];
 
 bool _crt0_kludge_skip_cleanup = false; // TODO: REMOVE THIS ASAP
-
 
 
 static void lconfig_init_default(uint64_t thread_handle);
@@ -232,7 +268,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		dbg_printf("failed to initialize sm: 0x%x", ret);
 		goto restore_tls;
 	}
-	
+
 	if(loader_config.has_stdio_sockets) {
 		if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
 			sm_finalize();
@@ -255,6 +291,11 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		}
 	}
 	dbg_printf("set up stdout");
+
+	if(setup_fs()) {
+		ret = -14;
+		goto fail_bsd;
+	}
 	
 	if(setjmp(exit_jmpbuf) == 0) {
 		if(init_array != NULL) {
