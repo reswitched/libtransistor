@@ -51,13 +51,15 @@ typedef struct {
 
 static_assert(sizeof(Elf64_Rela) == 0x18, "Elf64_Rela size should be 0x18");
 
-static void (**init_array)(void) = NULL;
-static void (**fini_array)(void) = NULL;
+typedef struct {
+	void (**init_array)(void);
+	void (**fini_array)(void);
 
-static ssize_t init_array_size = -1;
-static ssize_t fini_array_size = -1;
+	ssize_t init_array_size;
+	ssize_t fini_array_size;
+} dyn_info_t;
 
-static bool relocate(uint8_t *aslr_base) {
+static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 	module_header_t *mod_header = (module_header_t *)&aslr_base[*(uint32_t*) &aslr_base[4]];
 	Elf64_Dyn *dynamic = (Elf64_Dyn*) (((uint8_t*) mod_header) + mod_header->dynamic_off);
 	uint64_t rela_offset = 0;
@@ -65,7 +67,7 @@ static bool relocate(uint8_t *aslr_base) {
 	uint64_t rela_ent = 0;
 	uint64_t rela_count = 0;
 	bool found_rela = false;
-	
+
 	while(dynamic->d_tag > 0) {
 		switch(dynamic->d_tag) {
 		case 4: // DT_HASH
@@ -94,28 +96,28 @@ static bool relocate(uint8_t *aslr_base) {
 		case 16: // DT_SYMBOLIC
 			break;
 		case 25: // DT_INIT_ARRAY
-			if(init_array != NULL) {
+			if(dyn_info->init_array != NULL) {
 				return true;
 			}
-			init_array = (void (**)(void)) (aslr_base + dynamic->d_val);
+			dyn_info->init_array = (void (**)(void)) (aslr_base + dynamic->d_val);
 			break;
 		case 26: // DT_FINI_ARRAY
-			if(fini_array != NULL) {
+			if(dyn_info->fini_array != NULL) {
 				return true;
 			}
-			fini_array = (void (**)(void)) (aslr_base + dynamic->d_val);
+			dyn_info->fini_array = (void (**)(void)) (aslr_base + dynamic->d_val);
 			break;
 		case 27: // DT_INIT_ARRAYSZ
-			if(init_array_size != -1) {
+			if(dyn_info->init_array_size != -1) {
 				return true;
 			}
-			init_array_size = dynamic->d_val;
+			dyn_info->init_array_size = dynamic->d_val;
 			break;
 		case 28: // DT_FINI_ARRAYSZ
-			if(fini_array_size != -1) {
+			if(dyn_info->fini_array_size != -1) {
 				return true;
 			}
-			fini_array_size = dynamic->d_val;
+			dyn_info->fini_array_size = dynamic->d_val;
 			break;
 		case 30: // DT_FLAGS
 			// TODO
@@ -211,7 +213,13 @@ static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 static int make_dbg_log_fd();
 
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
-	if(relocate(aslr_base)) {
+	dyn_info_t dyn_info;
+	dyn_info.init_array = NULL;
+	dyn_info.fini_array = NULL;
+	dyn_info.init_array_size = -1;
+	dyn_info.fini_array_size = -1;
+	
+	if(relocate(aslr_base, &dyn_info)) {
 		return -4;
 	}
 	
@@ -298,10 +306,10 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	}
 	
 	if(setjmp(exit_jmpbuf) == 0) {
-		if(init_array != NULL) {
-			if(init_array_size != -1) {
-				for(size_t i = 0; i < init_array_size/sizeof(init_array[0]); i++) {
-					init_array[i]();
+		if(dyn_info.init_array != NULL) {
+			if(dyn_info.init_array_size != -1) {
+				for(size_t i = 0; i < dyn_info.init_array_size/sizeof(dyn_info.init_array[0]); i++) {
+					dyn_info.init_array[i]();
 				}
 			}
 		}
@@ -313,10 +321,10 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	}
 
 	if(!_crt0_kludge_skip_cleanup) { // TODO: remove cleanup kludge ASAP
-		if(fini_array != NULL) {
-			if(fini_array_size != -1) {
-				for(size_t i = 0; i < fini_array_size/sizeof(fini_array[0]); i++) {
-					fini_array[i]();
+		if(dyn_info.fini_array != NULL) {
+			if(dyn_info.fini_array_size != -1) {
+				for(size_t i = 0; i < dyn_info.fini_array_size/sizeof(dyn_info.fini_array[0]); i++) {
+					dyn_info.fini_array[i]();
 				}
 			}
 		}
