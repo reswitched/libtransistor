@@ -14,6 +14,7 @@ NORELOC_TEXT_END_ = .;
   .rodata : ALIGN(0x1000) {
 NORELOC_RODATA_START_ = .;
     *(.rodata .rodata*)
+    *(.gcc_except_table)
 NORELOC_RODATA_END_ = .;
   }
 
