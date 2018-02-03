@@ -28,13 +28,13 @@
 //__FBSDID("$FreeBSD: src/lib/msun/src/s_sinl.c,v 1.3 2011/05/30 19:41:28 kargl Exp $");
 
 #include <float.h>
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "math_private.h"
 #if LDBL_MANT_DIG == 64
 #include "../ld80/e_rem_pio2l.h"
 #elif LDBL_MANT_DIG == 113
-#include "../ld128/e_rem_pio2l.h"
+#include "e_rem_pio2l.h"
 #else
 #error "Unsupported long double format"
 #endif

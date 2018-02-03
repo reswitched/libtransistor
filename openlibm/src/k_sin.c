@@ -44,7 +44,7 @@
  *		sin(x) = x + (S1*x + (x *(r-y/2)+y))
  */
 
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "math_private.h"
 

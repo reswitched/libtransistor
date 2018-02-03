@@ -56,13 +56,8 @@ extern const union __nan_un {
 	float		__uf;
 } __nan;
 
-#if __GNUC_PREREQ__(3, 3) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER >= 800)
 #define	__MATH_BUILTIN_CONSTANTS
-#endif
-
-#if __GNUC_PREREQ__(3, 0) && !defined(__INTEL_COMPILER)
 #define	__MATH_BUILTIN_RELOPS
-#endif
 
 #if !defined(FLT_EVAL_METHOD) && defined(__FLT_EVAL_METHOD__)
   #define FLT_EVAL_METHOD __FLT_EVAL_METHOD__
@@ -186,10 +181,6 @@ extern const union __nan_un {
 //typedef	__float_t	float_t;
 #endif /* __ISO_C_VISIBLE >= 1999 */
 
-/*
- * XOPEN/SVID
- */
-#if __BSD_VISIBLE || __XSI_VISIBLE
 #define	M_E		2.7182818284590452354	/* e */
 #define	M_LOG2E		1.4426950408889634074	/* log 2e */
 #define	M_LOG10E	0.43429448190325182765	/* log 10e */
@@ -209,16 +200,8 @@ extern const union __nan_un {
 #ifndef OPENLIBM_ONLY_THREAD_SAFE
 extern int signgam;
 #endif
-#endif /* __BSD_VISIBLE || __XSI_VISIBLE */
 
-#if __BSD_VISIBLE
-#if 0
-/* Old value from 4.4BSD-Lite openlibm.h; this is probably better. */
-#define	HUGE		HUGE_VAL
-#else
 #define	HUGE		MAXFLOAT
-#endif
-#endif /* __BSD_VISIBLE */
 
 /*
  * Most of these functions depend on the rounding mode and have the side
@@ -279,10 +262,6 @@ OLM_DLLEXPORT double	fabs(double) __pure2;
 OLM_DLLEXPORT double	floor(double);
 OLM_DLLEXPORT double	fmod(double, double);
 
-/*
- * These functions are not in C90.
- */
-#if __BSD_VISIBLE || __ISO_C_VISIBLE >= 1999 || __XSI_VISIBLE
 OLM_DLLEXPORT double	acosh(double);
 OLM_DLLEXPORT double	asinh(double);
 OLM_DLLEXPORT double	atanh(double);
@@ -309,18 +288,14 @@ OLM_DLLEXPORT double	nextafter(double, double);
 OLM_DLLEXPORT double	remainder(double, double);
 OLM_DLLEXPORT double	remquo(double, double, int *);
 OLM_DLLEXPORT double	rint(double);
-#endif /* __BSD_VISIBLE || __ISO_C_VISIBLE >= 1999 || __XSI_VISIBLE */
 
-#if __BSD_VISIBLE || __XSI_VISIBLE
 OLM_DLLEXPORT double	j0(double);
 OLM_DLLEXPORT double	j1(double);
 OLM_DLLEXPORT double	jn(int, double);
 OLM_DLLEXPORT double	y0(double);
 OLM_DLLEXPORT double	y1(double);
 OLM_DLLEXPORT double	yn(int, double);
-#endif /* __BSD_VISIBLE || __XSI_VISIBLE */
 
-#if __BSD_VISIBLE || __ISO_C_VISIBLE >= 1999
 OLM_DLLEXPORT double	copysign(double, double) __pure2;
 OLM_DLLEXPORT double	fdim(double, double);
 OLM_DLLEXPORT double	fmax(double, double) __pure2;
@@ -331,12 +306,10 @@ OLM_DLLEXPORT double	scalbln(double, long);
 OLM_DLLEXPORT double	scalbn(double, int);
 OLM_DLLEXPORT double	tgamma(double);
 OLM_DLLEXPORT double	trunc(double);
-#endif
 
 /*
  * BSD math library entry points
  */
-#if __BSD_VISIBLE
 OLM_DLLEXPORT int	isnanf(float) __pure2;
 
 /*
@@ -349,7 +322,6 @@ OLM_DLLEXPORT double	lgamma_r(double, int *);
  * Single sine/cosine function.
  */
 OLM_DLLEXPORT void	sincos(double, double *, double *);
-#endif /* __BSD_VISIBLE */
 
 /* float versions of ANSI/POSIX functions */
 #if __ISO_C_VISIBLE >= 1999
@@ -421,7 +393,6 @@ OLM_DLLEXPORT float	fminf(float, float) __pure2;
 /*
  * float versions of BSD math library entry points
  */
-#if __BSD_VISIBLE
 OLM_DLLEXPORT float	dremf(float, float);
 OLM_DLLEXPORT float	j0f(float);
 OLM_DLLEXPORT float	j1f(float);
@@ -440,7 +411,6 @@ OLM_DLLEXPORT float	lgammaf_r(float, int *);
  * Single sine/cosine function.
  */
 OLM_DLLEXPORT void	sincosf(float, float *, float *);
-#endif	/* __BSD_VISIBLE */
 
 /*
  * long double versions of ISO/POSIX math functions
@@ -508,14 +478,12 @@ OLM_DLLEXPORT long double	truncl(long double);
 #endif /* __ISO_C_VISIBLE >= 1999 */
 
 /* Reentrant version of lgammal. */
-#if __BSD_VISIBLE
 OLM_DLLEXPORT long double	lgammal_r(long double, int *);
 
 /*
  * Single sine/cosine function.
  */
 OLM_DLLEXPORT void	sincosl(long double, long double *, long double *);
-#endif	/* __BSD_VISIBLE */
 
 #if defined(__cplusplus)
 }

@@ -26,7 +26,7 @@
  * $FreeBSD: src/lib/msun/src/s_cimag.c,v 1.3 2009/03/14 18:24:15 das Exp $
  */
 
-#include <openlibm_complex.h>
+#include <complex.h>
 
 #include "math_private.h"
 

@@ -25,9 +25,9 @@
  */
 
 #include "cdefs-compat.h"
-//__FBSDID("$FreeBSD: src/lib/msun/ld128/invtrig.c,v 1.1 2008/07/31 22:41:26 das Exp $");
+//__FBSDID("$FreeBSD: src/lib/msun/invtrig.c,v 1.1 2008/07/31 22:41:26 das Exp $");
 
-#include "ld128/invtrig.h"
+#include "invtrig.h"
 
 /*
  * asinl() and acosl()

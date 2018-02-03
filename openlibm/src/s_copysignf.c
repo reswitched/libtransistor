@@ -22,7 +22,7 @@
  * with the sign bit of y.
  */
 
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "math_private.h"
 

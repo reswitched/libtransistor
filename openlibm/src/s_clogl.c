@@ -55,8 +55,8 @@
  * absolute error 1.0e-16.
  */
 
-#include <openlibm_complex.h>
-#include <openlibm_math.h>
+#include <complex.h>
+#include <math.h>
 
 long double complex
 clogl(long double complex z)

@@ -25,7 +25,7 @@
  *
  */
 
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "fpmath.h"
 #include "math_private.h"

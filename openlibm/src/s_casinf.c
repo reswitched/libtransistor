@@ -47,8 +47,8 @@
  *
  */
 
-#include <openlibm_complex.h>
-#include <openlibm_math.h>
+#include <complex.h>
+#include <math.h>
 
 float complex
 casinf(float complex z)
