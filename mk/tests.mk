@@ -34,7 +34,7 @@ $(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_HOME)/build/test/%.d: $(LIB
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(LIBTRANSISTOR_HOME)/build/test/$*.o $<
 
-$(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_HOME)/build/test/%.d: $(LIBTRANSISTOR_HOME)/test/%.cpp $(CXX_LIBS)
+$(LIBTRANSISTOR_HOME)/build/test/%.o $(LIBTRANSISTOR_HOME)/build/test/%.d: $(LIBTRANSISTOR_HOME)/test/%.cpp $(CXX_LIB_DEPS)
 	mkdir -p $(@D)
 	$(CXX) $(CXX_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(LIBTRANSISTOR_HOME)/build/test/$*.o $<
 
