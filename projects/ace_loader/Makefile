@@ -2,7 +2,7 @@ LIBTRANSISTOR_HOME=../../
 LIBNRO_SERVER_OBJ := nro.o sha256.o http.o server.o common_setup.o common_memory.o
 LIBNRO_SERVER := libnro_server.a
 WK_ACE_OBJ := wk_main.o wk_memory.o wk_asm.o
-SYSMOD_ACE_OBJ := sysmod_main.o sysmod_memory.o
+SYSMOD_ACE_OBJ := sysmod_main.o
 
 include $(LIBTRANSISTOR_HOME)/libtransistor.mk
 
@@ -25,4 +25,4 @@ sysmod_ace.nro.so: $(SYSMOD_ACE_OBJ) $(LIBNRO_SERVER) $(LIBTRANSITOR_NRO_DEPS)
 	$(LD) $(LD_FLAGS) -o $@ $(SYSMOD_ACE_OBJ) $(LIBNRO_SERVER) $(LIBTRANSISTOR_NRO_LDFLAGS)
 
 clean:
-	rm -rf *.o *.nso *.nro *.so
+	rm -rf *.o *.nso *.nro *.so *.a

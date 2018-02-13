@@ -1,19 +1,14 @@
-// heap block for internal use
-extern void *heap_base;
-extern uint64_t heap_size;
-
-// heap for NROs
-extern void *map_base;
-extern uint64_t map_size;
+// initialize memory allocator
+int mem_init();
 
 // dump mapping info
-void mem_info();
+void mem_dump_info();
 
-// create one huge contiguous block from HEAP, put it in map_base and map_size
-int mem_make_block();
+// allocate clean type-5 memory
+void *mem_alloc_pages(size_t min, size_t max, size_t *actual);
 
-// free created contiguous block
-int mem_destroy_block();
+// free pages allocated with mem_alloc_pages
+bool mem_free_pages(void *pages);
 
-// get biggest HEAP block
-int mem_get_heap();
+// allocate the largest block available
+void *mem_alloc_largest(size_t *size);

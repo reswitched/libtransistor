@@ -18,6 +18,7 @@ int nro_loaded_count;
 static loader_config_entry_t nro_config[64];
 static void *nro_base;
 static void *nro_load_base;
+static void *nro_bss;
 
 static char *nro_argv[NRO_MAX_ARGS+1];
 static char nro_args[NRO_MAX_ARG_BUF];
@@ -31,13 +32,16 @@ uint64_t nro_start()
 	uint64_t (*entry)(loader_config_entry_t*, thread_h) = nro_base + 0x80;
 	uint64_t ret;
 
-	// generate memory block
-	if(mem_make_block())
-	{
-		printf("- failed to map memory block\n");
+	void *clean_heap = NULL;
+	size_t clean_heap_size;
+
+	clean_heap = mem_alloc_largest(&clean_heap_size);
+	if(clean_heap == NULL) {
+		printf("- out of memory\n");
+		mem_dump_info();
 		return -1;
 	}
-
+	
 	printf("- writing NRO config\n");
 	
 	int ent_no = 0;
@@ -48,8 +52,8 @@ uint64_t nro_start()
 
 	nro_config[ent_no].key = LCONFIG_KEY_OVERRIDE_HEAP;
 	nro_config[ent_no].flags = LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
-	nro_config[ent_no].override_heap.heap_base = map_base;
-	nro_config[ent_no].override_heap.heap_size = map_size;
+	nro_config[ent_no].override_heap.heap_base = clean_heap;
+	nro_config[ent_no].override_heap.heap_size = clean_heap_size;
 	ent_no++;
 
 	nro_config[ent_no].key = LCONFIG_KEY_OVERRIDE_SERVICE;
@@ -105,41 +109,40 @@ uint64_t nro_start()
 	// Restore TLS
 	*tls_userspace_pointer = tls_backup;
 
-	// release memory block
-	if(mem_destroy_block())
-	{
-		printf("- PANIC: failed to unmap memory\n");
+	// release clean heap
+	if(mem_free_pages(clean_heap)) {
+		printf("- PANIC: failed to release clean heap\n");
 		exit_loader();
 	}
 
 	return ret;
 }
 
-result_t nro_load(void *load_base, int in_size)
+result_t nro_load(void *nro_blob, int nro_blob_size)
 {
 	result_t r;
 	SHA256_CTX ctx;
-	uint64_t free_size = heap_size - (load_base - heap_base);
-	int nro_size = *(uint32_t*)(load_base + 0x18);
-	uint32_t bss_size = *(uint32_t*)(load_base + 0x38);
-	uint32_t nro_id = *(uint32_t*)(load_base + 0x10);
-	uint32_t *nrru32 = (uint32_t*)(load_base + nro_size + bss_size);
+	int nro_size = *(uint32_t*)(nro_blob + 0x18);
+	uint32_t bss_size = *(uint32_t*)(nro_blob + 0x38);
+	uint32_t nro_id = *(uint32_t*)(nro_blob + 0x10);
 
-	// If nro_size < in_size, it means we have some extra data appended to the
-	// NRO, probably meant for the launcher.
-	if(in_size < 0x1000 || nro_id != NRO_MAGIC || nro_size > in_size || nro_size & 0xFFF)
-	{
-		printf("- NRO is invalid\n");
+	uint32_t *nrru32 = mem_alloc_pages(NRR_SIZE, NRR_SIZE, NULL);
+	if(nrru32 == NULL) {
+		printf("- failed to allocate memory for NRR\n");
+		mem_dump_info();
 		return 1;
 	}
 
-	if(nro_size + bss_size + NRR_SIZE > free_size)
+	// If nro_size < in_size, it means we have some extra data appended to the
+	// NRO, probably meant for the launcher.
+	if(nro_blob_size < 0x1000 || nro_id != NRO_MAGIC || nro_size > nro_blob_size || nro_size & 0xFFF)
 	{
-		printf("- NRO (+bss) is too big\n");
+		printf("- NRO is invalid\n");
+		mem_free_pages(nrru32);
 		return 2;
 	}
 
-	printf("- NRO %iB (%iB) bss %iB\n", nro_size, in_size, bss_size);
+	printf("- NRO %iB (%iB) bss %iB\n", nro_size, nro_blob_size, bss_size);
 
 	// prepare NRR
 	nrru32[0] = 0x3052524E; // NRR0
@@ -149,7 +152,7 @@ result_t nro_load(void *load_base, int in_size)
 
 	// get hash
 	sha256_init(&ctx);
-	sha256_update(&ctx, (uint8_t*)load_base, nro_size);
+	sha256_update(&ctx, (uint8_t*) nro_blob, nro_blob_size);
 	sha256_final(&ctx, (uint8_t*)&nrru32[0xD4]); // hash
 
 	// load NRR
@@ -157,27 +160,37 @@ result_t nro_load(void *load_base, int in_size)
 	if(r)
 	{
 		printf("- NRR load error 0x%06X\n", r);
+		mem_free_pages(nrru32);
 		return r;
 	}
 
+	nro_bss = mem_alloc_pages(bss_size, bss_size, NULL);
+	if(nro_bss == NULL) {
+		printf("- failed to allocate BSS\n");
+		mem_dump_info();
+		return 3;
+	}
+	
 	// clear bss
-	memset(load_base + nro_size, 0, bss_size);
+	memset(nro_bss, 0, bss_size);
 
 	// load NRO
-	r = ro_load_nro(&nro_base, load_base, nro_size, load_base + nro_size, bss_size);
+	r = ro_load_nro(&nro_base, nro_blob, nro_size, nro_bss, bss_size);
 	if(r)
 	{
 		printf("- NRO load error 0x%06X\n", r);
+		mem_free_pages(nro_bss);
 		return r;
 	}
 
 	nro_load_count++;
 	nro_loaded_count++;
-	nro_load_base = load_base;
+	nro_load_base = nro_blob;
 	printf("- NRO base at 0x%016lX\n", (uint64_t)nro_base);
 
 	// unload NRR
 	r = ro_unload_nrr(nrru32);
+	mem_free_pages(nrru32);
 	if(r)
 	{
 		printf("- NRR unload error 0x%06X\n", r);
@@ -200,13 +213,8 @@ result_t nro_unload()
 		nro_loaded_count--;
 	}
 
-	// rescan for free heap block now
-	if(mem_get_heap())
-	{
-		printf("- PANIC: failed get memory\n");
-		exit_loader();
-	}
-
+	mem_free_pages(nro_bss);
+	
 	return r;
 }
 
