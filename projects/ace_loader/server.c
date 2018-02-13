@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "defs.h"
 #include "server.h"
 #include "memory.h"
@@ -80,17 +81,20 @@ int server_init()
 	};
 
 	sck = bsd_socket(2, 1, 6); // AF_INET, SOCK_STREAM, PROTO_TCP
+	printf("- server socket: %d, 0x%x, %d\n", sck, bsd_result, bsd_errno);
 	if(sck < 0)
 		return 1;
 
 	if(bsd_bind(sck, (struct sockaddr *)&server_addr, sizeof(server_addr)))
 	{
+		printf("- bind failure\n");
 		bsd_close(sck);
 		return 2;
 	}
 
 	if(bsd_listen(sck, 1) < 0)
 	{
+		printf("- listen failure\n");
 		bsd_close(sck);
 		return 3;
 	}
@@ -145,7 +149,7 @@ void server_loop()
 			{
 				bsd_close(sockets[1]);
 				sockets[1] = -1;
-				printf("- client dropped\n");
+				printf("- client dropped (%d, 0x%x, %d)\n", ret, bsd_result, bsd_errno);
 				continue;
 			}
 			if(ret == 0)

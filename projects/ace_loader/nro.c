@@ -24,7 +24,7 @@ static char nro_args[NRO_MAX_ARG_BUF];
 static int nro_argc;
 static char *nro_argoffs;
 
-extern thread_h aceloader_main_thread_handle;
+thread_h aceloader_main_thread_handle;
 
 uint64_t nro_start()
 {

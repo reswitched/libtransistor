@@ -1,3 +1,4 @@
+#include <stdio.h>
 
 #define STDOUT_PORT	2991
 
@@ -7,4 +8,3 @@ extern FILE custom_stdout;
 extern int std_sck;
 
 void exit_loader();
-
