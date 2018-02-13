@@ -11,7 +11,7 @@
 #include<arpa/inet.h>
 #include<netinet/in.h>
 
-#define TRANSFER_MEM_SIZE 256*1024
+#define TRANSFER_MEM_SIZE 256*2*1024
 
 result_t bsd_result;
 int      bsd_errno;
@@ -71,7 +71,7 @@ result_t bsd_init_ex(bool require_override, loader_config_socket_service_t servi
 			uint64_t pid_copy;
 			uint64_t tmem_size;
 		} raw;
-		raw.fields[0] = 0x3;
+		raw.fields[0] = 0x1;
 		raw.fields[1] = 0x8000;
 		raw.fields[2] = 0x10000;
 		raw.fields[3] = 0x40000;
