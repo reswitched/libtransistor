@@ -255,6 +255,31 @@ result_t igbp_connect(igbp_t *igbp, int api, bool producer_controlled_by_app, in
 	return RESULT_OK;
 }
 
+result_t igbp_disconnect(igbp_t *igbp, int api, disconnect_mode_t mode, int *status) {
+	result_t r;
+  
+	parcel_t parcel;
+	parcel_initialize(&parcel);
+
+	parcel_write_interface_token(&parcel, INTERFACE_TOKEN);
+	parcel_write_u32(&parcel, api);
+	parcel_write_u32(&parcel, mode);
+
+	parcel_t response;
+	r = binder_transact_parcel(&(igbp->igbp_binder), DISCONNECT, 0, &parcel, &response);
+	if(r) {
+		return r;
+	}
+
+	if(parcel_read_remaining(&response) < sizeof(uint32_t)) {
+		return LIBTRANSISTOR_ERR_PARCEL_DATA_UNDERRUN;
+	}
+
+	*status = parcel_read_u32(&response);
+
+	return RESULT_OK;
+}
+
 result_t igbp_set_preallocated_buffer(igbp_t *igbp, int slot, graphic_buffer_t *gb) {
 	result_t r;
 

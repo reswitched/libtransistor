@@ -71,13 +71,23 @@ result_t display_open_layer(surface_t *surface) {
 	return RESULT_OK;
 
 fail_surface:
-	// TODO: destroy
+	surface_destroy(surface);
+	// surface takes ownership of IGBP and layer
+	return r;
 fail_igbp:
-	// TODO: destroy
+	vi_adjust_refcount(igbp.igbp_binder.handle, -1, 1);
+	vi_close_layer(layer_id);
 fail_managed_layer:
 	vi_destroy_managed_layer(layer_id);
 fail:
 	return r;
+}
+
+void display_close_layer(surface_t *surface) {
+	surface_destroy(surface);
+	vi_adjust_refcount(surface->igbp.igbp_binder.handle, -1, 1);
+	vi_close_layer(surface->layer_id);
+	vi_destroy_managed_layer(surface->layer_id);
 }
 
 result_t display_get_vsync_event(revent_h *event) {

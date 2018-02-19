@@ -1,6 +1,7 @@
 #include<libtransistor/types.h>
 #include<libtransistor/err.h>
 #include<libtransistor/svc.h>
+#include<libtransistor/ipc/vi.h>
 #include<libtransistor/display/graphic_buffer_queue.h>
 #include<libtransistor/display/surface.h>
 
@@ -83,10 +84,23 @@ fail_memory_attribute:
 fail_memory:
 	//free(surface->gpu_buffer_memory_alloc);
 fail_connect:
-	// TODO: disconnect?
+	igbp_disconnect(&surface->igbp, 2, ALL_LOCAL, &status);
 fail:
 	surface->state = SURFACE_STATE_INVALID;
 	return r;
+}
+
+void surface_destroy(surface_t *surface) {
+	int status;
+	igbp_disconnect(&surface->igbp, 2, ALL_LOCAL, &status);
+	vi_adjust_refcount(surface->igbp.igbp_binder.handle, -1, 1);
+	vi_destroy_managed_layer(surface->layer_id);
+	surface->state = SURFACE_STATE_INVALID;
+	
+	gpu_buffer_destroy(&surface->gpu_buffer, NULL, NULL);
+	
+	svcSetMemoryAttribute(surface->gpu_buffer_memory, 0x780000, 0x0, 0x0);
+	// TODO: free memory
 }
 
 result_t surface_dequeue_buffer(surface_t *surface, uint32_t **image) {
