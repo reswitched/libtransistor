@@ -41,6 +41,18 @@ IS_NRO:
 .section .text, "e"
 .global start
 start:
+	// clear .bss
+	adrp x5, NORELOC_BSS_START_
+	adrp x6, NORELOC_BSS_END_
+
+bssloop:
+	cmp x5, x6
+	b.eq run
+	str xzr, [x5]
+	add x5, x5, 8
+	b bssloop
+
+run:	
         adrp x2, _start // aslr base
 
         // set LR to svcExitProcess if it's null
