@@ -43,8 +43,8 @@
  */
 
 #include <float.h>
-#include <openlibm_complex.h>
-#include <openlibm_math.h>
+#include <complex.h>
+#include <math.h>
 
 double complex
 cacosh(double complex z)

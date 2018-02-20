@@ -26,7 +26,7 @@
 #include "cdefs-compat.h"
 
 #include <float.h>
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "fpmath.h"
 #include "math_private.h"

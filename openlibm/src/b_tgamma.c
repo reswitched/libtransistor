@@ -38,7 +38,7 @@
  * acknowledged.
  */
 
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "mathimpl.h"
 

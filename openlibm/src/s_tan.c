@@ -44,7 +44,7 @@
  */
 
 #include <float.h>
-#include <openlibm_math.h>
+#include <math.h>
 
 //#define INLINE_REM_PIO2
 #include "math_private.h"

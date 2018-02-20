@@ -28,7 +28,7 @@
 //__FBSDID("$FreeBSD: src/lib/msun/src/s_fmaf.c,v 1.3 2011/10/15 04:16:58 das Exp $");
 
 #include <openlibm_fenv.h>
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "math_private.h"
 

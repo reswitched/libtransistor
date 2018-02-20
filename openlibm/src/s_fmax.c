@@ -27,7 +27,7 @@
 #include "cdefs-compat.h"
 //__FBSDID("$FreeBSD: src/lib/msun/src/s_fmax.c,v 1.1 2004/06/30 07:04:01 das Exp $");
 
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "fpmath.h"
 #include "math_private.h"

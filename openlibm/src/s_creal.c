@@ -26,7 +26,7 @@
  * $FreeBSD: src/lib/msun/src/s_creal.c,v 1.1 2004/05/30 09:21:56 stefanf Exp $
  */
 
-#include <openlibm_complex.h>
+#include <complex.h>
 
 #include "math_private.h"
 

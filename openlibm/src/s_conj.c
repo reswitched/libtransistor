@@ -26,7 +26,7 @@
  * $FreeBSD: src/lib/msun/src/s_conj.c,v 1.2 2008/08/07 14:39:56 das Exp $
  */
 
-#include <openlibm_complex.h>
+#include <complex.h>
 
 #include "math_private.h"
 

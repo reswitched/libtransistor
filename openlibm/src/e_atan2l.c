@@ -22,7 +22,7 @@
  */
 
 #include <float.h>
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "invtrig.h"
 #include "math_private.h"

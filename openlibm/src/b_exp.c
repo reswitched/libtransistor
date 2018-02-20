@@ -31,7 +31,7 @@
 #include "cdefs-compat.h"
 //__FBSDID("$FreeBSD: src/lib/msun/bsdsrc/b_exp.c,v 1.9 2011/10/16 05:37:20 das Exp $");
 
-#include <openlibm_math.h>
+#include <math.h>
 
 /* EXP(X)
  * RETURN THE EXPONENTIAL OF X

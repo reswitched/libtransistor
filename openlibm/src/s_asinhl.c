@@ -21,7 +21,7 @@
  *                := signl(x)*log1pl(|x| + x^2/(1 + sqrtl(1+x^2)))
  */
 
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "math_private.h"
 

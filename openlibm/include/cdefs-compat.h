@@ -9,15 +9,16 @@
 #define	__END_DECLS
 #endif
 
-#ifdef __GNUC__
 #ifndef __strong_reference
-#ifdef __APPLE__
-#define __strong_reference(sym,aliassym) __weak_reference(sym,aliassym)
-#else
 #define __strong_reference(sym,aliassym)	\
 	OLM_DLLEXPORT extern __typeof (sym) aliassym __attribute__ ((__alias__ (#sym)));
-#endif /* __APPLE__ */
 #endif /* __strong_reference */
+
+#ifndef __strong_alias
+#define __strong_alias(alias, sym) \
+    __asm__(".global " #alias "\n" \
+            #alias " = " #sym);
+#endif
 
 #ifndef __weak_reference
 #ifdef __ELF__
@@ -66,7 +67,6 @@
 #endif	/* __STDC__ */
 #endif	/* __ELF__ */
 #endif  /* __weak_reference */
-#endif	/* __GNUC__ */
 
 
 #endif /* _CDEFS_COMPAT_H_ */

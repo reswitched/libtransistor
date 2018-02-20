@@ -11,10 +11,10 @@
  */
 
 #include <sys/types.h>
-#include <machine/ieee.h>
+#include "ieee.h"
 
 #include <float.h>
-#include <openlibm_math.h>
+#include <math.h>
 #include <stdint.h>
 
 #include "math_private.h"

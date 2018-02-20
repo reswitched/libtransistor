@@ -25,7 +25,7 @@
  *	Inexact flag raised if x not equal to floorf(x).
  */
 
-#include <openlibm_math.h>
+#include <math.h>
 
 #include "math_private.h"
 
