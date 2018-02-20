@@ -40,6 +40,17 @@ If some of the cmake CXX tests fail, you may need to install the necessary depen
 sudo dnf -y install libstdc++-devel gcc-c++.x86_64
 ```
 
+### Building on Arch Linux
+
+You'll need to install some packages.
+```bash
+sudo pacman -S llvm clang lld python pip squashfs-tools
+```
+
+and you'll also need to install some python dependencies via pip.
+```bash
+pip install --user -r requirements.txt
+```
 ## Running
 
 ```
