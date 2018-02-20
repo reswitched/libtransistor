@@ -35,10 +35,10 @@ uint64_t nro_start()
 	void *clean_heap = NULL;
 	size_t clean_heap_size;
 
-	clean_heap = mem_alloc_largest(&clean_heap_size);
+	clean_heap = ap_alloc_largest(&clean_heap_size);
 	if(clean_heap == NULL) {
 		printf("- out of memory\n");
-		mem_dump_info();
+		ap_dump_info();
 		return -1;
 	}
 	
@@ -110,7 +110,7 @@ uint64_t nro_start()
 	*tls_userspace_pointer = tls_backup;
 
 	// release clean heap
-	if(mem_free_pages(clean_heap)) {
+	if(free_pages(clean_heap)) {
 		printf("- PANIC: failed to release clean heap\n");
 		exit_loader();
 	}
@@ -126,10 +126,10 @@ result_t nro_load(void *nro_blob, int nro_blob_size)
 	uint32_t bss_size = *(uint32_t*)(nro_blob + 0x38);
 	uint32_t nro_id = *(uint32_t*)(nro_blob + 0x10);
 
-	uint32_t *nrru32 = mem_alloc_pages(NRR_SIZE, NRR_SIZE, NULL);
+	uint32_t *nrru32 = alloc_pages(NRR_SIZE, NRR_SIZE, NULL);
 	if(nrru32 == NULL) {
 		printf("- failed to allocate memory for NRR\n");
-		mem_dump_info();
+		ap_dump_info();
 		return 1;
 	}
 
@@ -138,7 +138,7 @@ result_t nro_load(void *nro_blob, int nro_blob_size)
 	if(nro_blob_size < 0x1000 || nro_id != NRO_MAGIC || nro_size > nro_blob_size || nro_size & 0xFFF)
 	{
 		printf("- NRO is invalid\n");
-		mem_free_pages(nrru32);
+		free_pages(nrru32);
 		return 2;
 	}
 
@@ -160,14 +160,14 @@ result_t nro_load(void *nro_blob, int nro_blob_size)
 	if(r)
 	{
 		printf("- NRR load error 0x%06X\n", r);
-		mem_free_pages(nrru32);
+		free_pages(nrru32);
 		return r;
 	}
 
-	nro_bss = mem_alloc_pages(bss_size, bss_size, NULL);
+	nro_bss = alloc_pages(bss_size, bss_size, NULL);
 	if(nro_bss == NULL) {
 		printf("- failed to allocate BSS\n");
-		mem_dump_info();
+		ap_dump_info();
 		return 3;
 	}
 	
@@ -179,7 +179,7 @@ result_t nro_load(void *nro_blob, int nro_blob_size)
 	if(r)
 	{
 		printf("- NRO load error 0x%06X\n", r);
-		mem_free_pages(nro_bss);
+		free_pages(nro_bss);
 		return r;
 	}
 
@@ -190,7 +190,7 @@ result_t nro_load(void *nro_blob, int nro_blob_size)
 
 	// unload NRR
 	r = ro_unload_nrr(nrru32);
-	mem_free_pages(nrru32);
+	free_pages(nrru32);
 	if(r)
 	{
 		printf("- NRR unload error 0x%06X\n", r);
@@ -213,7 +213,7 @@ result_t nro_unload()
 		nro_loaded_count--;
 	}
 
-	mem_free_pages(nro_bss);
+	free_pages(nro_bss);
 	
 	return r;
 }

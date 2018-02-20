@@ -2,6 +2,7 @@
 #include <libtransistor/svc.h>
 #include <libtransistor/ipc/pm.h>
 #include <libtransistor/loader_config.h>
+#include <libtransistor/alloc_pages.h>
 
 #include <stdio.h>
 #include <setjmp.h>
@@ -41,14 +42,7 @@ int main(int argc, char **argv) {
 			return ret;
 		}
 
-		if(!loader_config.heap_overridden) {
-			// hack to keep us from tripping over our own heap
-			loader_config.heap_overridden = true;
-			loader_config.heap_base = ptr;
-			loader_config.heap_size = (malloc(1) - ptr) + 0x8000;
-		}
-		
-		ret = mem_init();
+		ret = ap_init();
 		if(ret != 0) {
 			return ret;
 		}

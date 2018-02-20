@@ -238,9 +238,9 @@ void hook_func(uint64_t arg0)
 		goto crash;
 	}
 
-	ret = mem_init();
+	ret = ap_probe_full_address_space();
 	if(ret != 0) {
-		printf("- failed to setup page allocator: %d\n", ret);
+		printf("- failed to probe entire address space: 0x%x\n", ret);
 		goto crash;
 	}
 	common_begin_server();

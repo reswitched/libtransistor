@@ -175,7 +175,7 @@ void server_loop()
 				if(!is_command_mode) {
 					uint64_t r = nro_execute(nro_buf, recv_size);
 					printf("- NRO returned 0x%016lX\n", r);
-					mem_free_pages(nro_buf);
+					free_pages(nro_buf);
 					nro_buf = NULL;
 				}
 				continue;
@@ -193,13 +193,13 @@ void server_loop()
 				// this is an NRO, let's allocate some space for it
 				is_command_mode = false; // just to make sure
 				nro_size = ((nro_header_t*) recv_ptr)->nro_size;
-				nro_buf = mem_alloc_pages(nro_size + 0x1000, nro_size + 0x1000, NULL);
+				nro_buf = alloc_pages(nro_size + 0x1000, nro_size + 0x1000, NULL);
 				
 				if(nro_buf == NULL) {
 					printf("- failed to allocate memory for NRO (size 0x%lx); dropping client\n", nro_size);
 					bsd_close(sockets[1]);
 					sockets[1] = -1;
-					mem_dump_info();
+					ap_dump_info();
 					continue;
 				}
 
@@ -484,7 +484,7 @@ void func_exec(char *par)
 
 void func_meminfo(char *par)
 {
-	mem_dump_info();
+	ap_dump_info();
 }
 
 void func_stats(char *par)
