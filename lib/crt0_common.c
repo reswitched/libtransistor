@@ -185,10 +185,10 @@ bool setup_fs() {
 		return true;
 	}
 
-	if((r = trn_fs_set_root(&root_inode)) != RESULT_OK) {
-		printf("failed to set SquashFS root\n");
+	/*if((r = trn_fs_mount_fs("/squashfs", &root_inode)) != RESULT_OK) {
+		printf("failed to mount SquashFS\n");
 		return true;
-	}
+	}*/
 
 	return false;
 }

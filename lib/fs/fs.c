@@ -20,6 +20,61 @@ static trn_traverse_t cwd[MAX_RECURSION];
 static int cwd_recursion = -1;
 static char *empty_name = "";
 
+/*
+struct mountpoint {
+	struct mountpoint *next;
+	char *name; // TODO: Static array ?
+	trn_inode_t *fs;
+}
+
+// TODO: Locking ?
+static struct mountpoint *mounts = NULL;
+
+typedef struct {
+	trn_inode_t inode;
+	char *name;
+} trn_traverse_t;
+
+static struct trn_inode_ops_t rootfs_inode_ops = {
+	.is_dir = rootfs_is_dir;
+	.lookup = rootfs_lookup;
+	.release = NULL;
+	.open_as_file = NULL;
+	.open_as_dir = NULL;
+}
+
+static trn_inode_t rootfs = {
+	.data = NULL,
+	.trn_inode_ops_t = &rootfs_inode_ops
+};
+
+static trn_inode_t *root = &rootfs;
+
+static trn_traverse_t cwd[MAX_RECURSION];
+static int cwd_recursion = -1;
+static char *empty_name = "";
+
+// Takes ownership of name and mountpoint! Will free them on his own!
+result_t trn_fs_mount_fs(char *name, trn_inode_t *mountpoint) {
+	struct mountpoint *m = malloc(sizeof(struct mountpoint));
+	if (m == NULL)
+		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+
+	m->name = name;
+	m->fs = mountpoint;
+
+	// TODO: Locking
+	m->next = roots;
+	roots = m;
+
+	cwd[0].inode = *new_root;
+	cwd[0].name = empty_name;
+	cwd_recursion = 0;
+
+	return RESULT_OK;
+}
+*/
+
 result_t trn_fs_set_root(trn_inode_t *new_root) {
 	if(root != NULL) {
 		root->ops->release(root->data);
