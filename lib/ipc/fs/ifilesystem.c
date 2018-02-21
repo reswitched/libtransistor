@@ -25,13 +25,13 @@ result_t ifilesystem_create_file(ifilesystem_t obj, uint64_t in_mode, uint32_t i
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	res = ipc_send(obj, &rq, &rs);
 	return res;
 }
@@ -48,13 +48,13 @@ result_t ifilesystem_delete_file(ifilesystem_t obj, const uint8_t in_path[0x301]
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	res = ipc_send(obj, &rq, &rs);
 	return res;
 }
@@ -71,13 +71,13 @@ result_t ifilesystem_create_directory(ifilesystem_t obj, const uint8_t in_path[0
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	res = ipc_send(obj, &rq, &rs);
 	return res;
 }
@@ -94,13 +94,13 @@ result_t ifilesystem_delete_directory(ifilesystem_t obj, const uint8_t in_path[0
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	res = ipc_send(obj, &rq, &rs);
 	return res;
 }
@@ -117,13 +117,13 @@ result_t ifilesystem_delete_directory_recursively(ifilesystem_t obj, const uint8
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	res = ipc_send(obj, &rq, &rs);
 	return res;
 }
@@ -145,6 +145,7 @@ result_t ifilesystem_rename_file(ifilesystem_t obj, const uint8_t in_oldPath[0x3
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	ipc_buffer_t *buffers[] = {
 		&in_oldPath_buf,
 		&in_newPath_buf
@@ -152,7 +153,6 @@ result_t ifilesystem_rename_file(ifilesystem_t obj, const uint8_t in_oldPath[0x3
 	rq.num_buffers = 2;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	res = ipc_send(obj, &rq, &rs);
 	return res;
 }
@@ -174,6 +174,7 @@ result_t ifilesystem_rename_directory(ifilesystem_t obj, const uint8_t in_oldPat
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	ipc_buffer_t *buffers[] = {
 		&in_oldPath_buf,
 		&in_newPath_buf
@@ -181,7 +182,6 @@ result_t ifilesystem_rename_directory(ifilesystem_t obj, const uint8_t in_oldPat
 	rq.num_buffers = 2;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	res = ipc_send(obj, &rq, &rs);
 	return res;
 }
@@ -198,19 +198,19 @@ result_t ifilesystem_get_entry_type(ifilesystem_t obj, uint32_t *out_unk1, const
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	uint8_t output_raw[4];
+	rs.raw_data = output_raw;
+	rs.raw_data_size = 4;
+
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
-	uint8_t output_raw[4];
-	rs.raw_data = output_raw;
-	rs.raw_data_size = 4;
-
 	res = ipc_send(obj, &rq, &rs);
-	*out_unk1 = (uint32_t)(rs.raw_data + 0);
+	*out_unk1 = *(uint32_t*)(rs.raw_data + 0);
 
 	return res;
 }
@@ -232,16 +232,16 @@ result_t ifilesystem_open_file(ifilesystem_t obj, ifile_t *out_file, uint32_t in
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	rs.objects = out_file;
+	rs.num_objects = 1;
+
+
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
-
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
-	rs.objects = out_file;
-	rs.num_objects = 1;
-
 
 	res = ipc_send(obj, &rq, &rs);
 	return res;
@@ -264,16 +264,16 @@ result_t ifilesystem_open_directory(ifilesystem_t obj, idirectory_t *out_directo
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	rs.objects = out_directory;
+	rs.num_objects = 1;
+
+
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
-
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
-	rs.objects = out_directory;
-	rs.num_objects = 1;
-
 
 	res = ipc_send(obj, &rq, &rs);
 	return res;
@@ -301,19 +301,19 @@ result_t ifilesystem_get_free_space_size(ifilesystem_t obj, uint64_t *out_totalF
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	uint8_t output_raw[8];
+	rs.raw_data = output_raw;
+	rs.raw_data_size = 8;
+
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
-	uint8_t output_raw[8];
-	rs.raw_data = output_raw;
-	rs.raw_data_size = 8;
-
 	res = ipc_send(obj, &rq, &rs);
-	*out_totalFreeSpace = (uint64_t)(rs.raw_data + 0);
+	*out_totalFreeSpace = *(uint64_t*)(rs.raw_data + 0);
 
 	return res;
 }
@@ -330,19 +330,19 @@ result_t ifilesystem_get_total_space_size(ifilesystem_t obj, uint64_t *out_total
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	uint8_t output_raw[8];
+	rs.raw_data = output_raw;
+	rs.raw_data_size = 8;
+
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
-	uint8_t output_raw[8];
-	rs.raw_data = output_raw;
-	rs.raw_data_size = 8;
-
 	res = ipc_send(obj, &rq, &rs);
-	*out_totalSize = (uint64_t)(rs.raw_data + 0);
+	*out_totalSize = *(uint64_t*)(rs.raw_data + 0);
 
 	return res;
 }
@@ -359,13 +359,13 @@ result_t ifilesystem_clean_directory_recursively(ifilesystem_t obj, const uint8_
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
 
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	res = ipc_send(obj, &rq, &rs);
 	return res;
 }
@@ -382,16 +382,16 @@ result_t ifilesystem_get_file_time_stamp_raw(ifilesystem_t obj, uint8_t out_time
 	};
 
 
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	uint8_t output_raw[32];
+	rs.raw_data = output_raw;
+	rs.raw_data_size = 32;
+
 	ipc_buffer_t *buffers[] = {
 		&in_path_buf
 	};
 	rq.num_buffers = 1;
 	rq.buffers = buffers;
-
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
-	uint8_t output_raw[32];
-	rs.raw_data = output_raw;
-	rs.raw_data_size = 32;
 
 	res = ipc_send(obj, &rq, &rs);
 	memcpy(out_timestamp, rs.raw_data + 0, 32);

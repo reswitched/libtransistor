@@ -3,7 +3,6 @@
  * @brief IFileSystem bindings
  */
 
-
 #pragma once
 
 #include <libtransistor/types.h>

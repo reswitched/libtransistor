@@ -5,6 +5,8 @@
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/fs/ifile.h>
+#include<string.h>
+
 
 result_t ifile_read(ifile_t obj, uint64_t *out_out_size, int8_t * out_out_buf, size_t out_out_buf_size, uint64_t in_unk0, uint64_t in_offset, uint32_t in_size) {
 	result_t res;
@@ -39,7 +41,7 @@ result_t ifile_read(ifile_t obj, uint64_t *out_out_size, int8_t * out_out_buf, s
 	rq.buffers = buffers;
 
 	res = ipc_send(obj, &rq, &rs);
-	*out_out_size = (uint64_t)(rs.raw_data + 0);
+	*out_out_size = *(uint64_t*)(rs.raw_data + 0);
 
 	return res;
 }
@@ -112,22 +114,7 @@ result_t ifile_get_size(ifile_t obj, uint64_t *out_fileSize) {
 	rs.raw_data_size = 8;
 
 	res = ipc_send(obj, &rq, &rs);
-	*out_fileSize = (uint64_t)(rs.raw_data + 0);
+	*out_fileSize = *(uint64_t*)(rs.raw_data + 0);
 
 	return res;
 }
-
-// START HEADER
-#pragma once
-
-#include <libtransistor/types.h>
-
-typedef ipc_object_t ifile_t;
-
-// TODO: Codegen structs
-
-result_t ifile_read(ifile_t obj, uint64_t *out_out_size, int8_t * out_out_buf, size_t out_out_buf_size, uint64_t in_unk0, uint64_t in_offset, uint32_t in_size);
-result_t ifile_write(ifile_t obj, uint64_t in_unk0, uint64_t in_offset, uint32_t in_size, const int8_t * in_buf, size_t in_buf_size);
-result_t ifile_flush(ifile_t obj);
-result_t ifile_set_size(ifile_t obj, uint64_t in_size);
-result_t ifile_get_size(ifile_t obj, uint64_t *out_fileSize);

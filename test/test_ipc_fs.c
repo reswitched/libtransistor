@@ -11,7 +11,7 @@
 #define make_ip(a,b,c,d) ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24))
 struct sockaddr_in sockaddr = {
         .sin_family = AF_INET,
-        .sin_port = htons(4444),
+        .sin_port = htons(2991),
         .sin_addr = {
                 .s_addr = make_ip(91, 121, 81, 160)
         }
@@ -46,10 +46,11 @@ int main() {
 	printf("Listing files\n");
 	idirectoryentry_t entry;
 	uint64_t out_entries;
-	while (1) {
+	for (int it = 0; it < 100; it++) {
 		ASSERT_OK(fail_dir, idirectory_read(root_dir, &out_entries, &entry, 1 * sizeof(idirectoryentry_t)));
-		if (out_entries == 0)
+		if (out_entries == 0);
 			break;
+		printf("Out entries = %lu\n", out_entries);
 		printf("%.*s\n", 0x300, entry.path);
 	}
 
