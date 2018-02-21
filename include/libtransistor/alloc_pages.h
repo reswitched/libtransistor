@@ -1,5 +1,7 @@
 #pragma once
 
+#include<libtransistor/types.h>
+
 #include<stdint.h>
 
 void *alloc_pages(size_t min, size_t max, size_t *actual);

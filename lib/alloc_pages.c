@@ -25,6 +25,14 @@ typedef struct mem_block_t mem_block_t;
 static mem_block_t mem_blocks[512];
 static mem_block_t *first_block;
 
+static mem_block_t *ap_get_new_block();
+static mem_block_t *ap_attempt_coalesce(mem_block_t *block);
+static int ap_insert_new_block(void *base, size_t size, bool is_free);
+static result_t ap_insert_and_split_block(void *base, size_t size, bool locked);
+static void ap_assert_coherency();
+static void *ap_alloc_pages(size_t min, size_t max, size_t *actual);
+static bool ap_free_pages(void *pages);
+
 static mem_block_t *ap_get_new_block() {
 	for(uint64_t i = 0; i < ARRAY_LENGTH(mem_blocks); i++) {
 		if(!mem_blocks[i].is_valid) {
@@ -36,14 +44,41 @@ static mem_block_t *ap_get_new_block() {
 	return NULL;
 }
 
+static mem_block_t *ap_attempt_coalesce(mem_block_t *block) {
+	if(block->prev &&
+	   block->prev->is_free == block->is_free &&
+	   block->prev->is_locked == block->is_locked) { // coalesce with block before
+		block->prev->size+= block->size;
+		block->prev->next = block->next;
+		if(block->next) {
+			block->next->prev = block->prev;
+		}
+		block->is_valid = false;
+		return ap_attempt_coalesce(block->prev);
+	} else if(block->next &&
+	          block->next->is_free == block->is_free &&
+	          block->next->is_locked == block->is_locked) { // coalesce with block after
+		block->size+= block->next->size;
+		if(block->next->next) {
+			block->next->next->prev = block;
+		}
+		block->next->is_valid = false;
+		block->next = block->next->next;
+		return ap_attempt_coalesce(block);
+	} else {
+		return block;
+	}
+}
+
 static int ap_insert_new_block(void *base, size_t size, bool is_free) {
+	dbg_printf("inserting [%p, +0x%x)", base, size);
 	size&= ~0xfff; // round down
 	base = (void*) ((((uint64_t) base) + 0xfff) & ~0xfff); // round up
 	
 	if(size <= 0) {
 		return 0;
 	}
-	
+
 	mem_block_t *mb = ap_get_new_block();
 	if(mb == NULL) {
 		return 1;
@@ -76,6 +111,8 @@ static int ap_insert_new_block(void *base, size_t size, bool is_free) {
 			} else {
 				first_block = mb;
 			}
+
+			ap_attempt_coalesce(mb);
 			
 			return 0;
 		}
@@ -96,35 +133,40 @@ result_t ap_init() {
 }
 
 // split this block around any existing blocks
-static result_t ap_probe_heap_block(void *base, size_t size) {
-	if(size <= 0x1000) {
+static result_t ap_insert_and_split_block(void *base, size_t size, bool locked) {
+	dbg_printf("probing block: [%p, +0x%x)...", base, size);
+	if(size < 0x1000) {
 		return RESULT_OK;
 	}
-
-	dbg_printf("probing heap block: %p...", base);
 	
 	mem_block_t *head = first_block;
 	while(head != NULL) {
 		if((head->base >= base && head->base < base + size) ||
 		   (head->base + head->size > base && head->base + head->size <= base + size)) {
+			dbg_printf("overlapped with existing block [%p, +0x%x]", head->base, head->size);
 			// we're overlapping with an existing block, need to split...
 			result_t r;
 			if(head->base >= base) { // if the start of the overlapping block is in the one we're trying to add
+				dbg_printf("split begin");
 				// add the space before it
-				r = ap_probe_heap_block(head->base, size - (head->base - base));
+				r = ap_insert_and_split_block(head->base, head->base - base, locked);
 				if(r) { return r; }
+				dbg_printf("done split begin");
 			}
 			if(head->base + size > base) { // if the end of the overlapping block is in the one we're trying to add
+				dbg_printf("split end");
 				// add the space after it
-				r = ap_probe_heap_block(base, (head->base + size) - base);
+				r = ap_insert_and_split_block(head->base + head->size, (base + size) - (head->base + head->size), locked);
 				if(r) { return r; }
+				dbg_printf("done split end");
 			}
 			return RESULT_OK;
 		}
 		head = head->next;
 	}
 
-	return ap_insert_new_block(base, size, true);
+	dbg_printf("no overlap detected");
+	return ap_insert_new_block(base, size, !locked);
 }
 
 // dump address space mapping
@@ -211,11 +253,11 @@ result_t ap_probe_full_address_space() {
 		if(minfo.permission == 3 && minfo.memory_type == 5 && minfo.memory_attribute == 0) {
 			dbg_printf("- detected usable heap block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
 			
-			r = ap_probe_heap_block(minfo.base_addr, minfo.size);
+			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, false);
 			if(r) { return r; }
 		} else {
 			dbg_printf("- detected unusable block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
-			r = ap_insert_new_block(minfo.base_addr, minfo.size, false);
+			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, true);
 			if(r) { return r; }
 		}
 
@@ -316,6 +358,7 @@ rescan:
 
 		dbg_printf("  - split block, asserting coherency...\n");
 		ap_assert_coherency();
+		dbg_printf("  - coherent!\n");
 	}
 	
 	smallest->is_free = false;
@@ -350,29 +393,23 @@ static bool ap_free_pages(void *pages) {
 		return true;
 	}
 
-	// TODO: check memory permission/type/state
-	
-	free_head->is_free = true;
-	if(free_head->prev && free_head->prev->is_free) { // coalesce with block before
-		free_head->prev->size+= free_head->size;
-		free_head->prev->next = free_head->next;
-		if(free_head->next) {
-			free_head->next->prev = free_head->prev;
-		}
-		free_head->is_valid = false;
-		free_head = free_head->prev;
-		ap_assert_coherency();
-	}
-	if(free_head->next && free_head->next->is_free) { // coalesce with block after
-		free_head->size+= free_head->next->size;
-		if(free_head->next->next) {
-			free_head->next->next->prev = free_head;
-		}
-		free_head->next->is_valid = false;
-		free_head->next = free_head->next->next;
-		ap_assert_coherency();
+	result_t r;
+	memory_info_t minfo;
+	uint32_t pinfo;
+	if((r = svcQueryMemory(&minfo, &pinfo, pages)) != RESULT_OK) {
+		return true;
 	}
 
+	if(minfo.permission != 3 || minfo.memory_type != 5 || minfo.memory_attribute != 0) {
+		return true;
+	}
+	
+	// TODO: check memory permission/type/state
+
+	free_head->is_free = true;
+	free_head = ap_attempt_coalesce(free_head);
+	ap_assert_coherency();
+	
 	return false;
 }
 

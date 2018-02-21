@@ -96,19 +96,23 @@ uint64_t nro_start()
 	nro_config[ent_no].key = LCONFIG_KEY_END_OF_LIST;
 	nro_config[ent_no].flags = LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
 	ent_no++;
+
+	printf("- backing up TLS and entering NRO...\n");
 	
 	// Backup and clean main thread TLS pointer
 	uint8_t *tls = (uint8_t*) get_tls();
 	void **tls_userspace_pointer = (void**)(tls + 0x1f8);
 	void *tls_backup = *tls_userspace_pointer;
 	*(void**)(tls + 0x1f8) = NULL;
-
+	
 	// run NRO
 	ret = entry(nro_config, -1);
 
 	// Restore TLS
 	*tls_userspace_pointer = tls_backup;
 
+	printf("- returned from NRO\n");
+	
 	// release clean heap
 	if(free_pages(clean_heap)) {
 		printf("- PANIC: failed to release clean heap\n");

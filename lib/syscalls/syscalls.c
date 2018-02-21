@@ -145,8 +145,8 @@ finalize:
 }
 
 static void *map_addr = NULL;
-static size_t map_size = 0;
-static size_t map_limit = 0;
+static ssize_t map_size = 0;
+static ssize_t map_limit = 0;
 static size_t reported_size = 0;
 
 typedef struct {
@@ -170,6 +170,27 @@ void *_sbrk_r(struct _reent *reent, ptrdiff_t incr) {
 			return (void*) -1;
 		}
 		dbg_printf("map addr: %p, limit: 0x%zx\n", map_addr, map_limit);
+
+		memory_info_t minfo;
+		uint32_t pinfo;
+
+		// the loader may have already mapped pages at the start of this region
+		while(1) {
+			if((r = svcQueryMemory(&minfo, &pinfo, map_addr)) != RESULT_OK) {
+				reent->_errno = ENOMEM;
+				return (void*) -1;
+			}
+			if(minfo.memory_type != 0) {
+				map_limit-= (minfo.base_addr + minfo.size) - (map_addr);
+				if(map_limit < 0 || minfo.base_addr + minfo.size < map_addr) {
+					reent->_errno = ENOMEM;
+					return (void*) -1;
+				}
+				map_addr = minfo.base_addr + minfo.size;
+			} else {
+				break;
+			}
+		}
 	}
 
 	if(reported_size + incr > map_size) {
@@ -183,15 +204,16 @@ void *_sbrk_r(struct _reent *reent, ptrdiff_t incr) {
 		}
 
 		while(rounded_incr > 0) {
+			if(num_map_entries >= ARRAY_LENGTH(map_entries)) {
+				reent->_errno = ENOMEM;
+				return (void*) -1;
+			}
+
 			size_t src_size;
 			void *src = alloc_pages(0x1000, rounded_incr, &src_size);
 			r = svcMapMemory(map_addr + map_size, src, src_size);
 			if(r != RESULT_OK) {
 				dbg_printf("map memory failed: 0x%x", r);
-				reent->_errno = ENOMEM;
-				return (void*) -1;
-			}
-			if(num_map_entries >= ARRAY_LENGTH(map_entries)) {
 				reent->_errno = ENOMEM;
 				return (void*) -1;
 			}
@@ -212,10 +234,15 @@ void *_sbrk_r(struct _reent *reent, ptrdiff_t incr) {
 }
 
 void _cleanup_mapped_heap() {
+	result_t r;
+	
 	for(int i = 0; i < num_map_entries; i++) {
 		map_entry_t e = map_entries[i];
-		svcUnmapMemory(e.dst, e.src, e.size);
-		free_pages(e.src);
+		if((r = svcUnmapMemory(e.dst, e.src, e.size)) != RESULT_OK) {
+			dbg_printf("failed to unmap %p -> %p, 0x%x\n", e.src, e.dst, e.size);
+		} else {
+			free_pages(e.src);
+		}
 	}
 }
 
