@@ -149,7 +149,7 @@ static result_t ap_insert_and_split_block(void *base, size_t size, bool locked) 
 			if(head->base >= base) { // if the start of the overlapping block is in the one we're trying to add
 				dbg_printf("split begin");
 				// add the space before it
-				r = ap_insert_and_split_block(head->base, head->base - base, locked);
+				r = ap_insert_and_split_block(base, head->base - base, locked);
 				if(r) { return r; }
 				dbg_printf("done split begin");
 			}
