@@ -98,7 +98,6 @@ static result_t trn_rootfs_dir_next(void *data, trn_dirent_t *dirent) {
 	if (*mount == NULL)
 		return LIBTRANSISTOR_ERR_FS_OUT_OF_DIR_ENTRIES;
 
-	dirent->inode = *(*mount)->fs;
 	size_t mount_len = strlen((*mount)->name);
 	if (!(mount_len < sizeof(dirent->name)))
 		return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;

@@ -11,7 +11,6 @@ typedef struct {
 } trn_inode_t; // libTRaNsistor INODE
 
 typedef struct {
-	trn_inode_t inode;
 	char name[256];
 	size_t name_size;
 } trn_dirent_t;

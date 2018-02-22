@@ -42,23 +42,8 @@ static result_t trn_sqfs_dir_next(void *data, trn_dirent_t *dirent) {
 		}
 	}
 	
-	trn_sqfs_inode_t *out_data = malloc(sizeof(*out_data));
-	if(out_data == NULL) {
-		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-	}
-	
-	dirent->inode.data = out_data;
-	err = sqfs_inode_get(dir->fs, &out_data->inode, dir->dentry.inode);
-	if(err) {
-		free(out_data);
-		return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
-	}
-	dirent->inode.ops = &trn_sqfs_inode_ops;
-
-	if(dir->dentry.name_size >= sizeof(dirent->name)-1) {
-		free(out_data);
+	if(dir->dentry.name_size >= sizeof(dirent->name)-1)
 		return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;
-	}
 	
 	memcpy(dirent->name, dir->dentry.name, dir->dentry.name_size);
 	dirent->name_size = dir->dentry.name_size;
