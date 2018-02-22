@@ -8,6 +8,9 @@
 #include<string.h>
 #include<stdlib.h>
 
+#define AP_DEBUG_ENABLED 0
+#define AP_DEBUG(...) if(AP_DEBUG_ENABLED) dbg_printf(__VA_ARGS__)
+
 struct mem_block_t;
 struct mem_block_t {
 	void *base;
@@ -71,7 +74,7 @@ static mem_block_t *ap_attempt_coalesce(mem_block_t *block) {
 }
 
 static int ap_insert_new_block(void *base, size_t size, bool is_free) {
-	dbg_printf("inserting [%p, +0x%x)", base, size);
+	AP_DEBUG("inserting [%p, +0x%x)", base, size);
 	size&= ~0xfff; // round down
 	base = (void*) ((((uint64_t) base) + 0xfff) & ~0xfff); // round up
 	
@@ -134,7 +137,7 @@ result_t ap_init() {
 
 // split this block around any existing blocks
 static result_t ap_insert_and_split_block(void *base, size_t size, bool locked) {
-	dbg_printf("probing block: [%p, +0x%x)...", base, size);
+	AP_DEBUG("probing block: [%p, +0x%x)...", base, size);
 	if(size < 0x1000) {
 		return RESULT_OK;
 	}
@@ -143,78 +146,81 @@ static result_t ap_insert_and_split_block(void *base, size_t size, bool locked) 
 	while(head != NULL) {
 		if((head->base >= base && head->base < base + size) ||
 		   (head->base + head->size > base && head->base + head->size <= base + size)) {
-			dbg_printf("overlapped with existing block [%p, +0x%x]", head->base, head->size);
+			AP_DEBUG("overlapped with existing block [%p, +0x%x]", head->base, head->size);
 			// we're overlapping with an existing block, need to split...
 			result_t r;
 			if(head->base >= base) { // if the start of the overlapping block is in the one we're trying to add
-				dbg_printf("split begin");
+				AP_DEBUG("split begin");
 				// add the space before it
 				r = ap_insert_and_split_block(base, head->base - base, locked);
 				if(r) { return r; }
-				dbg_printf("done split begin");
+				AP_DEBUG("done split begin");
 			}
 			if(head->base + size > base) { // if the end of the overlapping block is in the one we're trying to add
-				dbg_printf("split end");
+				AP_DEBUG("split end");
 				// add the space after it
 				r = ap_insert_and_split_block(head->base + head->size, (base + size) - (head->base + head->size), locked);
 				if(r) { return r; }
-				dbg_printf("done split end");
+				AP_DEBUG("done split end");
 			}
 			return RESULT_OK;
 		}
 		head = head->next;
 	}
 
-	dbg_printf("no overlap detected");
+	AP_DEBUG("no overlap detected");
 	return ap_insert_new_block(base, size, !locked);
 }
 
 // dump address space mapping
+// may not be safe to call if printf has not been set up yet
 void ap_dump_info() {
 	void *addr = NULL;
 	memory_info_t minfo;
 	uint32_t pinfo;
 
-	dbg_printf("- memory map\n");
+	printf("- memory map\n");
 	while(1)
 	{
 		if(svcQueryMemory(&minfo, &pinfo, addr))
 		{
-			dbg_printf("  - query fail\n");
+			printf("  - query fail\n");
 			return;
 		}
 
-		dbg_printf("  - mem 0x%016lX size 0x%016lX; %i %i [%i]\n", (uint64_t)minfo.base_addr, minfo.size, minfo.permission, minfo.memory_type, minfo.memory_attribute);
+		printf("  - mem 0x%016lX size 0x%016lX; %i %i [%i]\n", (uint64_t)minfo.base_addr, minfo.size, minfo.permission, minfo.memory_type, minfo.memory_attribute);
 
 		addr = minfo.base_addr + minfo.size;
 		if(!addr)
 			break;
 	}
 
-	dbg_printf("- alloc_pages blocks\n");
+	printf("- alloc_pages blocks\n");
 	for(uint64_t i = 0; i < ARRAY_LENGTH(mem_blocks); i++) {
 		if(mem_blocks[i].is_valid) {
-			dbg_printf("  - [%16p] base %16p, size 0x%16lx, free %d, locked %d, prev %16p, next %16p\n", &mem_blocks[i], mem_blocks[i].base, mem_blocks[i].size, mem_blocks[i].is_free, mem_blocks[i].is_locked, mem_blocks[i].prev, mem_blocks[i].next);
+			printf("  - [%16p] base %16p, size 0x%16lx, free %d, locked %d, prev %16p, next %16p\n", &mem_blocks[i], mem_blocks[i].base, mem_blocks[i].size, mem_blocks[i].is_free, mem_blocks[i].is_locked, mem_blocks[i].prev, mem_blocks[i].next);
 		}
 	}
 
-	dbg_printf("- alloc_pages blockchain\n");
+	printf("- alloc_pages blockchain\n");
 	for(mem_block_t *head = first_block; head != NULL; head = head->next) {
-		dbg_printf("  - [%16p] base %16p, size 0x%16lx, free %d, locked %d, prev %16p, next %16p\n", head, head->base, head->size, head->is_free, head->is_locked, head->prev, head->next);
+		printf("  - [%16p] base %16p, size 0x%16lx, free %d, locked %d, prev %16p, next %16p\n", head, head->base, head->size, head->is_free, head->is_locked, head->prev, head->next);
 	}
 }
 
 static void ap_assert_coherency() {
 	mem_block_t *head = first_block;
 	if(head == NULL) {
-		dbg_printf("first block is NULL?\n");
+		AP_DEBUG("first block is NULL?\n");
 		return;
 	}
 	void *addr = head->base;
 	while(head != NULL) {
 		if(head->base != addr) {
-			dbg_printf("coherency broken\n");
-			ap_dump_info();
+			AP_DEBUG("coherency broken\n");
+			if(AP_DEBUG_ENABLED) {
+				ap_dump_info();
+			}
 			exit(1);
 		}
 		addr+= head->size;
@@ -251,12 +257,12 @@ result_t ap_probe_full_address_space() {
 		int r;
 		
 		if(minfo.permission == 3 && minfo.memory_type == 5 && minfo.memory_attribute == 0) {
-			dbg_printf("- detected usable heap block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
+			AP_DEBUG("- detected usable heap block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
 			
 			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, false);
 			if(r) { return r; }
 		} else {
-			dbg_printf("- detected unusable block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
+			AP_DEBUG("- detected unusable block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
 			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, true);
 			if(r) { return r; }
 		}
@@ -273,7 +279,7 @@ result_t ap_probe_full_address_space() {
 }
 
 static void *ap_alloc_pages(size_t min, size_t max, size_t *actual) {
-	dbg_printf("- alloc pages [0x%lx, 0x%lx]\n", min, max);
+	AP_DEBUG("- alloc pages [0x%lx, 0x%lx]\n", min, max);
 	
 	// round up to page size
 	min = (min + 0xfff) & ~0xfff;
@@ -300,7 +306,7 @@ rescan:
 	
 	if(smallest == NULL) {
 		if(!loader_config.heap_overridden) {
-			dbg_printf("  - out of memory, growing heap...\n");
+			AP_DEBUG("  - out of memory, growing heap...\n");
 			size_t original_heap_size = heap_size;
 			heap_size*= 2;
 
@@ -313,19 +319,21 @@ rescan:
 				heap_size-= 0x20000;
 			}
 			if(heap_size == original_heap_size) {
-				dbg_printf("  - failed to grow heap\n");
+				AP_DEBUG("  - failed to grow heap\n");
 				return NULL;
 			}
-			dbg_printf("  - grew heap to 0x%lx bytes\n", heap_size);
-			dbg_printf("  - rescanning address space...\n");
+			AP_DEBUG("  - grew heap to 0x%lx bytes\n", heap_size);
+			AP_DEBUG("  - rescanning address space...\n");
 			ap_probe_full_address_space();
-			ap_dump_info();
+			if(AP_DEBUG_ENABLED) {
+				ap_dump_info();
+			}
 			goto rescan;
 		}
 		return NULL;
 	}
 
-	dbg_printf("  - using block [%p]\n", smallest);
+	AP_DEBUG("  - using block [%p]\n", smallest);
 	
 	// use as much of the block as we can
 	size_t size = max;
@@ -333,7 +341,7 @@ rescan:
 	if(size >= smallest->size) {
 		// use the entire block
 		size = smallest->size;
-		dbg_printf("  - using entire block\n");
+		AP_DEBUG("  - using entire block\n");
 	} else {
 		// split the block
 		mem_block_t *new_block = ap_get_new_block();
@@ -356,9 +364,9 @@ rescan:
 		
 		smallest->size = size;
 
-		dbg_printf("  - split block, asserting coherency...\n");
+		AP_DEBUG("  - split block, asserting coherency...\n");
 		ap_assert_coherency();
-		dbg_printf("  - coherent!\n");
+		AP_DEBUG("  - coherent!\n");
 	}
 	
 	smallest->is_free = false;
