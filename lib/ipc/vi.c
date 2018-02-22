@@ -191,6 +191,15 @@ result_t vi_open_layer(const char *display_name, uint64_t layer_id, uint64_t aru
 	return 0;
 }
 
+result_t vi_close_layer(uint64_t layer_id) {
+	ipc_request_t rq = ipc_default_request;
+	rq.request_id = 2021;
+	rq.raw_data_size = sizeof(layer_id);
+	rq.raw_data = &layer_id;
+
+	return ipc_send(iads_object, &rq, &ipc_default_response_fmt);
+}
+
 result_t vi_create_managed_layer(uint32_t unknown, display_t *display, uint64_t aruid, uint64_t *layer_id) {
 	struct {
 		uint32_t unknown;

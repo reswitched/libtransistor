@@ -8,6 +8,7 @@
 #define NVMAP_IOC_CREATE 0xC0080101
 #define NVMAP_IOC_FROM_ID 0xC0080103
 #define NVMAP_IOC_ALLOC 0xC0200104
+#define NVMAP_IOC_FREE 0xC0180105
 #define NVMAP_IOC_PARAM 0xC00C0109
 #define NVMAP_IOC_GET_ID 0xC008010E
 
@@ -48,6 +49,18 @@ typedef struct {
 	uint8_t pad[7];
 	uint64_t addr;
 } nvmap_ioc_alloc_args;
+
+/**
+ * @struct nvmap_ioc_free_args
+ * @brief Memory freeing args structure for the nvmap object. 
+ */
+typedef struct {
+	uint32_t handle;
+	uint32_t pad;
+	uint64_t refcount; ///< out
+	uint32_t size; ///< out
+	uint32_t flags; ///< out (1=NOT_FREED_YET)
+} nvmap_ioc_free_args;
 
 /**
 * @struct nvmap_ioc_param_args

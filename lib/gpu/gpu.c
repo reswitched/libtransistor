@@ -74,6 +74,23 @@ result_t gpu_buffer_initialize(gpu_buffer_t *gpu_b, void *addr, size_t size, uin
 	return RESULT_OK;
 }
 
+result_t gpu_buffer_destroy(gpu_buffer_t *gpu_b, uint64_t *refcount, uint32_t *flags) {
+	nvmap_ioc_free_args nvm_free;
+	nvm_free.handle = gpu_b->nvmap_handle;
+	if(nv_ioctl(nvmap_fd, NVMAP_IOC_FREE, &nvm_free, sizeof(nvm_free)) != 0) {
+		return nv_result;
+	}
+
+	if(refcount) {
+		*refcount = nvm_free.refcount;
+	}
+	if(flags) {
+		*flags = nvm_free.flags;
+	}
+
+	return RESULT_OK;
+}
+
 result_t gpu_buffer_get_id(gpu_buffer_t *gpu_b, uint32_t *id) {
 	nvmap_ioc_get_id_args nvm_get_id;
 	nvm_get_id.handle = gpu_b->nvmap_handle;
