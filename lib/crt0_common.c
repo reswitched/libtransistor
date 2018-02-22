@@ -7,6 +7,7 @@
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
+#include<libtransistor/fs/rootfs.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/fd.h>
 
@@ -167,6 +168,7 @@ static size_t dbg_log_write(void *v, const char *ptr, size_t len) {
 static blob_file sqfs_blob;
 static sqfs fs;
 static trn_inode_t root_inode;
+static trn_inode_t squash_inode;
 
 bool setup_fs() {
 	size_t sqfs_size = ((uint8_t*) &_libtransistor_squashfs_image_end) - ((uint8_t*) &_libtransistor_squashfs_image); // TODO: not this
@@ -175,21 +177,31 @@ bool setup_fs() {
 
 	err = sqfs_init(&fs, sqfs_img_fd, 0);
 	if(err != SQFS_OK) {
-		printf("failed to open SquashFS image\n");
+		printf("failed to open SquashFS image: %x\n", err);
 		return true;
 	}
 
 	result_t r;
-	if((r = trn_sqfs_open_root(&root_inode, &fs)) != RESULT_OK) {
-		printf("failed to open SquashFS root\n");
+	// Setup rootfs
+	if((r = trn_rootfs_create(&root_inode)) != RESULT_OK) {
+		printf("Failed to create rootfs: %x\n", r);
+		return true;
+	}
+	if((r = trn_fs_set_root(&root_inode)) != RESULT_OK) {
+		printf("Failed to set rootfs as root: %x\n", r);
 		return true;
 	}
 
-	/*if((r = trn_fs_mount_fs("/squashfs", &root_inode)) != RESULT_OK) {
-		printf("failed to mount SquashFS\n");
+	// TODO: Should we? Mounting squashfs to /squash by default
+	if((r = trn_sqfs_open_root(&squash_inode, &fs)) != RESULT_OK) {
+		printf("failed to open SquashFS root: %x\n", r);
 		return true;
-	}*/
+	}
 
+	if((r = trn_fs_mount("/squashfs", &squash_inode)) != RESULT_OK) {
+		printf("failed to mount SquashFS: %x\n", r);
+		return true;
+	}
 	return false;
 }
 

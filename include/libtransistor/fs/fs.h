@@ -24,7 +24,8 @@
 #include<sys/stat.h>
 
 // FS are mounted
-result_t trn_fs_mount_fs(const char *name, trn_inode_t *root);
+result_t trn_fs_set_root(trn_inode_t *new_root) __attribute__((deprecated));
+result_t trn_fs_mount(const char *name, trn_inode_t *root);
 result_t trn_fs_realpath(const char *path, char **resolved_path);
 result_t trn_fs_open(int *fd, const char *path, int flags);
 result_t trn_fs_opendir(trn_dir_t *dir, const char *path);

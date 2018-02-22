@@ -14,6 +14,7 @@
 int main(int argc, char *argv[]) {
 	result_t r;
 
+	printf("Opening / through unix\n");
 	DIR *d = opendir("/");
 	if(d == NULL) {
 		printf("failed to open directory: %d\n", errno);
@@ -21,6 +22,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	struct dirent *dent;
+	printf("Reading dir through unix\n");
 	while((dent = readdir(d)) != NULL) {
 		printf("dent: %.*s\n", dent->d_namlen, dent->d_name);
 	}
@@ -28,7 +30,7 @@ int main(int argc, char *argv[]) {
 	
 	printf("trn_fs_open:\n");
 	int fd;
-	if((r = trn_fs_open(&fd, "/foo.bar", 0)) != RESULT_OK) {
+	if((r = trn_fs_open(&fd, "/squashfs/foo.bar", 0)) != RESULT_OK) {
 		printf("failed to open: 0x%x\n", r);
 		return 1;
 	}
@@ -42,7 +44,7 @@ int main(int argc, char *argv[]) {
 	}
 	printf("read: %s\n", buf);
 
-	FILE *f = fopen("/./testdir/../.././testdir/./testfile", "rb");
+	FILE *f = fopen("/./squashfs/testdir/../.././squashfs/testdir/./testfile", "rb");
 	if(f == NULL) {
 		printf("fopen failure: %d\n", errno);
 		return 1;
