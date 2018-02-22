@@ -120,7 +120,7 @@ result_t vi_close_display(display_t *display) {
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 
-	return ipc_send(imds_object, &rq, &rs);
+	return ipc_send(iads_object, &rq, &rs);
 }
 
 result_t vi_get_display_vsync_event(display_t *display) {
