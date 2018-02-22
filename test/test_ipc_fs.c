@@ -8,28 +8,7 @@
 		goto label; \
 	}
 
-#define make_ip(a,b,c,d) ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24))
-struct sockaddr_in sockaddr = {
-        .sin_family = AF_INET,
-        .sin_port = htons(2991),
-        .sin_addr = {
-                .s_addr = make_ip(91, 121, 81, 160)
-        }
-};
-
 int main() {
-	// Init stdout.
-	int fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (fd < -1) {
-		*(char*)0;
-	}
-	if (connect(fd, &sockaddr, sizeof(sockaddr)) == -1) {
-		*(char*)0;
-	}
-	dup2(fd, STDIN_FILENO);
-	dup2(fd, STDOUT_FILENO);
-	dup2(fd, STDERR_FILENO);
-
 	result_t r;
 	printf("init fsp-srv\n");
 	ASSERT_OK(fail, fsp_srv_init(0));
