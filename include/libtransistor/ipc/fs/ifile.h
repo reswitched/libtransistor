@@ -6,6 +6,7 @@
 #pragma once
 
 #include <libtransistor/types.h>
+#include <libtransistor/ipc.h>
 
 typedef ipc_object_t ifile_t;
 
