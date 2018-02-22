@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 			return ret;
 		}
 
-		ret = ap_init();
+		ret = ap_probe_full_address_space();
 		if(ret != 0) {
 			return ret;
 		}

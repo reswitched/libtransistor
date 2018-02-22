@@ -11,35 +11,42 @@
 #define AP_DEBUG_ENABLED 0
 #define AP_DEBUG(...) if(AP_DEBUG_ENABLED) dbg_printf(__VA_ARGS__)
 
+typedef enum {
+	STATE_UNUSED = 0,
+	STATE_INVALID,
+	STATE_UNALLOCATED ,
+	STATE_ALLOCATED,
+	STATE_LOCKED_BY_MEMORY_STATE,
+	STATE_LOCKED_BY_OVERRIDE,
+} block_state_t;
+
 struct mem_block_t;
 struct mem_block_t {
 	void *base;
 	size_t size;
 
-	bool is_free;
-	bool is_locked;
-	bool is_valid;
+	block_state_t state;
 
 	struct mem_block_t *prev;
 	struct mem_block_t *next;
 };
 typedef struct mem_block_t mem_block_t;
 
-static mem_block_t mem_blocks[512];
-static mem_block_t *first_block;
+static mem_block_t mem_blocks[512] = {{NULL, 0, STATE_UNUSED, NULL, NULL}};
+static mem_block_t *first_block = NULL;
 
 static mem_block_t *ap_get_new_block();
 static mem_block_t *ap_attempt_coalesce(mem_block_t *block);
-static int ap_insert_new_block(void *base, size_t size, bool is_free);
-static result_t ap_insert_and_split_block(void *base, size_t size, bool locked);
+static int ap_insert_new_block(void *base, size_t size, block_state_t state);
+static result_t ap_insert_and_split_block(void *base, ssize_t size, block_state_t state);
 static void ap_assert_coherency();
 static void *ap_alloc_pages(size_t min, size_t max, size_t *actual);
 static bool ap_free_pages(void *pages);
 
 static mem_block_t *ap_get_new_block() {
 	for(uint64_t i = 0; i < ARRAY_LENGTH(mem_blocks); i++) {
-		if(!mem_blocks[i].is_valid) {
-			mem_blocks[i].is_valid = true;
+		if(mem_blocks[i].state == STATE_UNUSED) {
+			mem_blocks[i].state = STATE_INVALID;
 			return &mem_blocks[i];
 		}
 	}
@@ -49,23 +56,21 @@ static mem_block_t *ap_get_new_block() {
 
 static mem_block_t *ap_attempt_coalesce(mem_block_t *block) {
 	if(block->prev &&
-	   block->prev->is_free == block->is_free &&
-	   block->prev->is_locked == block->is_locked) { // coalesce with block before
+	   block->prev->state == block->state) { // coalesce with block before
 		block->prev->size+= block->size;
 		block->prev->next = block->next;
 		if(block->next) {
 			block->next->prev = block->prev;
 		}
-		block->is_valid = false;
+		block->state = STATE_UNUSED;
 		return ap_attempt_coalesce(block->prev);
 	} else if(block->next &&
-	          block->next->is_free == block->is_free &&
-	          block->next->is_locked == block->is_locked) { // coalesce with block after
+	          block->next->state == block->state) { // coalesce with block after
 		block->size+= block->next->size;
 		if(block->next->next) {
 			block->next->next->prev = block;
 		}
-		block->next->is_valid = false;
+		block->next->state = STATE_UNUSED;
 		block->next = block->next->next;
 		return ap_attempt_coalesce(block);
 	} else {
@@ -73,7 +78,7 @@ static mem_block_t *ap_attempt_coalesce(mem_block_t *block) {
 	}
 }
 
-static int ap_insert_new_block(void *base, size_t size, bool is_free) {
+static int ap_insert_new_block(void *base, size_t size, block_state_t state) {
 	AP_DEBUG("inserting [%p, +0x%x)", base, size);
 	size&= ~0xfff; // round down
 	base = (void*) ((((uint64_t) base) + 0xfff) & ~0xfff); // round up
@@ -89,9 +94,7 @@ static int ap_insert_new_block(void *base, size_t size, bool is_free) {
 	
 	mb->base = base;
 	mb->size = size;
-	mb->is_free = is_free;
-	mb->is_locked = !is_free;
-	mb->is_valid = true;
+	mb->state = state;
 
 	mem_block_t *last = NULL;
 	for(mem_block_t *head = first_block; true; head = head->next) {
@@ -127,39 +130,47 @@ static size_t heap_size = 0;
 
 result_t ap_init() {
 	if(loader_config.heap_overridden) {
-		memset(mem_blocks, 0, sizeof(mem_blocks));
-		ap_insert_new_block(0, loader_config.heap_base, false);
-		ap_insert_new_block(loader_config.heap_base, loader_config.heap_size, true);
+		ap_insert_and_split_block(0, loader_config.heap_base, STATE_LOCKED_BY_MEMORY_STATE);
+		ap_insert_and_split_block(loader_config.heap_base, loader_config.heap_size, STATE_UNALLOCATED);
+	} else {
+		ap_probe_full_address_space();
 	}
 
 	return RESULT_OK;
 }
 
+result_t ap_lock_region(void *base, size_t size) {
+	return ap_insert_new_block(base, size, STATE_LOCKED_BY_OVERRIDE);
+}
+
 // split this block around any existing blocks
-static result_t ap_insert_and_split_block(void *base, size_t size, bool locked) {
-	AP_DEBUG("probing block: [%p, +0x%x)...", base, size);
+static result_t ap_insert_and_split_block(void *base, ssize_t size, block_state_t state) {
+	AP_DEBUG("probing block: [%p, +0x%lx)...", base, size);
 	if(size < 0x1000) {
 		return RESULT_OK;
 	}
 	
 	mem_block_t *head = first_block;
 	while(head != NULL) {
-		if((head->base >= base && head->base < base + size) ||
-		   (head->base + head->size > base && head->base + head->size <= base + size)) {
-			AP_DEBUG("overlapped with existing block [%p, +0x%x]", head->base, head->size);
+		if((head->base >= base && head->base < base + size) || // if the beginning of HEAD is in this block
+		   (head->base + head->size > base && head->base + head->size <= base + size) || // if the end of HEAD is in this block
+		   (base >= head->base && base < head->base + head->size) || // if the beginning of this block is in HEAD
+		   (base + size > head->base && base + size <= head->base + head->size) // if the end of this block is in HEAD
+			) {
+			AP_DEBUG("overlapped with existing block [%p, +0x%lx]", head->base, head->size);
 			// we're overlapping with an existing block, need to split...
 			result_t r;
 			if(head->base >= base) { // if the start of the overlapping block is in the one we're trying to add
 				AP_DEBUG("split begin");
 				// add the space before it
-				r = ap_insert_and_split_block(base, head->base - base, locked);
+				r = ap_insert_and_split_block(base, head->base - base, state);
 				if(r) { return r; }
 				AP_DEBUG("done split begin");
 			}
 			if(head->base + size > base) { // if the end of the overlapping block is in the one we're trying to add
 				AP_DEBUG("split end");
 				// add the space after it
-				r = ap_insert_and_split_block(head->base + head->size, (base + size) - (head->base + head->size), locked);
+				r = ap_insert_and_split_block(head->base + head->size, (base + size) - (head->base + head->size), state);
 				if(r) { return r; }
 				AP_DEBUG("done split end");
 			}
@@ -169,43 +180,52 @@ static result_t ap_insert_and_split_block(void *base, size_t size, bool locked) 
 	}
 
 	AP_DEBUG("no overlap detected");
-	return ap_insert_new_block(base, size, !locked);
+	return ap_insert_new_block(base, size, state);
 }
 
 // dump address space mapping
 // may not be safe to call if printf has not been set up yet
-void ap_dump_info() {
+static void ap_do_dump_info(bool dbg) {
+#define DI_PRINTF(...) if(dbg) { dbg_printf(__VA_ARGS__); } else printf(__VA_ARGS__)
+	
 	void *addr = NULL;
 	memory_info_t minfo;
 	uint32_t pinfo;
 
-	printf("- memory map\n");
+	DI_PRINTF("- memory map\n");
 	while(1)
 	{
 		if(svcQueryMemory(&minfo, &pinfo, addr))
 		{
-			printf("  - query fail\n");
+			DI_PRINTF("  - query fail\n");
 			return;
 		}
 
-		printf("  - mem 0x%016lX size 0x%016lX; %i %i [%i]\n", (uint64_t)minfo.base_addr, minfo.size, minfo.permission, minfo.memory_type, minfo.memory_attribute);
+		DI_PRINTF("  - mem 0x%016lX size 0x%016lX; %i %i [%i]\n", (uint64_t)minfo.base_addr, minfo.size, minfo.permission, minfo.memory_type, minfo.memory_attribute);
 
 		addr = minfo.base_addr + minfo.size;
 		if(!addr)
 			break;
 	}
 
-	printf("- alloc_pages blocks\n");
+	const char *state_labels[] = {"UNUSED", "INVALID", "UNALLOCD", "ALLOCD", "LOCKED_MEMSTATE", "LOCKED_MANUAL"};
+	
+	DI_PRINTF("- alloc_pages blocks\n");
 	for(uint64_t i = 0; i < ARRAY_LENGTH(mem_blocks); i++) {
-		if(mem_blocks[i].is_valid) {
-			printf("  - [%16p] base %16p, size 0x%16lx, free %d, locked %d, prev %16p, next %16p\n", &mem_blocks[i], mem_blocks[i].base, mem_blocks[i].size, mem_blocks[i].is_free, mem_blocks[i].is_locked, mem_blocks[i].prev, mem_blocks[i].next);
+		if(mem_blocks[i].state != STATE_UNUSED) {
+			DI_PRINTF("  - [%16p] base %16p, size 0x%16lx, state %15s, prev %16p, next %16p\n", &mem_blocks[i], mem_blocks[i].base, mem_blocks[i].size, state_labels[mem_blocks[i].state], mem_blocks[i].prev, mem_blocks[i].next);
 		}
 	}
 
-	printf("- alloc_pages blockchain\n");
+	DI_PRINTF("- alloc_pages blockchain\n");
 	for(mem_block_t *head = first_block; head != NULL; head = head->next) {
-		printf("  - [%16p] base %16p, size 0x%16lx, free %d, locked %d, prev %16p, next %16p\n", head, head->base, head->size, head->is_free, head->is_locked, head->prev, head->next);
+		DI_PRINTF("  - [%16p] base %16p, size 0x%16lx, state %15s, prev %16p, next %16p\n", head, head->base, head->size, state_labels[head->state], head->prev, head->next);
 	}
+#undef DI_PRINTF
+}
+
+void ap_dump_info() {
+	ap_do_dump_info(false);
 }
 
 static void ap_assert_coherency() {
@@ -219,7 +239,7 @@ static void ap_assert_coherency() {
 		if(head->base != addr) {
 			AP_DEBUG("coherency broken\n");
 			if(AP_DEBUG_ENABLED) {
-				ap_dump_info();
+				ap_do_dump_info(true);
 			}
 			exit(1);
 		}
@@ -234,9 +254,10 @@ result_t ap_probe_full_address_space() {
 	memory_info_t minfo;
 	uint32_t pinfo;
 
-	// clear chain, except for blocks that have been allocated
+	// clear everything that's safe to clear so we can rebuild it
 	for(mem_block_t *head = first_block; head != NULL; head = head->next) {
-		if(head->is_locked || head->is_free) {
+		if(head->state == STATE_LOCKED_BY_MEMORY_STATE ||
+		   head->state == STATE_UNALLOCATED) {
 			if(head->prev == NULL) {
 				first_block = head->next;
 			} else {
@@ -245,6 +266,7 @@ result_t ap_probe_full_address_space() {
 					head->next->prev = head->prev;
 				}
 			}
+			head->state = STATE_UNUSED;
 		}
 	}
 
@@ -259,11 +281,12 @@ result_t ap_probe_full_address_space() {
 		if(minfo.permission == 3 && minfo.memory_type == 5 && minfo.memory_attribute == 0) {
 			AP_DEBUG("- detected usable heap block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
 			
-			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, false);
+			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, STATE_UNALLOCATED);
 			if(r) { return r; }
 		} else {
 			AP_DEBUG("- detected unusable block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
-			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, true);
+			
+			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, STATE_LOCKED_BY_MEMORY_STATE);
 			if(r) { return r; }
 		}
 
@@ -298,7 +321,7 @@ rescan:
 	
 	// find smallest block that matches our lower bound on size
 	while(alloc_head != NULL) {
-		if(alloc_head->is_free && alloc_head->size >= min && (smallest == NULL || alloc_head->size < smallest->size)) {
+		if(alloc_head->state == STATE_UNALLOCATED && alloc_head->size >= min && (smallest == NULL || alloc_head->size < smallest->size)) {
 			smallest = alloc_head;
 		}
 		alloc_head = alloc_head->next;
@@ -307,6 +330,11 @@ rescan:
 	if(smallest == NULL) {
 		if(!loader_config.heap_overridden) {
 			AP_DEBUG("  - out of memory, growing heap...\n");
+
+			if(heap_size == 0) {
+				svcGetInfo(&heap_size, 5, 0xFFFF8001, 0);
+			}
+			
 			size_t original_heap_size = heap_size;
 			heap_size*= 2;
 
@@ -351,9 +379,8 @@ rescan:
 		
 		new_block->base = smallest->base + size;
 		new_block->size = smallest->size - size;
-		
-		new_block->is_free = true;
-		new_block->is_valid = true;
+
+		new_block->state = STATE_UNALLOCATED;
 		
 		new_block->next = smallest->next;
 		new_block->prev = smallest;
@@ -368,8 +395,8 @@ rescan:
 		ap_assert_coherency();
 		AP_DEBUG("  - coherent!\n");
 	}
-	
-	smallest->is_free = false;
+
+	smallest->state = STATE_ALLOCATED;
 	
 	if(actual != NULL) {
 		*actual = size;
@@ -393,14 +420,10 @@ static bool ap_free_pages(void *pages) {
 		return true;
 	}
 
-	if(free_head->is_locked) {
+	if(free_head->state != STATE_ALLOCATED) {
 		return true;
 	}
 	
-	if(free_head->is_free) {
-		return true;
-	}
-
 	result_t r;
 	memory_info_t minfo;
 	uint32_t pinfo;
@@ -414,7 +437,7 @@ static bool ap_free_pages(void *pages) {
 	
 	// TODO: check memory permission/type/state
 
-	free_head->is_free = true;
+	free_head->state = STATE_UNALLOCATED;
 	free_head = ap_attempt_coalesce(free_head);
 	ap_assert_coherency();
 	
@@ -428,7 +451,7 @@ void *ap_alloc_largest(size_t *size) {
 
 	// find smallest block that matches our lower bound on size
 	while(alloc_head != NULL) {
-		if(alloc_head->is_free && (largest == NULL || alloc_head->size > largest->size)) {
+		if(alloc_head->state == STATE_UNALLOCATED && (largest == NULL || alloc_head->size > largest->size)) {
 			largest = alloc_head;
 		}
 		alloc_head = alloc_head->next;
@@ -439,7 +462,7 @@ void *ap_alloc_largest(size_t *size) {
 	}
 
 	*size = largest->size;
-	largest->is_free = false;
+	largest->state = STATE_ALLOCATED;
 	return largest->base;
 }
 

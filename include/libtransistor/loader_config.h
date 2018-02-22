@@ -27,6 +27,7 @@ typedef enum {
 	LCONFIG_KEY_PROCESS_HANDLE = 10,
 	LCONFIG_KEY_LAST_LOAD_RESULT = 11,
 	LCONFIG_KEY_ALLOC_PAGES = 12,
+	LCONFIG_KEY_LOCK_REGION = 13,
 } loader_config_key_t;
 
 typedef enum {
@@ -101,6 +102,10 @@ typedef struct {
 			void *(*alloc_pages)(size_t min, size_t max, size_t *actual);
 			bool (*free_pages)(void *pages);
 		} alloc_pages;
+		struct {
+			void *addr;
+			size_t size;
+		} lock_region;
 	};
 } loader_config_entry_t;
 
@@ -140,6 +145,7 @@ typedef struct {
 	int socket_stdout, socket_stdin, socket_stderr;
 	loader_config_socket_service_t socket_service;
 
+	// AllocPages
 	bool has_alloc_pages;
 	void *(*alloc_pages)(size_t min, size_t max, size_t *actual);
 	bool (*free_pages)(void *pages);
