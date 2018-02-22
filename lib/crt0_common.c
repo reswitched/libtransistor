@@ -8,6 +8,7 @@
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
 #include<libtransistor/fs/rootfs.h>
+#include<libtransistor/fs/fspfs.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/fd.h>
 
@@ -167,8 +168,10 @@ static size_t dbg_log_write(void *v, const char *ptr, size_t len) {
 // filesystem stuff
 static blob_file sqfs_blob;
 static sqfs fs;
+static ifilesystem_t sdcard_ifs;
 static trn_inode_t root_inode;
 static trn_inode_t squash_inode;
+static trn_inode_t sdcard_inode;
 
 bool setup_fs() {
 	size_t sqfs_size = ((uint8_t*) &_libtransistor_squashfs_image_end) - ((uint8_t*) &_libtransistor_squashfs_image); // TODO: not this
@@ -192,7 +195,7 @@ bool setup_fs() {
 		return true;
 	}
 
-	// TODO: Should we? Mounting squashfs to /squash by default
+	// Mounting squashfs to /squash
 	if((r = trn_sqfs_open_root(&squash_inode, &fs)) != RESULT_OK) {
 		printf("failed to open SquashFS root: %x\n", r);
 		return true;
@@ -200,6 +203,26 @@ bool setup_fs() {
 
 	if((r = trn_fs_mount("/squashfs", &squash_inode)) != RESULT_OK) {
 		printf("failed to mount SquashFS: %x\n", r);
+		return true;
+	}
+
+	// Mount sdcardfs to /sd
+	// TODO: We probably shouldn't fail entirely if those operations don't work
+	// out.
+	if((r = fsp_srv_init(0)) != RESULT_OK) {
+		printf("Failed to open connection to fsp-srv: %x\n", r);
+		return true;
+	}
+	if((r = fsp_srv_mount_sd_card(&sdcard_ifs)) != RESULT_OK) {
+		printf("Failed to mount sdcard on fsp-srv: %x\n", r);
+		return true;
+	}
+	if((r = trn_fspfs_create(&sdcard_inode, sdcard_ifs)) != RESULT_OK) {
+		printf("Failed to create fsp-srv vfs: %x\n", r);
+		return true;
+	}
+	if((r = trn_fs_mount("/sd", &sdcard_inode)) != RESULT_OK) {
+		printf("failed to mount sdcard: %x\n", r);
 		return true;
 	}
 	return false;

@@ -55,6 +55,20 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	printf("fread: %d: %.*s\n", rd, rd, buf);
-	
+
+	printf("Opening /sd through Unix\n");
+	d = opendir("/sd");
+	if(d == NULL) {
+		printf("failed to open directory: %d\n", errno);
+		return 1;
+	}
+
+	printf("Reading sdcard through unix\n");
+	while((dent = readdir(d)) != NULL) {
+		printf("dent: %.*s\n", dent->d_namlen, dent->d_name);
+	}
+	closedir(d);
+
+	// TODO: Try opening a file on sdcard
 	return 0;
 }
