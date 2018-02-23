@@ -83,8 +83,11 @@ result_t ipc_server_accept_session(ipc_server_t *srv) {
 }
 
 int session_touch_timestamp_compare(const void *va, const void *vb) {
-	const ipc_server_session_t *a = va;
-	const ipc_server_session_t *b = vb;
+	const ipc_server_session_t **pa = va;
+	const ipc_server_session_t **pb = vb;
+
+	const ipc_server_session_t *a = *pa;
+	const ipc_server_session_t *b = *pb;
 
 	return (a->last_touch_timestamp > b->last_touch_timestamp) - (a->last_touch_timestamp < b->last_touch_timestamp);
 }
