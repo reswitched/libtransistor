@@ -73,6 +73,7 @@ int common_init(int argc, char **argv) {
 			} else {
 				dup2(fd, STDOUT_FILENO);
 				dup2(fd, STDERR_FILENO);
+				dbg_set_bsd_log(std_sck);
 			}
 		}
 	}
