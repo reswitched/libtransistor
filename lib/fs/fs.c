@@ -59,6 +59,7 @@ static result_t trn_fs_traverse(const char *path, trn_traverse_t *traverse, int 
 	result_t r;
 
 	while(segment[0] != 0) {
+		printf("Path is %s\n", path);
 		seglen = 0;
 		while(segment[0] == '/') {
 			segment++; // trim leading slashes
@@ -73,6 +74,7 @@ static result_t trn_fs_traverse(const char *path, trn_traverse_t *traverse, int 
 
 		trn_traverse_t *trv = &traverse[traverse_recursion];
 		if(seglen == 2 && strncmp("..", segment, seglen) == 0) {
+			printf("Accessing parent\n");
 			if(traverse_recursion > 0) { // root is its own parent
 				if(traverse_recursion > borrowed_recursion) { // this is an inode that we opened and that we own
 					trv->inode.ops->release(trv->inode.data);
@@ -89,7 +91,7 @@ static result_t trn_fs_traverse(const char *path, trn_traverse_t *traverse, int 
 				r = LIBTRANSISTOR_ERR_FS_PATH_TOO_DEEP;
 				goto fail;
 			}
-
+			printf("Looking up %.*s\n", seglen, segment);
 			r = trv->inode.ops->lookup(trv[0].inode.data, &trv[1].inode, segment, seglen);
 			trv[1].name = malloc(seglen+1);
 			if(trv[1].name == NULL) {
@@ -173,13 +175,17 @@ result_t trn_fs_open(int *fd, const char *path, int flags) {
 	trn_traverse_t traverse[MAX_RECURSION];
 	int borrowed_recursion = 0;
 	int traverse_recursion = 0;
+	printf("Path is %s\n", path);
 	if((r = trn_fs_traverse(path, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;
 	}
-	
+
+	printf("open_as_file \"%s\"\n", path);
 	r = traverse[traverse_recursion].inode.ops->open_as_file(traverse[traverse_recursion].inode.data, flags, fd);
+	printf("open_as_file succeeded %lu\n", r);
 	
 	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
+		printf("Releasing %d\n", i);
 		traverse[i].inode.ops->release(traverse[i].inode.data);
 	}
 	
@@ -195,9 +201,12 @@ result_t trn_fs_opendir(trn_dir_t *dir, const char *path) {
 		return r;
 	}
 	
+	printf("open_as_dir\n");
 	r = traverse[traverse_recursion].inode.ops->open_as_dir(traverse[traverse_recursion].inode.data, dir);
+	printf("open_as_dir succeeded\n");
 
 	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
+		printf("Releasing %d\n", i);
 		traverse[i].inode.ops->release(traverse[i].inode.data);
 	}
 	

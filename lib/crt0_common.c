@@ -247,6 +247,15 @@ static result_t lconfig_parse(loader_config_entry_t *config);
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 static int make_dbg_log_fd();
 
+#define make_ip(a,b,c,d) ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24))
+struct sockaddr_in sockaddr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(2991),
+        .sin_addr = {
+                .s_addr = make_ip(91, 121, 81, 160)
+        }
+};
+
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
 	dyn_info_t dyn_info;
 	dyn_info.init_array = NULL;
@@ -258,7 +267,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		return -4;
 	}
 	
-	int ret;
+	int ret, fd = -1;
 
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("config: %p", config);
@@ -323,15 +332,31 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		setup_stdio_socket("stdin",  loader_config.socket_stdin,  STDIN_FILENO);
 		setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
 	} else {
+
+		// Hardcode roblabla socket
+		bsd_init();
+		fd = bsd_socket(AF_INET, SOCK_STREAM, 0);
+		if (fd == -1)
+			*(char*)0;
+		if (bsd_connect(fd, &sockaddr, sizeof(sockaddr)) == -1)
+			*(char*)0;
+		setup_stdio_socket("stdout", fd, STDOUT_FILENO);
+		setup_stdio_socket("stdin",  fd,  STDIN_FILENO);
+		setup_stdio_socket("stderr", fd, STDERR_FILENO);
+
+		int flag = 1;
+		printf("Disabling Naggle's Algorithm\n");
+		if (bsd_setsockopt(fd, IPPROTO_TCP, 1 /* TCP_NODELAY */, &flag, sizeof(flag)) == -1)
+			printf("Failed to disable nagle's algorithm\n");
 		// TODO: Create a fake FD for bsslog
-		dbg_printf("using bsslog stdout");
+		/*dbg_printf("using bsslog stdout");
 		int fd = make_dbg_log_fd();
 		if(fd < 0) {
 			dbg_printf("error making debug log fd");
 		} else {
 			dup2(fd, STDOUT_FILENO);
 			dup2(fd, STDERR_FILENO);
-		}
+		}*/
 	}
 	dbg_printf("set up stdout");
 
@@ -372,7 +397,11 @@ fail_bsd:
 	  at this point, bsd and sm have already been destructed, but just in case we
 	  ever change the destruction logic...
 	 */
-	if(loader_config.has_stdio_sockets) {
+	if (fd != -1) {
+		bsd_close(fd);
+		bsd_finalize();
+	}
+	else if(loader_config.has_stdio_sockets) {
 		bsd_finalize();
 	}
 	sm_finalize();

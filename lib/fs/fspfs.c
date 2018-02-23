@@ -138,14 +138,12 @@ static result_t fspfs_open_as_dir(void *data, trn_dir_t *out) {
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
 	printf("ifilesystem_open_directory %s\n", inode->name);
-	if ((r = ifilesystem_open_directory(inode->fs, dir, 3, inode->name)) != RESULT_OK)
+	if ((r = ifilesystem_open_directory(inode->fs, dir, 3, &inode->name)) != RESULT_OK)
 		goto fail;
 	printf("ifilesystem_open_directory succeeded\n");
 
 	out->data = (void*)dir;
-	printf("1\n");
 	out->ops = &trn_fspfs_dir_ops;
-	printf("2\n");
 	return RESULT_OK;
 
 fail:
@@ -154,6 +152,8 @@ fail:
 }
 
 static result_t fspfs_release(void *data) {
+	// TODO: Should we take ownership of the ifilesystem_t ?
+	printf("Freeing %p\n", data);
 	free(data);
 	return RESULT_OK;
 }
