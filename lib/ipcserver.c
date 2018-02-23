@@ -83,8 +83,8 @@ result_t ipc_server_accept_session(ipc_server_t *srv) {
 }
 
 int session_touch_timestamp_compare(const void *va, const void *vb) {
-	const ipc_server_session_t **pa = va;
-	const ipc_server_session_t **pb = vb;
+	const ipc_server_session_t *const *pa = va;
+	const ipc_server_session_t *const *pb = vb;
 
 	const ipc_server_session_t *a = *pa;
 	const ipc_server_session_t *b = *pb;
@@ -137,7 +137,7 @@ result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 			// meaning they will be sorted earlier on the next iteration of the loop
 			// and get first priority in case we missed them with this iteration.
 			// that way, no session can DoS the IPC server.
-			for(int i = 0; i <= handle_index-1; i++) {
+			for(uint32_t i = 0; i <= handle_index-1; i++) {
 				sessions[i]->last_touch_timestamp = make_timestamp();
 			}
 			ipc_server_session_receive(sessions[handle_index-1], timeout); // timeout is 0, but I think it still makes sense to pass it
@@ -179,7 +179,7 @@ result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs) {
 
 	result_t r;
 	
-	uint32_t *tls = get_tls();
+	uint32_t *tls = (uint32_t*) get_tls()->ipc_buffer;
 	uint32_t handle_index;
 	if((r = ipc_pack_response(tls, rs, obj)) != RESULT_OK) {
 		return r;
@@ -212,7 +212,7 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout
 
 	sess->state = IPC_SESSION_STATE_PROCESSING;
 	
-	uint32_t *tls = get_tls();
+	uint32_t *tls = (uint32_t*) get_tls()->ipc_buffer;
 	memcpy(sess->message_buffer, tls, 0x100);
 	
 	ipc_message_t msg;

@@ -37,7 +37,6 @@ result_t bpc_shutdown_system() {
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 0;
 
-	result_t r;
 	return ipc_send(ibpcm_object, &rq, &ipc_default_response_fmt);
 }
 
@@ -45,7 +44,6 @@ result_t bpc_reboot_system() {
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 1;
 
-	result_t r;
 	return ipc_send(ibpcm_object, &rq, &ipc_default_response_fmt);
 }
 
