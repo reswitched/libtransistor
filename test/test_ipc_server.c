@@ -15,6 +15,11 @@
 
 bool destroy_server_flag = false;
 
+static result_t add_object_add(uint64_t *userdata, uint64_t value, uint64_t *out) {
+	*out = value + *userdata;
+	return RESULT_OK;
+}
+
 static void add_object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
 	result_t r = 0;
 	
@@ -31,11 +36,12 @@ static void add_object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, ui
 		
 		ASSERT_OK(hard_failure, ipc_unflatten_request(msg, &rq, obj));
 
-		val+= *((uint64_t*) obj->userdata);
+		uint64_t out;
+		ASSERT_OK(soft_failure, add_object_add(obj->userdata, val, &out));
 		
 		ipc_response_t rs = ipc_default_response;
-		rs.raw_data_size = sizeof(val);
-		rs.raw_data = (uint32_t*) &val;
+		rs.raw_data_size = sizeof(out);
+		rs.raw_data = (uint32_t*) &out;
 
 		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
 		
@@ -320,7 +326,7 @@ result_t run_object_test() {
 			ipc_request_t rq = ipc_default_request;
 			rq.request_id = 1;
 			rq.raw_data_size = sizeof(i);
-			rq.raw_data = &i;
+			rq.raw_data = (uint32_t*) &i;
 
 			ipc_response_fmt_t rs = ipc_default_response_fmt;
 			rs.num_objects = 1;

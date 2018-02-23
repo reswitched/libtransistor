@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
 	struct dirent *dent;
 	while((dent = readdir(d)) != NULL) {
-		printf("dent: %.*s\n", dent->d_namlen, dent->d_name);
+		printf("dent: %.*s\n", (int) dent->d_namlen, dent->d_name);
 	}
 	closedir(d);
 	
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 		printf("fread failure\n");
 		return 1;
 	}
-	printf("fread: %d: %.*s\n", rd, rd, buf);
+	printf("fread: %ld: %.*s\n", rd, (int) rd, buf);
 	
 	return 0;
 }

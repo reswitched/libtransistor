@@ -113,7 +113,7 @@ typedef struct {
 *
 * https://source.android.com/reference/hidl/android/hardware/graphics/bufferqueue/1.0/IGraphicBufferProducer#requestbuffer
 */
-result_t igbp_request_buffer(igbp_t *igbp, int slot, int *status, graphic_buffer_t *gb);
+result_t igbp_request_buffer(igbp_t *igbp, uint32_t slot, uint32_t *status, graphic_buffer_t *gb);
 
 /**
 * @brief Dequeue a buffer from the IGraphicBufferProducer
@@ -131,7 +131,7 @@ result_t igbp_request_buffer(igbp_t *igbp, int slot, int *status, graphic_buffer
 *
 * https://source.android.com/reference/hidl/android/hardware/graphics/bufferqueue/1.0/IGraphicBufferProducer#dequeuebuffer
 */
-result_t igbp_dequeue_buffer(igbp_t *igbp, uint32_t width, uint32_t height, pixel_format_t pixel_format, uint32_t usage, bool get_frame_timestamps, int *status, int *slot, fence_t *fence, frame_event_history_delta_t *out_timestamps);
+result_t igbp_dequeue_buffer(igbp_t *igbp, uint32_t width, uint32_t height, pixel_format_t pixel_format, uint32_t usage, bool get_frame_timestamps, uint32_t *status, uint32_t *slot, fence_t *fence, frame_event_history_delta_t *out_timestamps);
 
 /**
 * @brief Queue a buffer to the IGraphicBufferProducer

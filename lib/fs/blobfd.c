@@ -4,7 +4,8 @@
 #include<stdio.h>
 #include<string.h>
 
-static off_t blobfd_llseek(blob_file *file, off_t offset, int whence) {
+static off_t blobfd_llseek(void *vfile, off_t offset, int whence) {
+	blob_file *file = vfile;
 	switch(whence) {
 	case SEEK_SET:
 		file->head = offset;
@@ -22,7 +23,8 @@ static off_t blobfd_llseek(blob_file *file, off_t offset, int whence) {
 	return file->head;
 }
 
-static ssize_t blobfd_read(blob_file *file, char *buffer, size_t size) {
+static ssize_t blobfd_read(void *vfile, char *buffer, size_t size) {
+	blob_file *file = vfile;
 	size_t sz = size;
 	if(file->head + sz > file->size) {
 		sz = file->size - file->head;
@@ -32,11 +34,11 @@ static ssize_t blobfd_read(blob_file *file, char *buffer, size_t size) {
 	return sz;
 }
 
-static ssize_t blobfd_write(blob_file *file, const char *buffer, size_t size) {
+static ssize_t blobfd_write(void *vfile, const char *buffer, size_t size) {
 	return -EROFS;
 }
 
-static int blobfd_flush(blob_file *file) {
+static int blobfd_flush(void *vfile) {
 	return 0;
 }
 
