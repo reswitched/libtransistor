@@ -86,6 +86,7 @@ void surface_destroy(surface_t *surface) {
 	int status;
 	igbp_disconnect(&surface->igbp, 2, ALL_LOCAL, &status);
 	vi_adjust_refcount(surface->igbp.igbp_binder.handle, -1, 1);
+	vi_close_layer(surface->layer_id);
 	vi_destroy_managed_layer(surface->layer_id);
 	surface->state = SURFACE_STATE_INVALID;
 	

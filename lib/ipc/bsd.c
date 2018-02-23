@@ -11,7 +11,7 @@
 #include<arpa/inet.h>
 #include<netinet/in.h>
 
-#define TRANSFER_MEM_SIZE 256*2*1024
+#define TRANSFER_MEM_SIZE 4*256*2*1024
 
 result_t bsd_result;
 int      bsd_errno;
