@@ -11,6 +11,24 @@
 
 #include"../lib/squashfs/squashfuse.h"
 
+int ls(char *str) {
+	DIR *d;
+	struct dirent *dent;
+
+	d = opendir(str);
+	if(d == NULL) {
+		printf("failed to open directory: %d\n", errno);
+		return 1;
+	}
+
+	printf("Reading sdcard through unix\n");
+	while((dent = readdir(d)) != NULL) {
+		printf("dent: %.*s\n", dent->d_namlen, dent->d_name);
+	}
+	closedir(d);
+	return 0;
+}
+
 int main(int argc, char *argv[]) {
 	result_t r;
 
@@ -57,17 +75,10 @@ int main(int argc, char *argv[]) {
 	printf("fread: %d: %.*s\n", rd, rd, buf);
 
 	printf("Opening /sd through Unix\n");
-	d = opendir("/sd");
-	if(d == NULL) {
-		printf("failed to open directory: %d\n", errno);
-		return 1;
-	}
-
-	printf("Reading sdcard through unix\n");
-	while((dent = readdir(d)) != NULL) {
-		printf("dent: %.*s\n", dent->d_namlen, dent->d_name);
-	}
-	closedir(d);
+	if (ls("/sd"))
+		printf("WTF ERROR\n");
+	if (ls("/sd/.Spotlight-V100"))
+		printf("WTF ERROR2\n");
 
 	// TODO: Try opening a file on sdcard
 	return 0;
