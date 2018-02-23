@@ -38,9 +38,22 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 	struct inode *new_inode;
 	uint32_t type;
 	result_t r;
+	const char *root_name;
+	size_t root_name_len;
+
+	// Ugly hack to strip leading /
+	if (strcmp(inode->name, "/") == 0) {
+		root_name = "";
+		root_name_len = 0;
+	} else {
+		root_name = inode->name;
+		root_name_len = inode->name_len;
+	}
+
+	printf("TRACING FSPFS_LOOKUP for (%d) %s/%.*s\n", root_name_len, root_name, name_len, name);
 
 	// First, calculate len
-	size_t l = inode->name_len + name_len + 1;
+	size_t l = root_name_len + name_len + 1;
 	if (l >= sizeof(new_inode->name) - 1)
 		return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;
 
@@ -49,14 +62,19 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
 	new_inode->fs = inode->fs;
-	strncpy(new_inode->name, inode->name, inode->name_len);
-	new_inode->name[inode->name_len] = '/';
-	strncpy(new_inode->name + inode->name_len + 1, name, name_len);
-	new_inode->name[inode->name_len + 1 + name_len] = '\0';
 
-	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->name)))
+	strncpy(new_inode->name, root_name, root_name_len);
+	new_inode->name[root_name_len] = '/';
+	strncpy(new_inode->name + root_name_len + 1, name, name_len);
+	new_inode->name[root_name_len + 1 + name_len] = '\0';
+	new_inode->name_len = l;
+
+	printf("Getting entry type of %s\n", new_inode->name);
+	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->name)) != RESULT_OK)
 		// TODO: ERRNOTFOUND
 		goto fail;
+	printf("Success! %d\n", type);
+
 	new_inode->is_dir = type == 0;
 
 	out->data = new_inode;
@@ -64,6 +82,7 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 
 	return RESULT_OK;
 fail:
+	printf("Fail: %d\n", r);
 	free(new_inode);
 	return r;
 }
