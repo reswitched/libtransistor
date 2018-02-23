@@ -3,6 +3,7 @@
 #include<libtransistor/util.h>
 #include<libtransistor/loader_config.h>
 #include<libtransistor/alloc_pages.h>
+#include<libtransistor/err.h>
 
 #include<stdio.h>
 #include<string.h>
@@ -37,7 +38,7 @@ static mem_block_t *first_block = NULL;
 
 static mem_block_t *ap_get_new_block();
 static mem_block_t *ap_attempt_coalesce(mem_block_t *block);
-static int ap_insert_new_block(void *base, size_t size, block_state_t state);
+static result_t ap_insert_new_block(void *base, size_t size, block_state_t state);
 static result_t ap_insert_and_split_block(void *base, ssize_t size, block_state_t state);
 static void ap_assert_coherency();
 static void *ap_alloc_pages(size_t min, size_t max, size_t *actual);
@@ -80,18 +81,18 @@ static mem_block_t *ap_attempt_coalesce(mem_block_t *block) {
 	}
 }
 
-static int ap_insert_new_block(void *base, size_t size, block_state_t state) {
+static result_t ap_insert_new_block(void *base, size_t size, block_state_t state) {
 	AP_DEBUG("inserting [%p, +0x%x)", base, size);
 	size&= ~0xfff; // round down
 	base = (void*) ((((uint64_t) base) + 0xfff) & ~0xfff); // round up
 	
 	if(size <= 0) {
-		return 0;
+		return RESULT_OK;
 	}
 
 	mem_block_t *mb = ap_get_new_block();
 	if(mb == NULL) {
-		return 1;
+		return LIBTRANSISTOR_ERR_AP_OUT_OF_PAGES;
 	}
 	
 	mb->base = base;
@@ -103,10 +104,10 @@ static int ap_insert_new_block(void *base, size_t size, block_state_t state) {
 		if(head == NULL || head->base >= base) {
 			if(head) {
 				if(head->base == base) {
-					return 2;
+					return LIBTRANSISTOR_ERR_AP_DUPLICATE_BLOCK;
 				}
 				if(head->base < base + size) {
-					return 3;
+					return LIBTRANSISTOR_ERR_AP_INSERT_FAILED;
 				}
 				head->prev = mb;
 			}
@@ -122,7 +123,7 @@ static int ap_insert_new_block(void *base, size_t size, block_state_t state) {
 
 			ap_attempt_coalesce(mb);
 			
-			return 0;
+			return RESULT_OK;
 		}
 		last = head;
 	}
@@ -343,13 +344,18 @@ rescan:
 			if(heap_size == 0) {
 				heap_size = 0x200000;
 			}
+
+			if(heap_size < original_heap_size + min) {
+				heap_size = original_heap_size + min;
+			}
 			
 			void *heap;
 			while(heap_size > original_heap_size && svcSetHeapSize(&heap, heap_size) != RESULT_OK) {
 				heap_size-= 0x20000;
 			}
-			if(heap_size == original_heap_size) {
+			if(heap_size <= original_heap_size) {
 				AP_DEBUG("  - failed to grow heap\n");
+				heap_size = original_heap_size;
 				return NULL;
 			}
 			AP_DEBUG("  - grew heap to 0x%lx bytes\n", heap_size);
