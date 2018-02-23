@@ -56,6 +56,7 @@ static mem_block_t *ap_get_new_block() {
 
 static mem_block_t *ap_attempt_coalesce(mem_block_t *block) {
 	if(block->prev &&
+	   block->prev->state != STATE_ALLOCATED && // never coalesce allocated blocks
 	   block->prev->state == block->state) { // coalesce with block before
 		block->prev->size+= block->size;
 		block->prev->next = block->next;
@@ -65,6 +66,7 @@ static mem_block_t *ap_attempt_coalesce(mem_block_t *block) {
 		block->state = STATE_UNUSED;
 		return ap_attempt_coalesce(block->prev);
 	} else if(block->next &&
+	          block->next->state != STATE_ALLOCATED && // never coalesce allocated blocks
 	          block->next->state == block->state) { // coalesce with block after
 		block->size+= block->next->size;
 		if(block->next->next) {
@@ -354,7 +356,7 @@ rescan:
 			AP_DEBUG("  - rescanning address space...\n");
 			ap_probe_full_address_space();
 			if(AP_DEBUG_ENABLED) {
-				ap_dump_info();
+				ap_do_dump_info(true);
 			}
 			goto rescan;
 		}
