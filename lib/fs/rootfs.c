@@ -14,10 +14,15 @@ struct mountpoint {
 	struct mountpoint *next;
 	const char *name; // TODO: Static array ?
 	trn_inode_t *fs;
+	trn_inode_ops_t *ops_clone;
 };
 
 static struct trn_inode_ops_t rootfs_inode_ops;
 static trn_dir_ops_t trn_rootfs_dir_ops;
+
+static result_t empty_release(void *inode) {
+	return RESULT_OK;
+}
 
 // Takes ownership of name and mountpoint! Will free them on his own!
 result_t trn_rootfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mountpoint) {
@@ -41,6 +46,8 @@ result_t trn_rootfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mou
 	}
 	m->name = name + i;
 	m->fs = mountpoint;
+	m->ops_clone = m->fs->ops;
+	m->fs->ops->release = empty_release;
 
 	// TODO: Locking
 	m->next = *cur_root;
