@@ -21,27 +21,6 @@ int main(int argc, char **argv) {
 			return ret;
 		}
 
-		/*ret = pm_init();
-		if(ret != 0) {
-			return ret;
-		}
-		printf("- terminating browser...\n");
-		ret = pm_terminate_process_by_title_id(0x0100000000001011);
-		printf("-   => 0x%x\n", ret);
-		pm_finalize();*/
-
-		printf("- acquiring heap...\n");
-		void *ptr;
-		size_t size = 0x18000000;
-		do {
-			ret = svcSetHeapSize(&ptr, size); // crank up the heap size
-			size-= 0x20000;
-		} while(ret != 0 && size > 0x100000);
-		printf("- svcSetHeapSize -> 0x%x, %p\n", ret, ptr);
-		if(ret != 0) {
-			return ret;
-		}
-
 		ret = ap_probe_full_address_space();
 		if(ret != 0) {
 			return ret;
