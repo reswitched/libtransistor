@@ -44,7 +44,7 @@ sudo dnf -y install libstdc++-devel gcc-c++.x86_64
 
 You'll need to install some packages.
 ```bash
-sudo pacman -S llvm clang lld python pip squashfs-tools
+sudo pacman -S llvm clang lld python python-pip squashfs-tools base-devel git cmake
 ```
 
 and you'll also need to install some python dependencies via pip.
