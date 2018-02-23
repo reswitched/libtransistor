@@ -287,6 +287,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		setup_stdio_socket("stdout", loader_config.socket_stdout, STDOUT_FILENO);
 		setup_stdio_socket("stdin",  loader_config.socket_stdin,  STDIN_FILENO);
 		setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
+		dbg_set_bsd_log(loader_config.socket_stdout);
 	} else {
 		// TODO: Create a fake FD for bsslog
 		dbg_printf("using bsslog stdout");
