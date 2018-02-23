@@ -30,7 +30,7 @@ uint64_t str2u64(const char *str);
 char nybble2hex(uint8_t nybble);
 
 /**
- * @brief Convert a uint8 nybble to a hex char
+ * @brief Hexdump a buffer
  *
  * @param rawbuf The buffer you want to dump
  * @param size The size of the buffer
@@ -40,6 +40,16 @@ char nybble2hex(uint8_t nybble);
 void hexdump(const void *rawbuf, size_t size);
 
 /**
+ * @brief Hexdump a buffer using the debug logger
+ *
+ * @param rawbuf The buffer you want to dump
+ * @param size The size of the buffer
+ *
+ * Hexdump is written over the basic debug logger.
+ */
+void hexdump_dbg(const void *rawbuf, size_t size);
+
+/**
  * @brief Convert an int number to hex and prints it to stdout
  *
  * @param num The int that you want converted
@@ -47,10 +57,15 @@ void hexdump(const void *rawbuf, size_t size);
 void hexnum(int num);
 
 /**
- * @brief Log a string to the bss log
+ * @brief Log a string to the debug log
  *
  * @param string The string to log
  * @param len Length of the string
+ *
+ * The debug log does not depend on newlib or malloc, and is therefore safe
+ * to use in environments such as the memory allocation code or threads that
+ * do not have context properly set up.
+ *
  */
 int log_string(const char *string, size_t len);
 
