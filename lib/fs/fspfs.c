@@ -188,6 +188,9 @@ static void trn_fspfs_dir_close(void *data) {
 
 static off_t fspfs_file_llseek(void *data, off_t offset, int whence) {
 	struct ifs_file *file = data;
+	uint64_t fsize;
+	result_t r;
+
 	switch(whence) {
 	case SEEK_SET:
 		file->head = offset;
@@ -196,7 +199,10 @@ static off_t fspfs_file_llseek(void *data, off_t offset, int whence) {
 		file->head+= offset;
 		break;
 	case SEEK_END:
-		// TODO: Implement.
+		if ((r = ifile_get_size(file->file, &fsize)) != RESULT_OK)
+			return -EIO;
+		file->head = fsize + offset;
+		break;
 	default:
 		return -EINVAL;
 	}
