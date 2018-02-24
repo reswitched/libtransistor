@@ -101,8 +101,8 @@ static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 		ifs_flags = 2;
 	else
 		ifs_flags = 1;
-	if (flags & O_APPEND)
-		ifs_flags |= 4;
+	// In unix land, we're kinda sorta *always* in append mode.
+	ifs_flags |= 4;
 
 	struct ifs_file *f = malloc(sizeof(struct ifs_file));
 	if (f == NULL)
@@ -111,6 +111,8 @@ static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	printf("ifilesystem_open_file %s\n", inode->name);
 	if ((r = ifilesystem_open_file(inode->fs, &f->file, ifs_flags, inode->name)) != RESULT_OK)
 		goto fail;
+
+	// TODO: if O_APPEND is set, we should set head to the end.
 	f->head = 0;
 
 	*fd = fd_create_file(&fspfs_file_ops, f);
@@ -220,9 +222,22 @@ static ssize_t fspfs_file_read(void *data, char *buf, size_t buf_size) {
 		return -EIO;
 	}
 	printf("Successfuly read from file: %lu\n", out_size);
-	hexdump(buf, out_size);
 	f->head += out_size;
 	return out_size;
+}
+
+static ssize_t fspfs_file_write(void *data, const char *buf, size_t buf_size) {
+	struct ifs_file *f = data;
+	result_t r;
+
+	printf("Writing file from %x to %x\n", f->head, f->head + buf_size);
+	if ((r = ifile_write(f->file, 0, f->head, buf_size, buf, buf_size)) != RESULT_OK) {
+		printf("Got an error: %x\n", r);
+		return -EIO;
+	}
+	printf("Successfuly write to file\n");
+	f->head += buf_size;
+	return buf_size;
 }
 
 static int fspfs_file_release(struct file *file) {
@@ -236,7 +251,8 @@ static int fspfs_file_release(struct file *file) {
 static struct file_operations fspfs_file_ops = {
 	.llseek = fspfs_file_llseek,
 	.read = fspfs_file_read,
-	.write = NULL,
+	.write = fspfs_file_write,
+	// TODO: Implement flush ?
 	.flush = NULL,
 	.release = fspfs_file_release
 };
