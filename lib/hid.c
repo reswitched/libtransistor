@@ -2,6 +2,7 @@
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/hid.h>
 #include<libtransistor/hid.h>
 
@@ -57,6 +58,7 @@ fail_no_ipc:
 }
 
 hid_shared_memory_t *hid_get_shared_memory() {
+	if(hid_initializations <= 0) { return NULL; }
 	return shared_memory;
 }
 

@@ -1,4 +1,5 @@
 #include<libtransistor/err.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/types.h>
 #include<libtransistor/ipc/nv.h>
 #include<libtransistor/gpu/gpu.h>
@@ -42,7 +43,8 @@ fail:
 }
 
 result_t gpu_buffer_initialize(gpu_buffer_t *gpu_b, void *addr, size_t size, uint32_t heapmask, uint32_t flags, uint32_t alignment, uint8_t kind) {
-
+	INITIALIZATION_GUARD(gpu);
+	
 	if(((uint64_t) addr & ((uint64_t) alignment)-1) != 0) {
 		// I wish it weren't true, but this legitimately crashes the graphics driver instead of throwing an error
 		return LIBTRANSISTOR_ERR_GPU_BUFFER_UNALIGNED;
@@ -75,6 +77,8 @@ result_t gpu_buffer_initialize(gpu_buffer_t *gpu_b, void *addr, size_t size, uin
 }
 
 result_t gpu_buffer_destroy(gpu_buffer_t *gpu_b, uint64_t *refcount, uint32_t *flags) {
+	INITIALIZATION_GUARD(gpu);
+	
 	nvmap_ioc_free_args nvm_free;
 	nvm_free.handle = gpu_b->nvmap_handle;
 	if(nv_ioctl(nvmap_fd, NVMAP_IOC_FREE, &nvm_free, sizeof(nvm_free)) != 0) {
@@ -92,6 +96,8 @@ result_t gpu_buffer_destroy(gpu_buffer_t *gpu_b, uint64_t *refcount, uint32_t *f
 }
 
 result_t gpu_buffer_get_id(gpu_buffer_t *gpu_b, uint32_t *id) {
+	INITIALIZATION_GUARD(gpu);
+	
 	nvmap_ioc_get_id_args nvm_get_id;
 	nvm_get_id.handle = gpu_b->nvmap_handle;
 
@@ -105,6 +111,8 @@ result_t gpu_buffer_get_id(gpu_buffer_t *gpu_b, uint32_t *id) {
 }
 
 result_t gpu_buffer_initialize_from_id(gpu_buffer_t *gpu_b, uint32_t id) {
+	INITIALIZATION_GUARD(gpu);
+	
 	nvmap_ioc_from_id_args nvm_from_id;
 	nvm_from_id.id = id;
 

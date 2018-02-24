@@ -4,6 +4,7 @@
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/am.h>
 
@@ -18,6 +19,8 @@ static ipc_object_t iwc_object; // nn::am::service::IWindowController
 static int am_initializations = 0;
 
 static result_t get_object(ipc_object_t iface, int command, ipc_object_t *out) {
+	INITIALIZATION_GUARD(am);
+	
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = command;
 
@@ -103,6 +106,7 @@ fail:
 #define NO_WORKAROUND if(using_workaround) { return LIBTRANSISTOR_ERR_AM_WORKAROUND_ACTIVE; }
 
 result_t am_isc_create_managed_display_layer(uint64_t *layer_id) {
+	INITIALIZATION_GUARD(am);
 	NO_WORKAROUND;
 	
 	ipc_request_t rq = ipc_default_request;
@@ -116,6 +120,7 @@ result_t am_isc_create_managed_display_layer(uint64_t *layer_id) {
 }
 
 result_t am_isc_approve_to_display() {
+	INITIALIZATION_GUARD(am);
 	NO_WORKAROUND;
 	
 	ipc_request_t rq = ipc_default_request;
@@ -127,6 +132,8 @@ result_t am_isc_approve_to_display() {
 }
 
 result_t am_iwc_get_applet_resource_user_id(aruid_t *aruid) {
+	INITIALIZATION_GUARD(am);
+	
 	if(using_workaround) {
 		*aruid = loader_config.applet_workaround_aruid;
 		return RESULT_OK;
@@ -143,6 +150,7 @@ result_t am_iwc_get_applet_resource_user_id(aruid_t *aruid) {
 }
 
 result_t am_iwc_acquire_foreground_rights() {
+	INITIALIZATION_GUARD(am);
 	NO_WORKAROUND;
 	
 	ipc_request_t rq = ipc_default_request;

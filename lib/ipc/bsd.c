@@ -3,6 +3,7 @@
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 
@@ -146,9 +147,13 @@ loader_config_socket_service_t bsd_get_socket_service() {
 	return bsd_service;
 }
 
+#define BSD_INITIALIZATION_GUARD(value) if(bsd_initializations <= 0) { bsd_result = LIBTRANSISTOR_ERR_MODULE_NOT_INITIALIZED; return value; }
+
 // def tested via PS
 // impl tested via Mephisto
 int bsd_socket(int domain, int type, int protocol) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	uint32_t raw[] = {domain, type, protocol};
@@ -182,6 +187,8 @@ int bsd_socket(int domain, int type, int protocol) {
 // def tested via PS
 // impl untested
 int bsd_recv(int socket, void *message, size_t length, int flags) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	uint32_t raw[] = {socket, flags};
@@ -224,6 +231,8 @@ int bsd_recv(int socket, void *message, size_t length, int flags) {
 // def tested via PS
 // impl tested via Mephisto
 int bsd_send(int socket, const void *data, size_t length, int flags) {
+	BSD_INITIALIZATION_GUARD(-1);
+
 	result_t r;
 
 	uint32_t raw[] = {socket, flags};
@@ -266,6 +275,8 @@ int bsd_send(int socket, const void *data, size_t length, int flags) {
 // def tested via PS
 // impl untested
 int bsd_sendto(int socket, const void *message, size_t length, int flags, const struct sockaddr *dest_addr, socklen_t dest_len) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	uint32_t raw[] = {socket, flags};
@@ -313,6 +324,8 @@ int bsd_sendto(int socket, const void *message, size_t length, int flags, const 
 // def tested via PS
 // impl untested
 int bsd_accept(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	uint32_t raw[] = {socket};
@@ -357,6 +370,8 @@ int bsd_accept(int socket, struct sockaddr *restrict address, socklen_t *restric
 // def tested via PS
 // impl untested
 int bsd_bind(int socket, const struct sockaddr *address, socklen_t address_len) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	uint32_t raw[] = {socket};
@@ -399,6 +414,8 @@ int bsd_bind(int socket, const struct sockaddr *address, socklen_t address_len) 
 // def tested via PS
 // impl tested via Mephisto
 int bsd_connect(int socket, const struct sockaddr *address, socklen_t address_len) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	uint32_t raw[] = {socket};
@@ -445,6 +462,8 @@ int bsd_getsockname(int socket, struct sockaddr *restrict address, socklen_t *re
 
 // def tested via PS
 int bsd_listen(int socket, int backlog) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	uint32_t raw[] = {socket, backlog};
@@ -487,6 +506,8 @@ int bsd_shutdown(int socket, int how) {
 
 // def untested
 int bsd_select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds, fd_set *restrict errorfds, struct timeval *restrict timeout) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	uint64_t timeout_words[3];
@@ -573,6 +594,8 @@ int bsd_select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds, fd
 }
 
 static int bsd_getaddrinfo_impl(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo *res, int limit) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	struct {
@@ -662,6 +685,8 @@ static int bsd_getaddrinfo_impl(const char *node, const char *service, const str
 }
 
 int bsd_getaddrinfo_fixed(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo_fixed *res, int num_addrinfos) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	for(int i = 0; i < num_addrinfos; i++) {
 		res[i].ai.ai_addr = (struct sockaddr*) &(res[i].addr);
 		res[i].ai.ai_canonname = res[i].canonname;
@@ -671,6 +696,8 @@ int bsd_getaddrinfo_fixed(const char *node, const char *service, const struct ad
 }
 
 int bsd_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res) {
+	BSD_INITIALIZATION_GUARD(-1);
+	
 	struct addrinfo *ai;
 	ai = malloc(sizeof(struct addrinfo));
 	if(ai == NULL) {
@@ -689,6 +716,8 @@ int bsd_getaddrinfo(const char *node, const char *service, const struct addrinfo
 
 // def tested via PS
 int bsd_close(int socket) {
+	BSD_INITIALIZATION_GUARD(-1);
+
 	result_t r;
 
 	uint32_t raw[] = {socket};

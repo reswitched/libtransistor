@@ -1,4 +1,5 @@
 #include<libtransistor/types.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bpc.h>
@@ -34,6 +35,8 @@ fail:
 }
 
 result_t bpc_shutdown_system() {
+	INITIALIZATION_GUARD(bpc);
+	
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 0;
 
@@ -41,6 +44,8 @@ result_t bpc_shutdown_system() {
 }
 
 result_t bpc_reboot_system() {
+	INITIALIZATION_GUARD(bpc);
+	
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 1;
 

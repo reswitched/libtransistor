@@ -1,4 +1,5 @@
 #include<libtransistor/types.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/nifm.h>
 #include<libtransistor/ipc/sm.h>
@@ -50,6 +51,8 @@ fail:
 }
 
 result_t nifm_get_ip_address(uint32_t *ip) {
+	INITIALIZATION_GUARD(nifm);
+	
 	ipc_request_t rq = ipc_default_request;
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 
