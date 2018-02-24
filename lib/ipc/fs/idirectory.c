@@ -31,7 +31,7 @@ result_t idirectory_read(idirectory_t obj, uint64_t *out_unk0, idirectoryentry_t
 	rq.buffers = buffers;
 
 	res = ipc_send(obj, &rq, &rs);
-	*out_unk0 = *(uint64_t*)(rs.raw_data + 0);
+	*out_unk0 = *(uint64_t*)(output_raw + 0);
 
 	return res;
 }
@@ -47,7 +47,7 @@ result_t idirectory_get_entry_count(idirectory_t obj, uint64_t *out_unk0) {
 	rs.raw_data_size = 8;
 
 	res = ipc_send(obj, &rq, &rs);
-	*out_unk0 = *(uint64_t*)(rs.raw_data + 0);
+	*out_unk0 = *(uint64_t*)(output_raw + 0);
 
 	return res;
 }

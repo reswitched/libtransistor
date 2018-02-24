@@ -17,9 +17,9 @@ result_t ifile_read(ifile_t obj, uint64_t *out_out_size, int8_t * out_out_buf, s
 	rq.raw_data = raw;
 	rq.raw_data_size = 20;
 
-	*(uint64_t*)(rq.raw_data + 0) = in_unk0;
-	*(uint64_t*)(rq.raw_data + 8) = in_offset;
-	*(uint32_t*)(rq.raw_data + 16) = in_size;
+	*(uint64_t*)(raw + 0) = in_unk0;
+	*(uint64_t*)(raw + 8) = in_offset;
+	*(uint32_t*)(raw + 16) = in_size;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -41,7 +41,7 @@ result_t ifile_read(ifile_t obj, uint64_t *out_out_size, int8_t * out_out_buf, s
 	rq.buffers = buffers;
 
 	res = ipc_send(obj, &rq, &rs);
-	*out_out_size = *(uint64_t*)(rs.raw_data + 0);
+	*out_out_size = *(uint64_t*)(output_raw + 0);
 
 	return res;
 }
@@ -55,9 +55,9 @@ result_t ifile_write(ifile_t obj, uint64_t in_unk0, uint64_t in_offset, uint32_t
 	rq.raw_data = raw;
 	rq.raw_data_size = 20;
 
-	*(uint64_t*)(rq.raw_data + 0) = in_unk0;
-	*(uint64_t*)(rq.raw_data + 8) = in_offset;
-	*(uint32_t*)(rq.raw_data + 16) = in_size;
+	*(uint64_t*)(raw + 0) = in_unk0;
+	*(uint64_t*)(raw + 8) = in_offset;
+	*(uint32_t*)(raw + 16) = in_size;
 	ipc_buffer_t in_buf_buf = {
 		.addr = in_buf,
 		.size = in_buf_size,
@@ -95,7 +95,7 @@ result_t ifile_set_size(ifile_t obj, uint64_t in_size) {
 	rq.raw_data = raw;
 	rq.raw_data_size = 8;
 
-	*(uint64_t*)(rq.raw_data + 0) = in_size;
+	*(uint64_t*)(raw + 0) = in_size;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -114,7 +114,7 @@ result_t ifile_get_size(ifile_t obj, uint64_t *out_fileSize) {
 	rs.raw_data_size = 8;
 
 	res = ipc_send(obj, &rq, &rs);
-	*out_fileSize = *(uint64_t*)(rs.raw_data + 0);
+	*out_fileSize = *(uint64_t*)(output_raw + 0);
 
 	return res;
 }

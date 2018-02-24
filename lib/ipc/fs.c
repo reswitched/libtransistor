@@ -35,7 +35,7 @@ result_t fsp_srv_init(uint64_t in_unk0) {
 	rq.raw_data = raw;
 	rq.raw_data_size = 8;
 
-	*(uint64_t*)(rq.raw_data + 0) = in_unk0;
+	*(uint64_t*)(raw + 0) = in_unk0;
 	rq.send_pid = true;
 
 
@@ -170,8 +170,8 @@ result_t fsp_srv_delete_save_data_with_space_id(uint8_t in_unk0, uint64_t in_unk
 	rq.raw_data = raw;
 	rq.raw_data_size = 9;
 
-	*(uint8_t*)(rq.raw_data + 0) = in_unk0;
-	*(uint64_t*)(rq.raw_data + 1) = in_unk1;
+	*(uint8_t*)(raw + 0) = in_unk0;
+	*(uint64_t*)(raw + 1) = in_unk1;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -200,7 +200,7 @@ result_t fsp_srv_is_ex_fat_supported(uint8_t *out_isSupported) {
 	rs.raw_data_size = 1;
 
 	res = ipc_send(fsp_srv_object, &rq, &rs);
-	*out_isSupported = *(uint8_t*)(rs.raw_data + 0);
+	*out_isSupported = *(uint8_t*)(output_raw + 0);
 
 	return res;
 }
@@ -216,8 +216,8 @@ result_t fsp_srv_mount_game_card_partition(ifilesystem_t *out_gameCardPartitionF
 	rq.raw_data = raw;
 	rq.raw_data_size = 8;
 
-	*(uint32_t*)(rq.raw_data + 0) = in_unk0;
-	*(uint32_t*)(rq.raw_data + 4) = in_unk1;
+	*(uint32_t*)(raw + 0) = in_unk0;
+	*(uint32_t*)(raw + 4) = in_unk1;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -238,10 +238,10 @@ result_t fsp_srv_extend_save_data(uint8_t in_unk0, uint64_t in_unk1, uint64_t in
 	rq.raw_data = raw;
 	rq.raw_data_size = 25;
 
-	*(uint8_t*)(rq.raw_data + 0) = in_unk0;
-	*(uint64_t*)(rq.raw_data + 1) = in_unk1;
-	*(uint64_t*)(rq.raw_data + 9) = in_unk2;
-	*(uint64_t*)(rq.raw_data + 17) = in_unk3;
+	*(uint8_t*)(raw + 0) = in_unk0;
+	*(uint64_t*)(raw + 1) = in_unk1;
+	*(uint64_t*)(raw + 9) = in_unk2;
+	*(uint64_t*)(raw + 17) = in_unk3;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -274,9 +274,9 @@ result_t fsp_srv_open_save_data_thumbnail_file(ifile_t *out_thumbnail, uint8_t i
 	rq.raw_data = raw;
 	rq.raw_data_size = 69;
 
-	*(uint8_t*)(rq.raw_data + 0) = in_unk0;
-	memcpy(rq.raw_data + 1, in_unk1, 64);
-	*(uint32_t*)(rq.raw_data + 65) = in_unk2;
+	*(uint8_t*)(raw + 0) = in_unk0;
+	memcpy(raw + 1, in_unk1, 64);
+	*(uint32_t*)(raw + 65) = in_unk2;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -297,7 +297,7 @@ result_t fsp_srv_mount_image_directory(ifilesystem_t *out_imageFs, uint32_t in_u
 	rq.raw_data = raw;
 	rq.raw_data_size = 4;
 
-	*(uint32_t*)(rq.raw_data + 0) = in_unk0;
+	*(uint32_t*)(raw + 0) = in_unk0;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -318,7 +318,7 @@ result_t fsp_srv_mount_content_storage(ifilesystem_t *out_contentFs, uint32_t in
 	rq.raw_data = raw;
 	rq.raw_data_size = 4;
 
-	*(uint32_t*)(rq.raw_data + 0) = in_contentStorageID;
+	*(uint32_t*)(raw + 0) = in_contentStorageID;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -353,7 +353,7 @@ result_t fsp_srv_set_current_posix_time(uint64_t in_time) {
 	rq.raw_data = raw;
 	rq.raw_data_size = 8;
 
-	*(uint64_t*)(rq.raw_data + 0) = in_time;
+	*(uint64_t*)(raw + 0) = in_time;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -370,8 +370,8 @@ result_t fsp_srv_query_save_data_total_size(uint64_t *out_saveDataSize, uint64_t
 	rq.raw_data = raw;
 	rq.raw_data_size = 16;
 
-	*(uint64_t*)(rq.raw_data + 0) = in_unk0;
-	*(uint64_t*)(rq.raw_data + 8) = in_unk1;
+	*(uint64_t*)(raw + 0) = in_unk0;
+	*(uint64_t*)(raw + 8) = in_unk1;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -380,7 +380,7 @@ result_t fsp_srv_query_save_data_total_size(uint64_t *out_saveDataSize, uint64_t
 	rs.raw_data_size = 8;
 
 	res = ipc_send(fsp_srv_object, &rq, &rs);
-	*out_saveDataSize = *(uint64_t*)(rs.raw_data + 0);
+	*out_saveDataSize = *(uint64_t*)(output_raw + 0);
 
 	return res;
 }
@@ -398,7 +398,7 @@ result_t fsp_srv_create_padding_file(uint64_t in_size) {
 	rq.raw_data = raw;
 	rq.raw_data_size = 8;
 
-	*(uint64_t*)(rq.raw_data + 0) = in_size;
+	*(uint64_t*)(raw + 0) = in_size;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -447,7 +447,7 @@ result_t fsp_srv_get_and_clear_file_system_proxy_error_info(uint8_t out_errorInf
 	rs.raw_data_size = 128;
 
 	res = ipc_send(fsp_srv_object, &rq, &rs);
-	memcpy(out_errorInfo, rs.raw_data + 0, 128);
+	memcpy(out_errorInfo, output_raw + 0, 128);
 
 	return res;
 }
@@ -461,7 +461,7 @@ result_t fsp_srv_set_bis_root_for_host(uint32_t in_unk0, const uint8_t in_path[0
 	rq.raw_data = raw;
 	rq.raw_data_size = 4;
 
-	*(uint32_t*)(rq.raw_data + 0) = in_unk0;
+	*(uint32_t*)(raw + 0) = in_unk0;
 	ipc_buffer_t in_path_buf = {
 		.addr = in_path,
 		.size = 769,
@@ -489,8 +489,8 @@ result_t fsp_srv_set_save_data_size(uint64_t in_unk0, uint64_t in_unk1) {
 	rq.raw_data = raw;
 	rq.raw_data_size = 16;
 
-	*(uint64_t*)(rq.raw_data + 0) = in_unk0;
-	*(uint64_t*)(rq.raw_data + 8) = in_unk1;
+	*(uint64_t*)(raw + 0) = in_unk0;
+	*(uint64_t*)(raw + 8) = in_unk1;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -540,7 +540,7 @@ result_t fsp_srv_set_global_access_log_mode(uint32_t in_mode) {
 	rq.raw_data = raw;
 	rq.raw_data_size = 4;
 
-	*(uint32_t*)(rq.raw_data + 0) = in_mode;
+	*(uint32_t*)(raw + 0) = in_mode;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
@@ -559,7 +559,7 @@ result_t fsp_srv_get_global_access_log_mode(uint32_t *out_logMode) {
 	rs.raw_data_size = 4;
 
 	res = ipc_send(fsp_srv_object, &rq, &rs);
-	*out_logMode = *(uint32_t*)(rs.raw_data + 0);
+	*out_logMode = *(uint32_t*)(output_raw + 0);
 
 	return res;
 }

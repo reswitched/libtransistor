@@ -16,8 +16,8 @@ result_t ifilesystem_create_file(ifilesystem_t obj, uint64_t in_mode, uint32_t i
 	rq.raw_data = raw;
 	rq.raw_data_size = 12;
 
-	*(uint64_t*)(rq.raw_data + 0) = in_mode;
-	*(uint32_t*)(rq.raw_data + 8) = in_size;
+	*(uint64_t*)(raw + 0) = in_mode;
+	*(uint32_t*)(raw + 8) = in_size;
 	ipc_buffer_t in_path_buf = {
 		.addr = in_path,
 		.size = 769,
@@ -210,7 +210,7 @@ result_t ifilesystem_get_entry_type(ifilesystem_t obj, uint32_t *out_unk1, const
 	rq.buffers = buffers;
 
 	res = ipc_send(obj, &rq, &rs);
-	*out_unk1 = *(uint32_t*)(rs.raw_data + 0);
+	*out_unk1 = *(uint32_t*)(output_raw + 0);
 
 	return res;
 }
@@ -224,7 +224,7 @@ result_t ifilesystem_open_file(ifilesystem_t obj, ifile_t *out_file, uint32_t in
 	rq.raw_data = raw;
 	rq.raw_data_size = 4;
 
-	*(uint32_t*)(rq.raw_data + 0) = in_mode;
+	*(uint32_t*)(raw + 0) = in_mode;
 	ipc_buffer_t in_path_buf = {
 		.addr = in_path,
 		.size = 769,
@@ -256,7 +256,7 @@ result_t ifilesystem_open_directory(ifilesystem_t obj, idirectory_t *out_directo
 	rq.raw_data = raw;
 	rq.raw_data_size = 4;
 
-	*(uint32_t*)(rq.raw_data + 0) = in_unk0;
+	*(uint32_t*)(raw + 0) = in_unk0;
 	ipc_buffer_t in_path_buf = {
 		.addr = in_path,
 		.size = 769,
@@ -313,7 +313,7 @@ result_t ifilesystem_get_free_space_size(ifilesystem_t obj, uint64_t *out_totalF
 	rq.buffers = buffers;
 
 	res = ipc_send(obj, &rq, &rs);
-	*out_totalFreeSpace = *(uint64_t*)(rs.raw_data + 0);
+	*out_totalFreeSpace = *(uint64_t*)(output_raw + 0);
 
 	return res;
 }
@@ -342,7 +342,7 @@ result_t ifilesystem_get_total_space_size(ifilesystem_t obj, uint64_t *out_total
 	rq.buffers = buffers;
 
 	res = ipc_send(obj, &rq, &rs);
-	*out_totalSize = *(uint64_t*)(rs.raw_data + 0);
+	*out_totalSize = *(uint64_t*)(output_raw + 0);
 
 	return res;
 }
@@ -394,7 +394,7 @@ result_t ifilesystem_get_file_time_stamp_raw(ifilesystem_t obj, uint8_t out_time
 	rq.buffers = buffers;
 
 	res = ipc_send(obj, &rq, &rs);
-	memcpy(out_timestamp, rs.raw_data + 0, 32);
+	memcpy(out_timestamp, output_raw + 0, 32);
 
 	return res;
 }
