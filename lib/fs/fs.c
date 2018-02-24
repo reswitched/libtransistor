@@ -7,6 +7,7 @@
 #include<stdio.h>
 #include<string.h>
 #include<sys/stat.h>
+#include<fcntl.h>
 
 #define MAX_RECURSION 256
 
@@ -45,7 +46,10 @@ result_t trn_fs_mount(const char *mount_name, trn_inode_t *mount) {
 
 // if this exits OK, it is the caller's responsiblity to close traverse[ (borrowed_recursion_out, traverse_recursion_out] ]
 //  (the interval from borrowed_recursion_out to traverse_recursion_out, excluding borrowed_recursion_out but including traverse_recursion_out)
-static result_t trn_fs_traverse(const char *path, trn_traverse_t *traverse, int *borrowed_recursion_out, int *traverse_recursion_out) {
+//
+// Max_len is useful for partial traversal (as required by mkdir). It is not a required argument: if your path is \0-terminated, you can just set
+// max_len to SIZE_MAX.
+static result_t trn_fs_traverse(const char *path, size_t max_len, trn_traverse_t *traverse, int *borrowed_recursion_out, int *traverse_recursion_out) {
 	memcpy(traverse, cwd, (cwd_recursion + 1) * sizeof(*traverse));
 	int borrowed_recursion = cwd_recursion; // traverse[i<=borrowed_recursion] aren't owned by us, so we shouldn't close them
 	int traverse_recursion = cwd_recursion;
@@ -61,14 +65,16 @@ static result_t trn_fs_traverse(const char *path, trn_traverse_t *traverse, int 
 	while(segment[0] != 0) {
 		printf("Path is %s\n", path);
 		seglen = 0;
-		while(segment[0] == '/') {
+		while(max_len > 0 && segment[0] == '/') {
+			max_len--;
 			segment++; // trim leading slashes
 		}
-		while(segment[seglen] != '/' && segment[seglen] != 0) {
+		while(max_len > 0 && segment[seglen] != '/' && segment[seglen] != 0) {
+			max_len--;
 			seglen++;
 		}
 
-		if(seglen == 0) { // trailing slash
+		if(max_len == 0 || seglen == 0) { // trailing slash
 			break;
 		}
 
@@ -135,7 +141,7 @@ result_t trn_fs_realpath(const char *path, char **resolved_path) {
 
 	printf("realpath(\"%s\")\n", path);
 	
-	if((r = trn_fs_traverse(path, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;
 	}
 	size_t path_size = 0;
@@ -176,7 +182,37 @@ result_t trn_fs_open(int *fd, const char *path, int flags) {
 	int borrowed_recursion = 0;
 	int traverse_recursion = 0;
 	printf("Path is %s\n", path);
-	if((r = trn_fs_traverse(path, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+
+	if (flags & O_CREAT) {
+		// Create file if it does not exist. First traverse to the parent.
+		char *last_component = strrchr(path, '/');
+		if (last_component == NULL) {
+			// create file named PATH in current directory
+		} else {
+			// TODO: Handle trailing slash case.
+
+			// Get inode of parent
+			if ((r = trn_fs_traverse(path, last_component - path, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK)
+				return r;
+
+			// Create the child (fail if it already exists).
+			r = traverse[traverse_recursion].inode.ops->create_file(traverse[traverse_recursion].inode.data, last_component + 1);
+
+			// TODO: Reuse borrow to open the file ?
+			for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
+				printf("Releasing %d\n", i);
+				traverse[i].inode.ops->release(traverse[i].inode.data);
+			}
+
+			if (r != RESULT_OK) {
+				// Failed to create the file. If it's because it already exists,
+				// we should *not*, in fact, fail. < TODO
+				return r;
+			}
+		}
+	}
+
+	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;
 	}
 
@@ -197,7 +233,7 @@ result_t trn_fs_opendir(trn_dir_t *dir, const char *path) {
 	trn_traverse_t traverse[MAX_RECURSION];
 	int borrowed_recursion = 0;
 	int traverse_recursion = 0;
-	if((r = trn_fs_traverse(path, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;
 	}
 	
@@ -218,7 +254,7 @@ result_t trn_fs_chdir(const char *path) {
 	trn_traverse_t traverse[MAX_RECURSION];
 	int borrowed_recursion;
 	int traverse_recursion;
-	if((r = trn_fs_traverse(path, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;
 	}
 
@@ -238,7 +274,7 @@ result_t trn_fs_stat(const char *path, struct stat *st) {
 	trn_traverse_t traverse[MAX_RECURSION];
 	int borrowed_recursion = 0;
 	int traverse_recursion = 0;
-	if((r = trn_fs_traverse(path, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;
 	}
 

@@ -204,10 +204,15 @@ static result_t trn_sqfs_open_as_dir(void *data, trn_dir_t *out) {
 	return RESULT_OK;
 }
 
+static result_t trn_sqfs_create_file(void *data, const char *name) {
+    return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+}
+
 static trn_inode_ops_t trn_sqfs_inode_ops = {
 	.is_dir = trn_sqfs_is_dir,
 	.lookup = trn_sqfs_lookup,
 	.release = trn_sqfs_release,
+	.create_file = trn_sqfs_create_file,
 	.open_as_file = trn_sqfs_open_as_file,
 	.open_as_dir = trn_sqfs_open_as_dir,
 };
