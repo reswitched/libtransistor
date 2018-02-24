@@ -89,7 +89,7 @@ deploy:
     local-dir: docs
     target-branch: gh-pages
     on:
-      branch: master
+      branch: development
       condition: $TRAVIS_OS_NAME = linux
   - provider: releases
     api_key: $GITHUB_TOKEN
