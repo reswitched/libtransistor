@@ -9,7 +9,6 @@
 #include "server.h"
 #include "memory.h"
 #include "nro.h"
-#include "http.h"
 
 typedef struct
 {
@@ -32,7 +31,6 @@ static_assert(sizeof(recv_buffer) >= sizeof(nro_header_t), "recv_buffer needs to
 void func_help(char*);
 void func_echo(char*);
 void func_stdout(char*);
-void func_exec(char*);
 void func_meminfo(char*);
 void func_stats(char*);
 void func_reboot(char*);
@@ -44,7 +42,6 @@ static const scmd_t server_commands[] =
 	{func_echo, "echo", NULL},
 	{NULL, "exit", "exit loader"},
 	{func_stdout, "stdout", "reconnect / disconnect / connect to stdout server"},
-	{func_exec, "exec", "load and run NRO from HTTP server"},
 	{func_meminfo, "meminfo", "print memory map using svcQueryMemory"},
 	{func_stats, "stats", "print statistics"},
 	{func_reboot, "reboot", "reboot the console"},
@@ -453,33 +450,6 @@ void func_args(char *par)
 		}
 	} else
 		nro_arg_name(arg);
-}
-
-void func_exec(char *par)
-{
-	int ret;
-	char *name = par;
-
-	/*
-	if(!par)
-	{
-		printf("specify server side path\n");
-		return;
-	}
-
-	// parse name and arguments
-	func_args(par);
-
-	// load & run
-	ret = http_get_file(name, heap_base, heap_size);
-	if(ret > 0)
-	{
-		uint64_t r;
-		printf("- starting NRO\n");
-		r = nro_execute(heap_base, ret);
-		printf("- NRO returned 0x%016lX\n", r);
-	} else
-	printf("- get NRO error %i\n", -ret);*/
 }
 
 void func_meminfo(char *par)
