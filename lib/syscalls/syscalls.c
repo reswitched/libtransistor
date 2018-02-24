@@ -109,10 +109,10 @@ int _open_r(struct _reent *reent, const char *name, int flags, int mode) {
 	case RESULT_OK:
 		return fd;
 	case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
-		reent->_errno = -ENOTDIR;
+		reent->_errno = ENOTDIR;
 		break;
 	case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
-		reent->_errno = -ENOENT;
+		reent->_errno = ENOENT;
 		break;
 	default:
 		reent->_errno = ENOSYS;
