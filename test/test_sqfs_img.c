@@ -77,9 +77,19 @@ int main(int argc, char *argv[]) {
 	printf("Opening /sd through Unix\n");
 	if (ls("/sd"))
 		printf("WTF ERROR\n");
-	if (ls("/sd/.Spotlight-V100"))
+	if (ls("/sd/switch"))
 		printf("WTF ERROR2\n");
 
-	// TODO: Try opening a file on sdcard
+	printf("Tryng to open file on sd\n");
+	f = fopen("/sd/test.txt", "rb");
+	if(f == NULL) {
+		printf("fopen failure: %d\n", errno);
+		return 1;
+	}
+	rd = fread(buf, sizeof(*buf), sizeof(buf)/sizeof(*buf), f);
+	if(rd == 0) {
+		printf("fread failure\n");
+		return 1;
+	}
 	return 0;
 }
