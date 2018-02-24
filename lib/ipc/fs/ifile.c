@@ -8,18 +8,18 @@
 #include<string.h>
 
 
-result_t ifile_read(ifile_t obj, uint64_t *out_out_size, int8_t * out_out_buf, size_t out_out_buf_size, uint64_t in_unk0, uint64_t in_offset, uint32_t in_size) {
+result_t ifile_read(ifile_t obj, uint64_t *out_out_size, int8_t * out_out_buf, size_t out_out_buf_size, uint64_t in_unk0, uint64_t in_offset, uint64_t in_size) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 0;
 
-	uint8_t raw[20];
+	uint8_t raw[24];
 	rq.raw_data = raw;
-	rq.raw_data_size = 20;
+	rq.raw_data_size = 24;
 
 	*(uint64_t*)(raw + 0) = in_unk0;
 	*(uint64_t*)(raw + 8) = in_offset;
-	*(uint32_t*)(raw + 16) = in_size;
+	*(uint64_t*)(raw + 16) = in_size;
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
