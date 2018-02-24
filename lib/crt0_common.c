@@ -9,6 +9,7 @@
 #include<libtransistor/fs/squashfs.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/fd.h>
+#include<libtransistor/alloc_pages.h>
 
 #include<sys/socket.h>
 #include<assert.h>
@@ -212,6 +213,8 @@ static result_t lconfig_parse(loader_config_entry_t *config);
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 static int make_dbg_log_fd();
 
+extern void _cleanup_mapped_heap();
+
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
 	dyn_info_t dyn_info;
 	dyn_info.init_array = NULL;
@@ -262,6 +265,12 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	dbg_printf("backup tls");
 	memcpy(tls_backup, get_tls(), 0x200);
 	memset(get_tls(), 0, 0x200);
+	
+	dbg_printf("init alloc_pages");
+	ret = ap_init();
+	if(ret != RESULT_OK) {
+		return ret;
+	}
 	
 	dbg_printf("init threads");
 	phal_tid tid = { .id = loader_config.main_thread, .stack = NULL };
@@ -322,6 +331,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	}
 
 	if(!_crt0_kludge_skip_cleanup) { // TODO: remove cleanup kludge ASAP
+		dbg_set_bsd_log(-1);
 		if(dyn_info.fini_array != NULL) {
 			if(dyn_info.fini_array_size != -1) {
 				for(size_t i = 0; i < dyn_info.fini_array_size/sizeof(dyn_info.fini_array[0]); i++) {
@@ -329,6 +339,10 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 				}
 			}
 		}
+
+		dbg_printf("cleaning up mapped heap");
+		_cleanup_mapped_heap();
+		dbg_printf("cleaned heap");
 	} else {
 		printf("crt0: cleanup kludge active, please fix this ASAP\n");
 	}
@@ -478,7 +492,17 @@ static result_t lconfig_parse(loader_config_entry_t *config) {
 			}
 			// TODO: initialize bsd
 			break;
-				
+
+		case LCONFIG_KEY_ALLOC_PAGES:
+			loader_config.has_alloc_pages = true;
+			loader_config.alloc_pages = entry->alloc_pages.alloc_pages;
+			loader_config.free_pages = entry->alloc_pages.free_pages;
+			break;
+
+		case LCONFIG_KEY_LOCK_REGION:
+			ap_lock_region(entry->lock_region.addr, entry->lock_region.size);
+			break;
+			
 		default: {
 			bool recognition_mandatory = entry->flags & LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
 			if(recognition_mandatory) {

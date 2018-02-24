@@ -18,11 +18,7 @@ typedef struct {
 } frame_t;
 
 static const int num_channels = 2;
-
-static const size_t chunk_size = ((num_frames_per_chunk * sizeof(frame_t)) + 0xfff) & ~0xfff;
-
-// don't think this can be in mapped memory, since samples get DMA'd out of it
-static frame_t __attribute__((aligned(0x1000))) chunks[2][chunk_size / sizeof(frame_t)];
+static const size_t chunk_size = num_frames_per_chunk * sizeof(frame_t);
 
 static const int playback_seconds = 12;
 static const int notes[] = {
@@ -139,8 +135,8 @@ int main() {
 	audio_output_buffer_t buffers[2];
 	for(int i = 0; i < 2; i++) {
 		buffers[i].ptr = &buffers[i].sample_data;
-		buffers[i].sample_data = chunks[i];
-		buffers[i].buffer_size = sizeof(chunks[i]);
+		buffers[i].sample_data = alloc_pages(chunk_size, chunk_size, NULL);
+		buffers[i].buffer_size = chunk_size;
 		buffers[i].data_size = num_frames_per_chunk * sizeof(frame_t);
 		buffers[i].unknown = 0;
 

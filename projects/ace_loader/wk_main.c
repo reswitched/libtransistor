@@ -1,19 +1,13 @@
 #include <libtransistor/nx.h>
-#include <libtransistor/ipc.h>
-#include <libtransistor/loader_config.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "defs.h"
-#include "memory.h"
-#include "http.h"
-#include "server.h"
-#include "nro.h"
 
-FILE custom_stdout;
-int std_sck;
+#include "defs.h"
+#include "common_setup.h"
+#include "memory.h"
+#include "wk_memory.h"
+#include "nro.h"
 
 // thread context
 typedef struct
@@ -37,14 +31,6 @@ typedef struct
 	void *mutex;
 	uint64_t unk3;
 } thread_context_t;
-
-struct sockaddr_in stdout_server_addr =
-{
-	.sin_family = AF_INET,
-	.sin_port = htons(STDOUT_PORT),
-};
-
-thread_h aceloader_main_thread_handle;
 
 uint64_t extra_cleanup(uint64_t arg0);
 
@@ -99,6 +85,8 @@ const int static_handles[] =
 	0x348036
 };
 
+extern thread_h aceloader_main_thread_handle;
+
 void locate_threads(void *base, uint64_t size, int simple)
 {
 	memory_info_t minfo;
@@ -128,13 +116,6 @@ void locate_threads(void *base, uint64_t size, int simple)
 							printf("- unmap stack: 0x%06X\n", svcUnmapMemory(tc->sp_mirror, tc->sp_base, tc->sp_size));
 						break;
 						case 0:
-							// broken getInfo workaround
-							if(tc->sp_mirror != tc->sp_base)
-							{
-								// use lowest detected mirror address
-								if((uint64_t)tc->sp_mirror < (uint64_t)map_base)
-									map_base = tc->sp_mirror;
-							}
 							// exit thread
 							printf("- cleaning up\n");
 							while(sizE)
@@ -235,26 +216,6 @@ void hook_func(uint64_t arg0)
 
 	arg0 = extra_cleanup(arg0);
 //	printf("* extra return 0x%016lX\n", arg0);
-
-	// get map range - returns invalid range
-	ret = svcGetInfo((uint64_t*)&map_base, 2, 0xffff8001, 0);
-	if(!ret)
-	{
-		printf("- map base address 0x%016lX\n", (uint64_t)map_base);
-	} else
-		printf("- get info error 0x%06X\n", ret);
-
-	ret = svcGetInfo((uint64_t*)&ptr, 3, 0xffff8001, 0);
-	if(!ret)
-	{
-		printf("- map base size 0x%016lX\n", (uint64_t)ptr);
-	} else
-		printf("- get info error 0x%06X\n", ret);
-
-	// broken getInfo workaround
-	// lowest stack mirror found is used as actual base
-	map_base = (void*)0xffffffffffffffff; 
-
 	// kill all threads
 	thread_scan(0);
 	svcSleepThread(1000*1000*1000);
@@ -271,66 +232,18 @@ void hook_func(uint64_t arg0)
 	printf("- set heap size 0x%06X at 0x%016lX\n", ret, (uint64_t)ptr);
 
 	// cleanup the heap
-	if(mem_heap_cleanup())
+	if(wk_mem_heap_cleanup())
 	{
 		printf("- failed to cleanup heap area\n");
 		goto crash;
 	}
 
-	// get largest heap block
-	if(mem_get_heap())
-	{
-		printf("- failed to locate usefull heap area\n");
+	ret = ap_probe_full_address_space();
+	if(ret != 0) {
+		printf("- failed to probe entire address space: 0x%x\n", ret);
 		goto crash;
 	}
-
-	// initialize RO
-	ret = ro_init();
-	if(ret)
-	{
-		printf("- ldr:ro initialization error 0x%06X\n", ret);
-		goto crash;
-	}
-
-	ret = bpc_init();
-	if(ret)
-	{
-		printf("- bpc initialization error 0x%06x\n", ret);
-		goto crash;
-	}
-
-	ret = nifm_init();
-	if(ret)
-	{
-		printf("- nifm initialization error 0x%06x\n", ret);
-		goto crash;
-	}
-
-	// release sm; it's not needed anymore
-	sm_finalize();
-
-	// debug
-	printf("- got %luB heap block at 0x%016lX\n", heap_size, (uint64_t)heap_base);
-
-	// start autorun NRO - if found
-	ret = http_get_file("autorun.nro", heap_base, heap_size);
-	if(ret > 0)
-	{
-		uint64_t r;
-		printf("- starting autorun\n");
-		nro_arg_name("autorun");
-		nro_add_arg(http_hostname);
-		r = nro_execute(heap_base, ret);
-		printf("- NRO returned 0x%016lX\n", r);
-		// do not exit for GUIs
-		if(!nro_loaded_count || nro_unload_fail)
-			goto crash;
-	}
-
-	// start 'push' server
-	if(!server_init())
-		server_loop();
-
+	common_begin_server();
 crash:
 	exit_loader();
 }
@@ -350,60 +263,15 @@ void exit_loader()
 
 int main(int argc, char **argv)
 {
-	const char *hostname;
-
-	if(argc == 0)
-		hostname = "a.b"; // PegaSwitch will respond to any DNS request
-	else
-		hostname = argv[0]; // use provided hostname
-
-	ipc_debug_flag = 0;
-
-	if(sm_init() != RESULT_OK)
-		return 1;
-
-	if(bsd_init() != RESULT_OK)
-	{
-		sm_finalize();
-		return 1;
+	int ret;
+	ret = common_init(argc, argv);
+	if(ret != 0) {
+		return ret;
 	}
-
-	// init HTTP (resolve hostname)
-	if(http_init(hostname))
-	{
-		bsd_close(std_sck);
-		bsd_finalize();
-		sm_finalize();
-		return 1;
-	}
-
-	// get stdout IP
-	http_paste_ip((uint32_t*)&stdout_server_addr.sin_addr.s_addr);
-
-	// create stdout socket, optional
-	std_sck = bsd_socket(2, 1, 6); // AF_INET, SOCK_STREAM, PROTO_TCP
-	if(std_sck >= 0)
-	{
-		// connect to stdout server, optional
-		if(bsd_connect(std_sck, (struct sockaddr*) &stdout_server_addr, sizeof(stdout_server_addr)) < 0)
-		{
-			bsd_close(std_sck);
-			std_sck = -1; // invalidate
-		} else {
-			// redirect stdout and stderr
-			int fd = socket_from_bsd(std_sck);
-			if(fd < 0) {
-				printf("error creating fd\n");
-			} else {
-				dup2(fd, STDOUT_FILENO);
-				dup2(fd, STDERR_FILENO);
-			}
-		}
-	}
-
+	
 	// locate and hook webkit
 	printf("searching for webkit ...\n");
-	if(mem_install_hook(hook_func))
+	if(wk_mem_install_hook(hook_func))
 	{
 		printf("- failed to locate webkit memories\n");
 		bsd_close(std_sck);

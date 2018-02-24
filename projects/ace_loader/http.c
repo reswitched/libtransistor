@@ -154,6 +154,7 @@ int http_get_file(const char *path, void *buff, uint64_t maxsize)
 
 	// get an answer
 	ret = parse_header(temp, sizeof(temp), &offs, &got);
+	printf("- parse_header > %d\n", ret);
 	// load it now
 	if(ret > 0)
 	{
