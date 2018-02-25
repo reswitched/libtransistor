@@ -5,7 +5,16 @@ else
 endif
 
 # llvm programs
-LLVM_CONFIG := llvm-config$(LLVM_POSTFIX)
+
+# On MacOS, brew refuses to install clang5/llvm5 in a global place. As a result,
+# they have to muck around with changing the path, which sucks.
+# Let's make their lives easier by asking brew where LLVM_CONFIG is.
+ifdef $(shell brew --prefix llvm)
+	LLVM_CONFIG := $(shell brew --prefix llvm)/bin/llvm-config
+else
+	LLVM_CONFIG := llvm-config$(LLVM_POSTFIX)
+endif
+
 LLVM_BINDIR := $(shell $(LLVM_CONFIG) --bindir)
 LD := $(LLVM_BINDIR)/ld.lld
 CC := $(LLVM_BINDIR)/clang
