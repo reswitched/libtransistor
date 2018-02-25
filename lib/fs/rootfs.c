@@ -14,7 +14,7 @@ struct mountpoint {
 	struct mountpoint *next;
 	const char *name; // TODO: Static array ?
 	trn_inode_t *fs;
-	trn_inode_ops_t *ops_clone;
+	trn_inode_ops_t ops_clone;
 };
 
 static struct trn_inode_ops_t rootfs_inode_ops;
@@ -24,7 +24,9 @@ static result_t empty_release(void *inode) {
 	return RESULT_OK;
 }
 
-// Takes ownership of name and mountpoint! Will free them on his own!
+// This borrows the name. Maybe I should make a copy?
+// It takes ownership of the mountpoint, and will call release on it automatically
+// on umount.
 result_t trn_rootfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mountpoint) {
 	if (fs == NULL || fs->ops != &rootfs_inode_ops)
 		return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
@@ -46,7 +48,7 @@ result_t trn_rootfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mou
 	}
 	m->name = name + i;
 	m->fs = mountpoint;
-	m->ops_clone = m->fs->ops;
+	m->ops_clone = *m->fs->ops;
 	m->fs->ops->release = empty_release;
 
 	// TODO: Locking
@@ -79,7 +81,17 @@ static result_t trn_rootfs_lookup(void *data, trn_inode_t *out, const char *name
 }
 
 static result_t trn_rootfs_release(void *data) {
-	// TODO: Call release on all the mountpoints
+	struct mountpoint **mounts = (struct mountpoint**)data;
+	struct mountpoint *cur_mount = *mounts;
+	result_t r;
+
+	for (; cur_mount != NULL; cur_mount = cur_mount->next) {
+		printf("Unmounting %s\n", cur_mount->name);
+		// Print the error, and discard it.
+		r = cur_mount->ops_clone.release(cur_mount->fs->data);
+		if (r != RESULT_OK)
+			printf("Error unmounting %s: %lx\n", cur_mount->name, r);
+	}
 	return RESULT_OK;
 }
 
