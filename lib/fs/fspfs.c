@@ -50,8 +50,6 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 		root_name_len = inode->name_len;
 	}
 
-	printf("TRACING FSPFS_LOOKUP for (%d) %s/%.*s\n", root_name_len, root_name, name_len, name);
-
 	// First, calculate len
 	size_t l = root_name_len + name_len + 1;
 	if (l >= sizeof(new_inode->name) - 1)
@@ -69,11 +67,9 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 	new_inode->name[root_name_len + 1 + name_len] = '\0';
 	new_inode->name_len = l;
 
-	printf("Getting entry type of %s\n", new_inode->name);
 	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->name)) != RESULT_OK)
 		// TODO: ERRNOTFOUND
 		goto fail;
-	printf("Success! %d\n", type);
 
 	new_inode->is_dir = type == 0;
 
@@ -82,7 +78,6 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 
 	return RESULT_OK;
 fail:
-	printf("Fail: %d\n", r);
 	free(new_inode);
 	return r;
 }
@@ -135,7 +130,6 @@ static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	if (f == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
-	printf("ifilesystem_open_file %s\n", inode->name);
 	if ((r = ifilesystem_open_file(inode->fs, &f->file, ifs_flags, inode->name)) != RESULT_OK)
 		goto fail;
 
@@ -166,15 +160,11 @@ static result_t fspfs_open_as_dir(void *data, trn_dir_t *out) {
 	if (dir == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
-	printf("ifilesystem_open_directory %s\n", inode->name);
 	if ((r = ifilesystem_open_directory(inode->fs, dir, 3, inode->name)) != RESULT_OK)
 		goto fail;
-	printf("ifilesystem_open_directory succeeded\n");
 
 	out->data = (void*)dir;
-	printf("1\n");
 	out->ops = &trn_fspfs_dir_ops;
-	printf("2\n");
 	return RESULT_OK;
 
 fail:
@@ -243,12 +233,10 @@ static ssize_t fspfs_file_read(void *data, char *buf, size_t buf_size) {
 	uint64_t out_size;
 	result_t r;
 
-	printf("Reading file from %x to %x\n", f->head, f->head + buf_size);
 	if ((r = ifile_read(f->file, &out_size, buf, buf_size, 0, f->head, buf_size)) != RESULT_OK) {
 		printf("Got an error: %x\n", r);
 		return -EIO;
 	}
-	printf("Successfuly read from file: %lu\n", out_size);
 	f->head += out_size;
 	return out_size;
 }
@@ -257,12 +245,10 @@ static ssize_t fspfs_file_write(void *data, const char *buf, size_t buf_size) {
 	struct ifs_file *f = data;
 	result_t r;
 
-	printf("Writing file from %x to %x\n", f->head, f->head + buf_size);
 	if ((r = ifile_write(f->file, 0, f->head, buf_size, buf, buf_size)) != RESULT_OK) {
 		printf("Got an error: %x\n", r);
 		return -EIO;
 	}
-	printf("Successfuly write to file\n");
 	f->head += buf_size;
 	return buf_size;
 }

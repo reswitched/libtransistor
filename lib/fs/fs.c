@@ -271,7 +271,6 @@ result_t trn_fs_stat(const char *path, struct stat *st) {
 	bool is_dir;
 	r = traverse[traverse_recursion].inode.ops->is_dir(traverse[traverse_recursion].inode.data, &is_dir);
 
-	printf("stat is_dir: %d\n", is_dir);
 	st->st_mode = is_dir ? S_IFDIR : S_IFREG;
 	
 	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
