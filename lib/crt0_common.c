@@ -168,7 +168,6 @@ static size_t dbg_log_write(void *v, const char *ptr, size_t len) {
 // filesystem stuff
 static blob_file sqfs_blob;
 static sqfs fs;
-static ifilesystem_t sdcard_ifs;
 static trn_inode_t root_inode;
 static trn_inode_t squash_inode;
 static trn_inode_t sdcard_inode;
@@ -177,6 +176,7 @@ bool setup_fs() {
 	size_t sqfs_size = ((uint8_t*) &_libtransistor_squashfs_image_end) - ((uint8_t*) &_libtransistor_squashfs_image); // TODO: not this
 	int sqfs_img_fd = blobfd_create(&sqfs_blob, &_libtransistor_squashfs_image, sqfs_size);
 	sqfs_err err = SQFS_OK;
+	ifilesystem_t sdcard_ifs;
 
 	err = sqfs_init(&fs, sqfs_img_fd, 0);
 	if(err != SQFS_OK) {
@@ -391,7 +391,10 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	} else {
 		printf("crt0: cleanup kludge active, please fix this ASAP\n");
 	}
-	
+
+	// Clean up FS
+	root_inode.ops->release(root_inode.data);
+
 fail_bsd:
 	/*
 	  at this point, bsd and sm have already been destructed, but just in case we

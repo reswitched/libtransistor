@@ -173,6 +173,9 @@ fail:
 }
 
 static result_t fspfs_release(void *data) {
+	struct inode *inode = (struct inode*)data;
+
+	ipc_close(inode->fs);
 	free(data);
 	return RESULT_OK;
 }
@@ -284,6 +287,7 @@ static trn_inode_ops_t fspfs_inode_ops = {
 	.open_as_dir = fspfs_open_as_dir
 };
 
+// Takes ownership of the ifilesystem. Will close it automatically on release.
 result_t trn_fspfs_create(trn_inode_t *out, ifilesystem_t fs) {
 	struct inode *inode = malloc(sizeof(struct inode));
 	if (inode == NULL)
