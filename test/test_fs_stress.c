@@ -183,7 +183,7 @@ void sha256_final(SHA256_CTX *ctx, BYTE hash[])
 }
 
 
-void hash_file(char hash[256], int fd) {
+void hash_file(char hash[32], int fd) {
 	char buf[4096];
 	ssize_t r;
 	SHA256_CTX ctx;
@@ -214,8 +214,8 @@ void tohex(unsigned char * in, size_t insz, char * out, size_t outsz)
 }
 
 void print_file(char *name, int indent) {
-	char hash[256];
-	char hashstr[513];
+	char hash[32];
+	char hashstr[65];
 
 	int fd = open(name, O_RDONLY);
 	if (fd < 0) {
@@ -223,7 +223,7 @@ void print_file(char *name, int indent) {
 		exit(0);
 	}
 	hash_file(hash, fd);
-	tohex(hash, 256, hashstr, 513);
+	tohex(hash, 32, hashstr, 65);
 	printf("%*s- %s: %s\n", indent, "", name, hashstr);
 }
 
