@@ -392,6 +392,13 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		printf("crt0: cleanup kludge active, please fix this ASAP\n");
 	}
 
+	// Fini_array will have wiped our bsd log. Let's avoid infinite loops.
+	// TODO: Make this better.
+	dbg_set_bsd_log(-1);
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+
 	// Clean up FS
 	root_inode.ops->release(root_inode.data);
 
