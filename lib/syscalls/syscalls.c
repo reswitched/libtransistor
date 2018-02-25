@@ -360,6 +360,11 @@ struct dirent *readdir(DIR *dirp) {
 	dirp->ent.d_ino = 0;
 	dirp->ent.d_namlen = trn_dirent.name_size;
 	memcpy(dirp->ent.d_name, trn_dirent.name, 256);
+	if (trn_dirent.name_size >= 256)
+		dirp->ent.d_name[255] = '\0';
+	else
+		dirp->ent.d_name[trn_dirent.name_size] = '\0';
+
 	return &dirp->ent;
 }
 
