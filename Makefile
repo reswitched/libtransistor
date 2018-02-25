@@ -1,3 +1,12 @@
+SOURCE_ROOT := ./
+BUILD_DIR := $(SOURCE_ROOT)/build/
+
+ifeq ($(LIBTRANSISTOR_HOME),)
+    LIBTRANSISTOR_HOME := $(realpath .)/dist
+else
+    LIBTRANSISTOR_HOME := $(realpath $(LIBTRANSISTOR_HOME))
+endif
+
 include libtransistor.mk
 
 # for building newlib and sdl
@@ -20,15 +29,18 @@ export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument -Wno-er
 
 default:
 
-include mk/lib.mk
-include mk/tests.mk
+include mk/dist.mk
+
 include mk/pthread.mk
 include mk/newlib.mk
 include mk/compiler-rt.mk
-include mk/sdl2.mk
 include mk/liblzma.mk
+include mk/sdl2.mk
 
-clean: clean_lib clean_test
+include mk/transistor.mk
+include mk/tests.mk
+
+clean: clean_transistor clean_test
 	rm -rf $(LIBTRANSISTOR_HOME)/docs
 
 distclean: clean clean_newlib clean_compiler-rt clean_pthread clean_sdl2
