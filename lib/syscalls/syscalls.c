@@ -12,7 +12,6 @@
 #include <malloc.h>
 #include <string.h>
 #include <reent.h>
-#include <stdio.h>
 
 #include<libtransistor/loader_config.h>
 #include<libtransistor/err.h>
@@ -328,7 +327,6 @@ DIR *opendir(const char *name) {
 	result_t r;
 	switch(r = trn_fs_opendir(&dir->dir, name)) {
 	case RESULT_OK:
-		printf("opendir success\n");
 		return dir;
 	case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
 	case LIBTRANSISTOR_ERR_FS_INVALID_PATH:
