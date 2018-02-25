@@ -58,18 +58,20 @@ char log_buffer[0x20000];
 int log_string(const char *string, size_t len) {
 	svcOutputDebugString((char*) string, len);
 	size_t start = log_length;
-	for(size_t i = 0; i < len; i++) {
+	for(size_t i = 0; i < len && log_length < sizeof(log_buffer) - 2; i++) {
 		if(string[i] == 0) { break; }
 		log_buffer[log_length++] = string[i];
 	}
-	log_buffer[log_length++] = '\n';
+	if (log_length < sizeof(log_buffer) - 1)
+		log_buffer[log_length++] = '\n';
 	if(bsd_log >= 0) {
 		int olddebug = ipc_debug_flag;
 		ipc_debug_flag = 0;
 		bsd_send(bsd_log, log_buffer + start, log_length - start, 0);
 		ipc_debug_flag = olddebug;
 	}
-	log_buffer[log_length] = 0;
+	if (log_length < sizeof(log_buffer))
+		log_buffer[log_length] = 0;
 	return 4;
 }
 
