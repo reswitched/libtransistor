@@ -4,6 +4,7 @@ import struct, sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import *
+from itertools import *
 import lz4.block
 
 R_AARCH64_ABS64 = 257
@@ -20,108 +21,108 @@ def main(input, output, format='nro'):
 
 	with open(input, 'rb') as f:
 		elffile = ELFFile(f)
-		elffile.iter_sections_by_type = lambda type: (x for x in elffile.iter_sections() if isinstance(x, type))
 
-		symbols = {}
-		symbolList = []
-		for x in elffile.iter_sections_by_type(SymbolTableSection):
-			for i, sym in enumerate(x.iter_symbols()):
-				sectaddr = elffile.get_section(sym['st_shndx'])['sh_addr'] if isinstance(sym['st_shndx'], int) else 0
-				symbols[sym.name] = sectaddr + sym['st_value']
-				symbolList.append(sym.name)
-
-		textCont, rodataCont, relaDynCont, dataCont, dynamicCont, dynstrCont, dynsymCont = [elffile.get_section_by_name(x).data() for x in (
-		        '.text', '.rodata', '.rela.dyn', '.data', '.dynamic', '.dynstr', '.dynsym')]
-		csec = dict(text=textCont, rodata=rodataCont, relaDyn=relaDynCont, data=dataCont, dynamic=dynamicCont, dynstr=dynstrCont, dynsym=dynsymCont)
-
-		def replace(tgt, offset, data):
-			orig = csec[tgt]
-			csec[tgt] = orig[:offset] + data + orig[offset + len(data):]
-
-		for x in elffile.iter_sections_by_type(RelocationSection):
-			tgtsect = elffile.get_section(x['sh_info'])
-			tgt = tgtsect.name[1:]
-			if tgt not in csec:
-				continue
-			for iter in x.iter_relocations():
-				symname = symbolList[iter['r_info_sym']]
-				if not symname.startswith('NORELOC_'):
-					continue
-
-				reloc_type = iter['r_info_type']
-				if reloc_type == R_AARCH64_PREL32:
-					replace(tgt, iter['r_offset'], struct.pack('<i', symbols[symname] + iter['r_addend'] - (
-							tgtsect['sh_addr'] + iter['r_offset'])))
-				elif reloc_type == R_AARCH64_ABS32:
-					replace(tgt, iter['r_offset'], struct.pack('<I', symbols[symname] + iter['r_addend']))
-				else:
-					print('Unknown relocation type!', reloc_type)
-					assert False
-
-		text, rodata, data = csec['text'], csec['rodata'], csec['data']
-
-		if len(rodata) & 0x7:
-			rodata += '\0'.encode() * (0x8 - (len(rodata) & 0x7))
-
-		rodata += csec['relaDyn']
-
-		if len(data) & 0x7:
-			data += '\0'.encode() * (0x8 - (len(data) & 0x7))
-
-		if len(text) & 0xFFF:
-			text += '\0'.encode() * (0x1000 - (len(text) & 0xFFF))
-		if len(rodata) & 0xFFF:
-			rodata += '\0'.encode() * (0x1000 - (len(rodata) & 0xFFF))
-
-		data += csec['dynamic']
-		if len(data) & 0xFFF:
-			data += '\0'.encode() * (0x1000 - (len(data) & 0xFFF))
-		data += csec['dynsym']
-		if len(data) & 0x7:
-			data += '\0'.encode() * (0x8 - (len(data) & 0x7))
-		data += csec['dynstr']
-
-		if len(data) & 0xFFF:
-			data += '\0'.encode() * (0x1000 - (len(data) & 0xFFF))
+		load_segments = list(filter(lambda x: x['p_type'] == 'PT_LOAD', elffile.iter_segments()))
 		
-		bssSize = elffile.get_section_by_name('.bss')['sh_size']
-		if bssSize & 0xFFF:
-			bssSize += 0x1000 - (bssSize & 0xFFF)
+		assert len(load_segments) == 4
 
+		code_segment = load_segments[0]
+		rodata_segment = load_segments[1]
+		data_segment = load_segments[2]
+		bss_segment = load_segments[3]
+
+		assert code_segment['p_vaddr'] & 0xFFF == 0
+		assert code_segment['p_flags'] == 5
+		
+		assert rodata_segment['p_vaddr'] & 0xFFF == 0
+		assert rodata_segment['p_flags'] == 4
+		
+		assert data_segment['p_vaddr'] & 0xFFF == 0
+		assert data_segment['p_flags'] == 6
+		
+		assert bss_segment['p_vaddr'] & 0xFFF == 0
+		assert bss_segment['p_filesz'] == 0
+		assert bss_segment['p_flags'] == 6
+
+		def page_pad(data):
+			return data + ('\0'.encode() * (((len(data) + 0xFFF) & ~0xFFF) - len(data)))
+		
+		code = page_pad(code_segment.data())
+		rodata = page_pad(rodata_segment.data())
+		data = page_pad(data_segment.data())
+		
 		if format == 'nro':
 			# text = text[0x80:]
 			with open(output, 'wb') as fp:
-				fp.write(text[:0x4]) # first branch instruction
-				fp.write(struct.pack('<III', len(text) + len(rodata) + 8, 0, 0))
+				dot = 0
+				
+				fp.write(code[:0x10]) # first branch instruction, mod0 offset, and padding
+				
+				# NRO header
 				fp.write('NRO0'.encode())
-				fp.write(struct.pack('<III', 0, len(text) + len(rodata) + len(data), 0))
-				fp.write(struct.pack('<II', 0, len(text)))	# exec segment
-				fp.write(struct.pack('<II', len(text), len(rodata))) # read only segment
-				fp.write(struct.pack('<II', len(text) + len(rodata), len(data))) # rw segment
-				fp.write(struct.pack('<II', bssSize, 0))
+				fp.write(struct.pack('<III', 0, len(code) + len(rodata) + len(data), 0))
+				
+				assert dot & 0xFFF == 0
+				assert code_segment['p_vaddr'] == dot
+				fp.write(struct.pack('<II', dot, len(code))) # exec segment
+				dot+= len(code)
+				
+				assert dot & 0xFFF == 0
+				assert rodata_segment['p_vaddr'] == dot
+				fp.write(struct.pack('<II', dot, len(rodata))) # read only segment
+				dot+= len(rodata)
+				
+				assert dot & 0xFFF == 0
+				assert data_segment['p_vaddr'] == dot
+				fp.write(struct.pack('<II', dot, len(data))) # rw segment
+				dot+= len(data)
+
+				assert dot & 0xFFF == 0
+				assert bss_segment['p_vaddr'] == dot
+				fp.write(struct.pack('<II', (bss_segment['p_memsz'] + 0xFFF) & ~0xFFF, 0))
+				
 				fp.write('\0'.encode() * 0x40)
-				fp.write(text[0x80:])
+				
+				fp.write(code[0x80:])
 				fp.write(rodata)
 				fp.write(data)
 		else:
 			with open(output, 'wb') as fp:
-				ctext, crodata, cdata = [lz4.block.compress(x, store_size=False) for x in (text, rodata, data)]
+				ccode, crodata, cdata = [lz4.block.compress(x, store_size=False) for x in (code, rodata, data)]
 
 				fp.write('NSO0'.encode())
 				fp.write('\0'.encode() * 0xC)
 
-				off = 0x101
-				fp.write(struct.pack('<IIII', off, 0, len(text), 0))
-				off += len(ctext)
-				fp.write(struct.pack('<IIII', off, len(text), len(rodata), 0))
-				off += len(crodata)
-				fp.write(struct.pack('<IIII', off, len(text) + len(rodata), len(data),
-									 symbols['NORELOC_BSS_END_'] - symbols['NORELOC_BSS_START_']))
-				fp.write('\0'.encode() * 0x20)
-				fp.write(struct.pack('<IIII', len(ctext), len(crodata), len(cdata), 0))
-				fp.write('\0'.encode() * 0x91)
+				off = 0x100
+				dot = 0
 
-				fp.write(ctext)
+				assert dot & 0xFFF == 0
+				assert code_segment['p_vaddr'] == dot
+				fp.write(struct.pack('<IIII', off, dot, len(code), 0))
+				off += len(ccode)
+				dot += len(code)
+
+				assert dot & 0xFFF == 0
+				assert rodata_segment['p_vaddr'] == dot
+				fp.write(struct.pack('<IIII', off, dot, len(rodata), 0))
+				off += len(crodata)
+				dot += len(rodata)
+
+				assert dot & 0xFFF == 0
+				assert data_segment['p_vaddr'] == dot
+				fp.write(struct.pack('<IIII', off, dot, len(data), (bss_segment['p_memsz'] + 0xFFF) & ~0xFFF))
+				off += len(cdata)
+				dot += len(data)
+
+				assert bss_segment['p_vaddr'] == dot
+
+				fp.write('\0'.encode() * 0x20)
+				
+				fp.write(struct.pack('<IIII', len(ccode), len(crodata), len(cdata), 0))
+				
+				fp.write('\0'.encode() * 0x90)
+
+				fp.write(ccode)
 				fp.write(crodata)
 				fp.write(cdata)
 
