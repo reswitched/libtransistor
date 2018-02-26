@@ -8,12 +8,40 @@
 #include<libtransistor/types.h>
 
 /**
- * @struct hid_touchscreen_t
- *
- * Currently a placeholder
+ * @struct hid_touch_data_entry_t
  */
 typedef struct {
-	uint8_t data[0x3000];
+	uint64_t timestamp;
+	uint32_t pad1;
+	uint32_t touch_idx;
+	uint32_t touch_x; /**< 0 is far left of screen, 1280 is far right. */
+	uint32_t touch_y; /**< 0 is top of screen, 720 is bottom. */
+	uint32_t touch_diameter_x;
+	uint32_t touch_diameter_y;
+	uint32_t touch_angle;
+	uint32_t pad2;
+} hid_touch_data_entry_t;
+
+/**
+ * @struct hid_touch_data_entry_t
+ */
+typedef struct {
+	uint64_t timestamp;
+	uint64_t num_touches;
+	hid_touch_data_entry_t touch_data[16];
+	uint64_t pad1;
+} hid_touch_entry_t;
+
+/**
+ * @struct hid_touchscreen_t
+ */
+typedef struct {
+	uint64_t unknown1;
+	uint64_t num_entries;
+	uint64_t latest_idx;
+	uint64_t max_idx;
+	uint64_t timestamp;
+	hid_touch_entry_t touch_entry[17];
 } hid_touchscreen_t;
 
 /**
@@ -109,6 +137,7 @@ typedef struct {
 typedef struct {
 	uint8_t pad1[0x400];
 	hid_touchscreen_t touchscreen;
+	uint8_t pad2[0x3c0];
 	hid_mouse_t mouse;
 	hid_keyboard_t keyboard;
 	uint8_t unknown1[0x400];
@@ -118,7 +147,7 @@ typedef struct {
 	uint8_t unknown5[0x200];
 	uint8_t unknown6[0x200];
 	uint8_t unknown7[0x200];
-	uint8_t pad2[0x800];
+	uint8_t pad3[0x800];
 	uint8_t controller_serials[0x4000];
 	hid_controller_t controllers[10];
 	uint8_t unknown8[0x4600];

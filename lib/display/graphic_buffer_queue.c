@@ -131,7 +131,7 @@ static result_t fence_unflatten(parcel_t *parcel, fence_t *fence) {
 	return RESULT_OK;
 }
 
-result_t igbp_request_buffer(igbp_t *igbp, int slot, int *status, graphic_buffer_t *gb) {
+result_t igbp_request_buffer(igbp_t *igbp, uint32_t slot, uint32_t *status, graphic_buffer_t *gb) {
 	result_t r;
 
 	parcel_t parcel;
@@ -159,7 +159,7 @@ result_t igbp_request_buffer(igbp_t *igbp, int slot, int *status, graphic_buffer
 	return RESULT_OK;
 }
 
-result_t igbp_dequeue_buffer(igbp_t *igbp, uint32_t width, uint32_t height, pixel_format_t pixel_format, uint32_t usage, bool get_frame_timestamps, int *status, int *slot, fence_t *fence, frame_event_history_delta_t *out_timestamps) {
+result_t igbp_dequeue_buffer(igbp_t *igbp, uint32_t width, uint32_t height, pixel_format_t pixel_format, uint32_t usage, bool get_frame_timestamps, uint32_t *status, uint32_t *slot, fence_t *fence, frame_event_history_delta_t *out_timestamps) {
 	if(get_frame_timestamps) {
 		return LIBTRANSISTOR_ERR_UNIMPLEMENTED;    
 	}
@@ -242,6 +242,31 @@ result_t igbp_connect(igbp_t *igbp, int api, bool producer_controlled_by_app, in
 	}
 
 	r = queue_buffer_output_unflatten(&response, qbo);
+	if(r) {
+		return r;
+	}
+
+	if(parcel_read_remaining(&response) < sizeof(uint32_t)) {
+		return LIBTRANSISTOR_ERR_PARCEL_DATA_UNDERRUN;
+	}
+
+	*status = parcel_read_u32(&response);
+
+	return RESULT_OK;
+}
+
+result_t igbp_disconnect(igbp_t *igbp, int api, disconnect_mode_t mode, int *status) {
+	result_t r;
+  
+	parcel_t parcel;
+	parcel_initialize(&parcel);
+
+	parcel_write_interface_token(&parcel, INTERFACE_TOKEN);
+	parcel_write_u32(&parcel, api);
+	parcel_write_u32(&parcel, mode);
+
+	parcel_t response;
+	r = binder_transact_parcel(&(igbp->igbp_binder), DISCONNECT, 0, &parcel, &response);
 	if(r) {
 		return r;
 	}

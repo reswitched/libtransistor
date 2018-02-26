@@ -40,7 +40,7 @@ static result_t dummy_inode_release(void *data) {
 static result_t dummy_inode_lookup(void *data, trn_inode_t *out, const char *name, size_t name_length) {
 	dummy_inode_t *inode = data;
 
-	printf("attempt to open %.*s under %s (%p)\n", name_length, name, inode->path, inode);
+	printf("attempt to open %.*s under %s (%p)\n", (int) name_length, name, inode->path, inode);
 	
 	dummy_inode_t *child_data = malloc(sizeof(*child_data));
 	if(child_data == NULL) {

@@ -26,4 +26,6 @@ void test_mutex() {
 int main() {
 	test_thread();
 	test_mutex();
+
+	return 0;
 }

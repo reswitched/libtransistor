@@ -1,5 +1,5 @@
 # libtransistor
-[![Build Status](https://travis-ci.org/reswitched/libtransistor.svg?branch=master)](https://travis-ci.org/reswitched/libtransistor) [![Chat on Discord](https://img.shields.io/badge/chat-Discord-brightgreen.svg)](https://discordapp.com/invite/ZdqEhed)
+[![Build Status](https://travis-ci.org/reswitched/libtransistor.svg?branch=development)](https://travis-ci.org/reswitched/libtransistor) [![Chat on Discord](https://img.shields.io/badge/chat-Discord-brightgreen.svg)](https://discordapp.com/invite/ZdqEhed)
 
 Libtransistor is a userland library for the Nintendo Switch. Currently, binaries can only be run under [Mephisto](https://github.com/reswitched/Mephisto) or with pegaswitch with ACE on 3.0.0.
 
@@ -16,7 +16,7 @@ First, clone the repo with
 git clone --recursive https://github.com/reswitched/libtransistor
 ```
 
-You will need Python 3 and the python packages listed in [`requirements.txt`](https://github.com/reswitched/libtransistor/blob/master/requirements.txt). You'll also need clang and lld >=5.0 (llvm linker).
+You will need Python 3 and the python packages listed in [`requirements.txt`](https://github.com/reswitched/libtransistor/blob/development/requirements.txt). You'll also need clang and lld >=5.0 (llvm linker).
 
 You *should* just be able to run `make`. If that doesn't work, submit an issue (or pull request). This will produce a number of `nro` and `nso` files in `build/test/`. These are binaries for the Nintendo Switch. NRO files are relocatable shared objects suitable for use with [ROhan](https://reswitched.tech/rohan). Both NRO and NSO binaries can be run under Mephisto, but NSO binaries don't get relocated properly at the moment and will crash pretty quickly.
 
@@ -40,6 +40,17 @@ If some of the cmake CXX tests fail, you may need to install the necessary depen
 sudo dnf -y install libstdc++-devel gcc-c++.x86_64
 ```
 
+### Building on Arch Linux
+
+You'll need to install some packages.
+```bash
+sudo pacman -S llvm clang lld python python-pip squashfs-tools base-devel git cmake
+```
+
+and you'll also need to install some python dependencies via pip.
+```bash
+pip install --user -r requirements.txt
+```
 ## Running
 
 ```

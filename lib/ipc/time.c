@@ -1,4 +1,5 @@
 #include<libtransistor/types.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/nifm.h>
 #include<libtransistor/ipc/sm.h>
@@ -16,6 +17,8 @@ system_clock_t *time_system_clock_local;
 static int time_initializations = 0;
 
 static result_t open_clock(ipc_object_t *time_object, system_clock_t *clock, uint32_t request_id) {
+	INITIALIZATION_GUARD(time);
+	
 	ipc_request_t rq = ipc_default_request;
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	
@@ -84,6 +87,8 @@ fail:
 }
 
 result_t time_system_clock_get_current_time(system_clock_t *system_clock, uint64_t *time) {
+	INITIALIZATION_GUARD(time);
+	
 	ipc_request_t rq = ipc_default_request;
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 
@@ -95,6 +100,8 @@ result_t time_system_clock_get_current_time(system_clock_t *system_clock, uint64
 }
 
 result_t time_system_clock_set_current_time(system_clock_t *system_clock, uint64_t time) {
+	INITIALIZATION_GUARD(time);
+	
 	ipc_request_t rq = ipc_default_request;
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 

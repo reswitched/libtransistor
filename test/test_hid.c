@@ -39,6 +39,14 @@ int main() {
 		hid_controller_t *num8 = controllers + 8;
 		hid_controller_state_entry_t ent = num8->main.entries[num8->main.latest_idx];
 		printf("num8: 0x%16lx, (%d, %d), (%d, %d)\n", ent.button_state, ent.left_stick_x, ent.left_stick_y, ent.right_stick_x, ent.right_stick_y);
+
+		hid_touchscreen_t touchscreen = hid_get_shared_memory()->touchscreen;
+		hid_touch_entry_t latest = touchscreen.touch_entry[touchscreen.latest_idx];
+		printf("Touch count: %lu %lu\n", latest.num_touches, touchscreen.latest_idx);
+		for (uint64_t j = 0; j < latest.num_touches; j++) {
+			printf("Touch %lu:\t(%u, %u)\n", j, latest.touch_data[j].touch_x, latest.touch_data[j].touch_y);
+		}
+
 		svcSleepThread(50000000);
 	}
 	

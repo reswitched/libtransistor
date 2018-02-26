@@ -64,4 +64,5 @@ result_t surface_dequeue_buffer(surface_t *surface, uint32_t **image);
 * @param surface Surface to submit buffer for
 */
 result_t surface_queue_buffer(surface_t *surface);
-// no surface_destroy() yet
+
+void surface_destroy(surface_t *surface);

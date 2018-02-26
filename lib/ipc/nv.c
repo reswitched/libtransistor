@@ -82,7 +82,11 @@ fail:
 	return r;
 }
 
+#define NV_INITIALIZATION_GUARD(value) if(nv_initializations <= 0) { nv_result = LIBTRANSISTOR_ERR_MODULE_NOT_INITIALIZED; return value; }
+
 int nv_open(const char *path) {
+	NV_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	ipc_buffer_t path_buffer;
@@ -119,6 +123,8 @@ int nv_open(const char *path) {
 }
 
 int nv_ioctl(int fd, uint32_t rqid, void *arg, size_t size) {
+	NV_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	ipc_buffer_t ioc_in_b;
@@ -158,6 +164,8 @@ int nv_ioctl(int fd, uint32_t rqid, void *arg, size_t size) {
 }
 
 int nv_close(int fd) {
+	NV_INITIALIZATION_GUARD(-1);
+	
 	result_t r;
 
 	int32_t raw[] = {fd};

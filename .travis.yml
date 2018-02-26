@@ -76,13 +76,30 @@ script:  make LD=ld.lld$LLVM_POSTFIX && LD=ld.lld$LLVM_POSTFIX make -C projects/
 after_success:
   # Once the build has passed, build the docs
   - if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then doxygen Doxyfile; fi
-
+  # Package tests for deployment
+  - cd build/test/
+  - tar czvf tests_nro.tar.gz test_*.nro
+  - tar czvf tests_nso.tar.gz test_*.nso
+  - cd ../../
+  
 deploy:
-  provider: pages
-  skip-cleanup: true
-  github-token: $GITHUB_TOKEN
-  local-dir: docs
-  target-branch: gh-pages
-  on:
-    branch: master
-    condition: $TRAVIS_OS_NAME = linux
+  - provider: pages
+    skip-cleanup: true
+    github-token: $GITHUB_TOKEN
+    local-dir: docs
+    target-branch: gh-pages
+    on:
+      branch: development
+      condition: $TRAVIS_OS_NAME = linux
+  - provider: releases
+    api_key: $GITHUB_TOKEN
+    file:
+      - "projects/ace_loader/ace.nro"
+      - "build/test/tests_nro.tar.gz"
+      - "build/test/tests_nso.tar.gz"
+    skip-cleanup: true
+    draft: true
+    tag_name: $TRAVIS_TAG
+    on:
+      tags: true
+      condition: $TRAVIS_OS_NAME = linux

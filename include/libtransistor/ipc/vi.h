@@ -60,6 +60,13 @@ result_t vi_create_stray_layer(uint32_t unknown, display_t *display, uint64_t *l
 result_t vi_open_layer(const char *display_name, uint64_t layer_id, aruid_t aruid, igbp_t *igbp);
 
 /**
+* @brief Close a managed layer
+*
+* @param layer_id ID of existing managed layer
+*/
+result_t vi_close_layer(uint64_t layer_id);
+
+/**
 * @brief Create a managed layer
 *
 * @param unknown Unknown

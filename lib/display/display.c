@@ -1,5 +1,6 @@
 #include<libtransistor/types.h>
 #include<libtransistor/util.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/vi.h>
 #include<libtransistor/display/display.h>
 
@@ -37,6 +38,8 @@ fail:
 }
 
 result_t display_open_layer(surface_t *surface) {
+	INITIALIZATION_GUARD(display);
+	
 	result_t r;
 
 	uint64_t layer_id;
@@ -71,16 +74,30 @@ result_t display_open_layer(surface_t *surface) {
 	return RESULT_OK;
 
 fail_surface:
-	// TODO: destroy
+	surface_destroy(surface);
+	// surface takes ownership of IGBP and layer
+	return r;
 fail_igbp:
-	// TODO: destroy
+	vi_adjust_refcount(igbp.igbp_binder.handle, -1, 1);
+	vi_close_layer(layer_id);
 fail_managed_layer:
 	vi_destroy_managed_layer(layer_id);
 fail:
 	return r;
 }
 
+void display_close_layer(surface_t *surface) {
+	INITIALIZATION_GUARD_RETURN_VOID(display);
+	
+	surface_destroy(surface);
+	vi_adjust_refcount(surface->igbp.igbp_binder.handle, -1, 1);
+	vi_close_layer(surface->layer_id);
+	vi_destroy_managed_layer(surface->layer_id);
+}
+
 result_t display_get_vsync_event(revent_h *event) {
+	INITIALIZATION_GUARD(display);
+	
 	if(display.vsync == 0) {
 		result_t r;
 		if((r = vi_get_display_vsync_event(&display)) != RESULT_OK) {

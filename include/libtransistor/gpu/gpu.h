@@ -38,6 +38,13 @@ result_t gpu_initialize();
 result_t gpu_buffer_initialize(gpu_buffer_t *gpu_b, void *addr, size_t size, uint32_t heapmask, uint32_t flags, uint32_t alignment, uint8_t kind);
 
 /**
+ * @brief Destroys a GPU buffer
+ *
+ * @param gpu_b GPU buffer to destroy
+ */
+result_t gpu_buffer_destroy(gpu_buffer_t *gpu_b, uint64_t *refcount, uint32_t *flags);
+
+/**
 * @brief Get a GPU buffer's ID
 *
 * @param gpu_b GPU buffer

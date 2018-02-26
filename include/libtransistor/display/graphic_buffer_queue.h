@@ -34,6 +34,17 @@ typedef enum {
 } pixel_format_t;
 
 /**
+ * @enum disconnect_mode_t
+ * @brief Disconnection mode
+ *
+ * https://source.android.com/reference/hidl/android/hardware/graphics/bufferqueue/1.0/IGraphicBufferProducer#disconnectmode
+ */
+typedef enum {
+	API,
+	ALL_LOCAL
+} disconnect_mode_t;
+
+/**
 * @struct compositor_timing_t
 * @brief Description here...
 *
@@ -102,7 +113,7 @@ typedef struct {
 *
 * https://source.android.com/reference/hidl/android/hardware/graphics/bufferqueue/1.0/IGraphicBufferProducer#requestbuffer
 */
-result_t igbp_request_buffer(igbp_t *igbp, int slot, int *status, graphic_buffer_t *gb);
+result_t igbp_request_buffer(igbp_t *igbp, uint32_t slot, uint32_t *status, graphic_buffer_t *gb);
 
 /**
 * @brief Dequeue a buffer from the IGraphicBufferProducer
@@ -120,7 +131,7 @@ result_t igbp_request_buffer(igbp_t *igbp, int slot, int *status, graphic_buffer
 *
 * https://source.android.com/reference/hidl/android/hardware/graphics/bufferqueue/1.0/IGraphicBufferProducer#dequeuebuffer
 */
-result_t igbp_dequeue_buffer(igbp_t *igbp, uint32_t width, uint32_t height, pixel_format_t pixel_format, uint32_t usage, bool get_frame_timestamps, int *status, int *slot, fence_t *fence, frame_event_history_delta_t *out_timestamps);
+result_t igbp_dequeue_buffer(igbp_t *igbp, uint32_t width, uint32_t height, pixel_format_t pixel_format, uint32_t usage, bool get_frame_timestamps, uint32_t *status, uint32_t *slot, fence_t *fence, frame_event_history_delta_t *out_timestamps);
 
 /**
 * @brief Queue a buffer to the IGraphicBufferProducer
@@ -170,6 +181,18 @@ result_t igbp_query(igbp_t *igbp, int what, int *status, int *value);
 * https://source.android.com/reference/hidl/android/hardware/graphics/bufferqueue/1.0/IGraphicBufferProducer#connect
 */
 result_t igbp_connect(igbp_t *igbp, int api, bool producer_controlled_by_app, int *status, queue_buffer_output_t *qbo);
+
+/**
+* @brief Disconnect from the IGraphicBufferProducer
+*
+* @param igbp IGBP to disconnect from
+* @param api Description
+* @param mode Disconnect mode
+* @param status Status output
+*
+* https://source.android.com/reference/hidl/android/hardware/graphics/bufferqueue/1.0/IGraphicBufferProducer#disconnect
+*/
+result_t igbp_disconnect(igbp_t *igbp, int api, disconnect_mode_t mode, int *status);
 
 /**
 * @brief Set a pre-allocated buffer on the IGraphicBufferProducer

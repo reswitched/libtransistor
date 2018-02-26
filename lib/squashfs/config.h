@@ -143,4 +143,4 @@
 /* #undef _LARGE_FILES */
 
 /* POSIX 2001 compatibility */
-#define _POSIX_C_SOURCE 200112L
+//#define _POSIX_C_SOURCE 200112L

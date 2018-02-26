@@ -1,83 +1,81 @@
 OUTPUT_FORMAT(elf64-littleaarch64)
+OUTPUT_ARCH(aarch64)
+ENTRY(_start)
+
+PHDRS
+{
+  text PT_LOAD FLAGS(5);
+  rodata PT_LOAD FLAGS(4);
+  data PT_LOAD FLAGS(6);
+  bss PT_LOAD FLAGS(6);
+}
 
 SECTIONS
 {
+  . = 0;
+
   .text : ALIGN(0x1000) {
-NORELOC_TEXT_START_ = .;
-    KEEP(crt0.nso.o(.text*))
-    KEEP(crt0.nro.o(.text*))
+    __text_start = .;
+    KEEP(crt0.nso.o(.text.jmp))
+    KEEP(crt0.nro.o(.text.jmp))
+
+    . = 0x4;
+    LONG(_mod_header - __text_start);
+
+    . = 0x80;
+
     *(.text .text*)
     *(.plt .plt*)
-NORELOC_TEXT_END_ = .;
   }
 
-  .rodata : ALIGN(0x1000) {
-NORELOC_RODATA_START_ = .;
-    *(.rodata .rodata*)
-    *(.gcc_except_table)
-NORELOC_RODATA_END_ = .;
-  }
+  /* Read-only sections */
 
-  .rela.dyn : ALIGN(8) {
-NORELOC_RELA_START_ = .;
-    *(.rela.dyn)
-  }
+  . = ALIGN(0x1000);
 
-  .data : ALIGN(0x1000) {
-NORELOC_DATA_START_ = .;
-    KEEP(crt0.nso.o(.data))
-    KEEP(crt0.nro.o(.data))
-    *(.data .data*)
-NORELOC_GOT_START_ = .;
-    *(.got .got*)
-NORELOC_GOT_PLT_START_ = .;
-    *(.got.plt .got.plt*)
-NORELOC_DATA_END_ = .;
+  .rodata : { *(.rodata .rodata*) } :rodata
+  .mod0 : {
+    KEEP(crt0.nso.o(.data.mod0))
+    KEEP(crt0.nro.o(.data.mod0))
   }
-
-  .dynamic : ALIGN(0x8) {
-NORELOC_DYNAMIC_START_ = .;
+  .hash : { *(.hash) }
+  .dynamic : {
+    __dynamic_start = .;
     *(.dynamic)
-NORELOC_DYNAMIC_END_ = .;
   }
+  .dynsym : { *(.dynsym .dynsym*) }
+  .dynstr : { *(.dynstr .dynstr*) }
+  .rela.dyn : { *(.rela.dyn) }
 
-  .dynsym : ALIGN(0x1000) {
-NORELOC_DYNSYM_START_ = .;
-    *(.dynsym .dynsym*)
-NORELOC_DYNSYM_END_ = .;
-  }
-
-  .dynstr : ALIGN(0x8) {
-NORELOC_DYNSTR_START_ = .;
-    *(.dynstr .dynstr*)
-NORELOC_DYNSTR_END_ = .;
-  }
-
-  .bss : ALIGN(0x1000) {
-NORELOC_BSS_START_ = .;
-    *(.bss)
-    *(COMMON)
-NORELOC_BSS_END_ = .;
-  }
-
-  .hash : {
-    *(.hash)
-  }
-
-  .eh_frame : ALIGN(0x1000) {
+  .eh_frame : {
     __eh_frame_start = .;
-    *(.eh_frame)
+    *(.eh_frame .eh_frame*)
     __eh_frame_end = .;
   }
 
-  .eh_frame_hdr : ALIGN(0x1000) {
+  .eh_frame_hdr : {
     __eh_frame_hdr_start = .;
-    *(.eh_frame_hdr)
+    *(.eh_frame_hdr .eh_frame_hdr*)
     __eh_frame_hdr_end = .;
   }
 
-  /DISCARD/ : {
-    *(.comment)
-    *(.note.GNU-stack)
-  }
+  /* Read-write sections */
+
+   . = ALIGN(0x1000);
+
+  .data : {
+    *(.data .data*)
+    *(.got .got*)
+    *(.got.plt .got.plt*)
+  } :data
+
+  /* BSS section */
+
+  . = ALIGN(0x1000);
+
+  .bss : {
+    __bss_start = .;
+    *(.bss .bss*)
+    *(COMMON)
+    __bss_end = .;
+  } :bss
 }
