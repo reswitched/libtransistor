@@ -19,9 +19,6 @@ SECTIONS
     KEEP(crt0.nso.o(.text.jmp))
     KEEP(crt0.nro.o(.text.jmp))
 
-    . = 0x4;
-    LONG(_mod_header - __text_start);
-
     . = 0x80;
 
     *(.text .text*)
