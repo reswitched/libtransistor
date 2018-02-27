@@ -7,6 +7,10 @@ else
     LIBTRANSISTOR_HOME := $(realpath $(LIBTRANSISTOR_HOME))
 endif
 
+ifeq ($(shell id -u), 0)
+   $(error "This script must not be run as root")
+endif
+
 include libtransistor.mk
 
 # for building newlib and sdl
@@ -25,7 +29,7 @@ export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument -Wno-er
 .SUFFIXES: # disable built-in rules
 .SECONDARY: # don't delete intermediate files
 
-.PHONY: all
+.PHONY: default
 
 default:
 
@@ -36,6 +40,8 @@ include mk/newlib.mk
 include mk/compiler-rt.mk
 include mk/liblzma.mk
 include mk/sdl2.mk
+include mk/openlibm.mk
+include mk/libcxx.mk
 
 include mk/transistor.mk
 include mk/tests.mk

@@ -87,6 +87,10 @@
  */
 #define PTHREAD_BARRIER_SERIAL_THREAD -1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Forward structure definitions.
  *
@@ -182,7 +186,7 @@ enum pthread_mutextype {
 /*
  * Thread function prototype definitions:
  */
-int		pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
+//int		pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
 int		pthread_attr_destroy(pthread_attr_t *);
 int		pthread_attr_getstack(const pthread_attr_t *,
 			void **, size_t *);
@@ -308,6 +312,10 @@ int		pthread_spin_unlock(pthread_spinlock_t *);
 
 #if __POSIX_VISIBLE >= 200112
 int		pthread_getcpuclockid(pthread_t, clockid_t *);
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #endif /* _PTHREAD_H_ */

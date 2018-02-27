@@ -1,10 +1,10 @@
 # LIBTRANSISTOR TESTS
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl sqfs_img audio_output init_fini_arrays fs_releases_inodes ipc_server pthread alloc_pages
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl sqfs_img audio_output init_fini_arrays fs_releases_inodes ipc_server pthread cpp alloc_pages unwind cpp_exceptions cpp_dynamic_memory
 
 # RUN RULES
 
-run_tests: run_helloworld_test run_hexdump_test run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test run_multiple_set_heap_size_test run_init_fini_arrays_test run_fs_releases_inodes_test run_alloc_pages_test
+run_tests: run_helloworld_test run_hexdump_test run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test run_multiple_set_heap_size_test run_init_fini_arrays_test run_fs_releases_inodes_test run_cpp_test run_alloc_pages_test run_unwind_test run_cpp_exceptions_test run_cpp_dynamic_memory_test
 
 run_bsd_test: $(BUILD_DIR)/test/test_bsd.nro $(SOURCE_ROOT)/test_helpers/bsd.rb
 	$(RUBY) $(SOURCE_ROOT)/test_helpers/bsd.rb $(MEPHISTO)
@@ -33,6 +33,10 @@ $(BUILD_DIR)/test/%.nso.so: $(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.squashfs.o
 $(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.d: $(SOURCE_ROOT)/test/%.c dist_transistor
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/test/$*.o $<
+
+$(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.d: $(SOURCE_ROOT)/test/%.cpp dist_transistor
+	mkdir -p $(@D)
+	$(CCC) $(CCC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/test/$*.o $<
 
 #include $(addprefix $(BUILD_DIR)/test/test_,$(addsuffix .d,$(libtransistor_TESTS)))
 

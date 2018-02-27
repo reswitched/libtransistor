@@ -69,6 +69,11 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 	uint64_t rela_count = 0;
 	bool found_rela = false;
 
+	const char mod_magic[] = "MOD0";
+	if(mod_header->magic != *((uint32_t*) mod_magic)) {
+		return true;
+	}
+	
 	while(dynamic->d_tag > 0) {
 		switch(dynamic->d_tag) {
 		case 4: // DT_HASH
