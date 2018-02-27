@@ -1,3 +1,7 @@
+ifeq ($(shell id -u), 0)
+   $(error "This script must not be run as root")
+endif
+
 include libtransistor.mk
 
 # for building newlib and sdl
