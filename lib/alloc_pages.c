@@ -336,6 +336,7 @@ rescan:
 
 			if(heap_size == 0) {
 				svcGetInfo(&heap_size, 5, 0xFFFF8001, 0);
+				AP_DEBUG("    - determined current heap size to be 0x%lx\n", heap_size);
 			}
 			
 			size_t original_heap_size = heap_size;
@@ -348,10 +349,14 @@ rescan:
 			if(heap_size < original_heap_size + min) {
 				heap_size = original_heap_size + min;
 			}
+
+			AP_DEBUG("    - growing to 0x%lx\n", heap_size);
 			
 			void *heap;
-			while(heap_size > original_heap_size && svcSetHeapSize(&heap, heap_size) != RESULT_OK) {
+			result_t r;
+			while(heap_size > original_heap_size && (r = svcSetHeapSize(&heap, heap_size)) != RESULT_OK) {
 				heap_size-= 0x20000;
+				AP_DEBUG("    - growing to 0x%lx (previously failed with 0x%x)\n", heap_size, r);
 			}
 			if(heap_size <= original_heap_size) {
 				AP_DEBUG("  - failed to grow heap\n");
