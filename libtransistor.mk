@@ -44,7 +44,7 @@ CPP_INCLUDES := \
 
 INCLUDES := $(SYS_INCLUDES) -I$(LIBTRANSISTOR_HOME)/include/ -I $(LIBTRANSISTOR_HOME)/build/sdl2_install/include/
 
-LD_FLAGS := -Bsymbolic --shared --no-gc-sections --no-undefined -T $(LIBTRANSISTOR_HOME)/link.T \
+LD_FLAGS := -Bsymbolic --shared --no-gc-sections --eh-frame-hdr --no-undefined -T $(LIBTRANSISTOR_HOME)/link.T \
 	-L $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/ \
 	-L $(LIBTRANSISTOR_HOME)/build/compiler-rt/lib/linux/ \
 	-L $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/ \
