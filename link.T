@@ -38,10 +38,6 @@ SECTIONS
     KEEP(crt0.nro.o(.data.mod0))
   }
   .hash : { *(.hash) }
-  .dynamic : {
-    __dynamic_start = .;
-    *(.dynamic)
-  }
   .dynsym : { *(.dynsym .dynsym*) }
   .dynstr : { *(.dynstr .dynstr*) }
   .rela.dyn : { *(.rela.dyn) }
@@ -67,6 +63,11 @@ SECTIONS
     *(.got .got*)
     *(.got.plt .got.plt*)
   } :data
+
+  .dynamic : {
+    __dynamic_start = .;
+    *(.dynamic)
+  }
 
   /* BSS section */
 
