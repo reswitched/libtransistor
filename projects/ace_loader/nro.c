@@ -29,7 +29,7 @@ thread_h aceloader_main_thread_handle;
 
 uint64_t nro_start()
 {
-	uint64_t (*entry)(loader_config_entry_t*, thread_h) = nro_base + 0x80;
+	uint64_t (*entry)(loader_config_entry_t*, thread_h) = nro_base;
 	uint64_t ret;
 
 	void *clean_heap = NULL;
