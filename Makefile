@@ -20,7 +20,7 @@ export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument -Wno-er
 .SUFFIXES: # disable built-in rules
 .SECONDARY: # don't delete intermediate files
 
-.PHONY: all
+.PHONY: default
 
 default:
 
@@ -31,6 +31,8 @@ include mk/newlib.mk
 include mk/compiler-rt.mk
 include mk/sdl2.mk
 include mk/liblzma.mk
+include mk/openlibm.mk
+include mk/libcxx.mk
 
 clean: clean_lib clean_test
 	rm -rf $(LIBTRANSISTOR_HOME)/docs

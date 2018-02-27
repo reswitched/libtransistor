@@ -13,3 +13,6 @@ projects/*
 # Ignore Project/ide files
 *.sublime-project
 *.sublime-workspace
+
+# Automake cache files
+xz/autom4te.cache/*

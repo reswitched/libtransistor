@@ -3,6 +3,7 @@ NORELOC__filestart:
 .global _start
 _start:
 	b start
+	.word _mod_header - _start
 
 .section .data.mod0
 	.word 0, 8
