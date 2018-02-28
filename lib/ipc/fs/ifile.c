@@ -53,7 +53,7 @@ result_t ifile_write(ifile_t obj, uint32_t in_unk0, uint64_t in_offset, uint64_t
 
 	uint8_t raw[24];
 	rq.raw_data = raw;
-	rq.raw_data_size = 20;
+	rq.raw_data_size = 24;
 
 	*(uint32_t*)(raw + 0) = in_unk0;
 	*(uint64_t*)(raw + 8) = in_offset;
