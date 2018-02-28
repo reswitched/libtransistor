@@ -2,6 +2,7 @@
 #include<libtransistor/util.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
+#include<libtransistor/tls.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/fs/blobfd.h>
@@ -23,6 +24,7 @@
 
 #include "default_squashfs_image.h"
 #include "squashfs/squashfuse.h"
+
 
 int main(int argc, char **argv);
 

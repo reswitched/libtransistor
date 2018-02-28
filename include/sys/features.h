@@ -315,7 +315,11 @@ extern "C" {
 #endif
 
 #define _POSIX_THREADS 1
-
+#define _POSIX_TIMERS 1
+#define _POSIX_MONOTONIC_CLOCK 1
+#define _POSIX_READER_WRITER_LOCKS 1
+#define _UNIX98_THREAD_MUTEX_ATTRIBUTES 1
+	
 #ifdef __cplusplus
 }
 #endif

@@ -20,29 +20,29 @@ run_%_test: $(BUILD_DIR)/test/test_%.nro
 
 # LINK RULES
 
-$(BUILD_DIR)/test/%.nro.so: $(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.squashfs.o dist_transistor
+$(BUILD_DIR)/test/%.nro.so: $(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.squashfs.o $(DIST)
 	mkdir -p $(@D)
 	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/$*.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS)
 
-$(BUILD_DIR)/test/%.nso.so: $(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.squashfs.o dist_transistor
+$(BUILD_DIR)/test/%.nso.so: $(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.squashfs.o $(DIST)
 	mkdir -p $(@D)
 	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/$*.squashfs.o $(LIBTRANSISTOR_NSO_LDFLAGS)
 
 # BUILD RULES
 
-$(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.d: $(SOURCE_ROOT)/test/%.c dist_transistor
+$(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.d: $(SOURCE_ROOT)/test/%.c $(DIST)
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/test/$*.o $<
 
-$(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.d: $(SOURCE_ROOT)/test/%.cpp dist_transistor
+$(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.d: $(SOURCE_ROOT)/test/%.cpp $(DIST)
 	mkdir -p $(@D)
-	$(CCC) $(CCC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/test/$*.o $<
+	$(CXX) $(CXX_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/test/$*.o $<
 
 #include $(addprefix $(BUILD_DIR)/test/test_,$(addsuffix .d,$(libtransistor_TESTS)))
 
 # SQUASHFS RULES
 
-$(BUILD_DIR)/test/%.squashfs.o: $(BUILD_DIR)/test/%.squashfs
+$(BUILD_DIR)/test/%.squashfs.o: $(BUILD_DIR)/test/%.squashfs $(LIBTRANSISTOR_HOME)/fs.T
 	mkdir -p $(@D)
 	$(LD) -s -r -b binary -m aarch64elf -T $(LIBTRANSISTOR_HOME)/fs.T -o $@ $<
 

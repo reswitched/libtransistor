@@ -33,18 +33,25 @@ export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument -Wno-er
 
 default:
 
-include mk/dist.mk
-
-include mk/pthread.mk
+include mk/transistor_support.mk
 include mk/newlib.mk
+include mk/transistor_headers.mk
+include mk/pthread.mk
 include mk/compiler-rt.mk
 include mk/liblzma.mk
 include mk/sdl2.mk
 include mk/openlibm.mk
 include mk/libcxx.mk
-
 include mk/transistor.mk
+
+DIST := $(DIST_TRANSISTOR_HEADERS) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREAD) $(DIST_NEWLIB) $(DIST_COMPILER_RT) $(DIST_LIBLZMA) $(DIST_OPENLIBM) $(DIST_LIBCXX) $(DIST_LIBCXXABI) $(DIST_LIBUNWIND) $(DIST_TRANSISTOR) $(DIST_SDL2)
+
 include mk/tests.mk
+
+dist: $(DIST)
+.PHONY: dist
+
+default: $(DIST)
 
 clean: clean_transistor clean_test
 	rm -rf $(LIBTRANSISTOR_HOME)/docs

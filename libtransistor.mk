@@ -23,7 +23,7 @@ MEPHISTO := ctu
 RUBY := ruby
 
 SYS_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/include/
-CPP_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/include/c++
+CPP_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/include/c++/v1/
 
 LD_FLAGS := -Bsymbolic --shared --no-gc-sections --eh-frame-hdr --no-undefined -T $(LIBTRANSISTOR_HOME)/link.T \
 	-L $(LIBTRANSISTOR_HOME)/lib/
@@ -37,15 +37,15 @@ AS_FLAGS := -arch=aarch64 -triple aarch64-none-switch
 CFLAGS := $(CC_FLAGS)
 CXXFLAGS := $(CXX_FLAGS)
 
-LIB_DEP_COMPILER_RT_BUILTINS := $(LIBTRANSISTOR_HOME)/build/compiler-rt/lib/linux/libclang_rt.builtins-aarch64.a
-LIB_DEP_SDL2 := $(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a
-LIB_DEP_NEWLIB_LIBC := $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a
-LIB_DEP_NEWLIB_LIBM := $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libm.a
-LIB_DEP_PTHREAD := $(LIBTRANSISTOR_HOME)/build/pthread/libpthread.a
-LIB_DEP_LIBLZMA := $(LIBTRANSISTOR_HOME)/build/xz/src/liblzma/.libs/liblzma.a
-LIB_DEP_LIBCXX := $(LIBTRANSISTOR_HOME)/build/libcxx/lib/libc++.a
-LIB_DEP_LIBCXXABI := $(LIBTRANSISTOR_HOME)/build/libcxxabi/lib/libc++abi.a
-LIB_DEP_LIBUNWIND := $(LIBTRANSISTOR_HOME)/build/libunwind/lib/libunwind.a
+LIB_DEP_COMPILER_RT_BUILTINS := $(LIBTRANSISTOR_HOME)/lib/libclang_rt.builtins-aarch64.a
+LIB_DEP_SDL2 := $(LIBTRANSISTOR_HOME)/lib/libSDL2.a
+LIB_DEP_NEWLIB_LIBC := $(LIBTRANSISTOR_HOME)/lib/libc.a
+LIB_DEP_NEWLIB_LIBM := $(LIBTRANSISTOR_HOME)/lib/libm.a
+LIB_DEP_PTHREAD := $(LIBTRANSISTOR_HOME)/lib/libpthread.a
+LIB_DEP_LIBLZMA := $(LIBTRANSISTOR_HOME)/lib/liblzma.a
+LIB_DEP_LIBCXX := $(LIBTRANSISTOR_HOME)/lib/libc++.a
+LIB_DEP_LIBCXXABI := $(LIBTRANSISTOR_HOME)/lib/libc++abi.a
+LIB_DEP_LIBUNWIND := $(LIBTRANSISTOR_HOME)/lib/libunwind.a
 CXX_LIB_DEPS := $(LIB_DEP_LIBCXX) $(LIB_DEP_LIBCXXABI) $(LIB_DEP_LIBUNWIND)
 LIBTRANSISTOR_COMMON_LIB_DEPS := $(LIB_DEP_NEWLIB_LIBC) $(LIB_DEP_NEWLIB_LIBM) $(LIB_DEP_COMPILER_RT_BUILTINS) $(LIB_DEP_SDL2) $(LIB_DEP_PTHREAD) $(LIB_DEP_LIBLZMA) $(CXX_LIB_DEPS) $(LIBTRANSISTOR_HOME)/link.T
 LIBTRANSISTOR_COMMON_LIBS := $(LIBTRANSISTOR_COMMON_LIB_DEPS) # for older Makefiles

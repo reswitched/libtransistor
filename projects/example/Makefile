@@ -1,5 +1,3 @@
-LIBTRANSISTOR_HOME=../../
-
 include $(LIBTRANSISTOR_HOME)/libtransistor.mk
 
 all: example.nro

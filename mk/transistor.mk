@@ -5,7 +5,7 @@ libtransistor_OBJECT_FILES := $(addprefix $(BUILD_DIR)/transistor/,$(libtransist
 
 libtransistor_WARNINGS := -Wall -Wextra -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-command-line-argument
 
-libtransistor_BUILD_DEPS := dist_pthread
+libtransistor_BUILD_DEPS := $(DIST_NEWLIB) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREAD) $(DIST_LIBLZMA) $(DIST_TRANSISTOR_HEADERS) $(DIST_TRANSISTOR_SUPPORT)
 
 # ARCHIVE RULES
 
@@ -25,31 +25,35 @@ $(libtransistor_TARGET_NSO): $(BUILD_DIR)/transistor/crt0.nso.o $(libtransistor_
 # BUILD RULES
 
 # Disable stack protector for crt0_common
-$(BUILD_DIR)/transistor/crt0_common.o $(BUILD_DIR)/transistor/crt0_common.d: $(SOURCE_ROOT)/lib/crt0_common.c dist_pthread
+$(BUILD_DIR)/transistor/crt0_common.o $(BUILD_DIR)/transistor/crt0_common.d: $(SOURCE_ROOT)/lib/crt0_common.c $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) -I$(LIBTRANSISTOR_HOME)/pthread/ -I$(LIBTRANSISTOR_HOME)/pthread/sys/switch/ $(libtransistor_WARNINGS) -MMD -MP -fno-stack-protector -c -o $(BUILD_DIR)/transistor/crt0_common.o $<
+	$(CC) $(CC_FLAGS) -I$(SOURCE_ROOT)/pthread/ -I$(SOURCE_ROOT)/pthread/sys/switch/ $(libtransistor_WARNINGS) -MMD -MP -fno-stack-protector -c -o $(BUILD_DIR)/transistor/crt0_common.o $<
 
-$(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.c dist_newlib
+$(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.c $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/transistor/$*.o $<
 
 #include $(libtransistor_OBJECT_FILES:.o=.d)
 
-$(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.S dist_newlib
+$(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.S $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)
 	$(AS) $(AS_FLAGS) $< -filetype=obj -o $(BUILD_DIR)/transistor/$*.o
 	touch $(BUILD_DIR)/transistor/$*.d
 
 # DIST RULES
 
-dist_transistor_headers: $(SOURCE_ROOT)/include/*
-	mkdir -p $(LIBTRANSISTOR_HOME)/include/
-	cp -rt $(LIBTRANSISTOR_HOME)/include/ $(SOURCE_ROOT)/include/*
+DIST_TRANSISTOR := $(DIST_TRANSISTOR_HEADERS) $(DIST_TRANSISTOR_SUPPORT) \
+	$(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.a \
+	$(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a \
 
-dist_transistor: $(libtransistor_TARGET_NRO) $(libtransistor_TARGET_NSO) dist_transistor_headers
-	install -Dt $(LIBTRANSISTOR_HOME)/lib/ $(libtransistor_TARGET_NRO) $(libtransistor_TARGET_NSO)
+$(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.a: $(libtransistor_TARGET_NRO)
+	install -TD $< $@
 
-.PHONY: dist_transistor_headers dist_transistor
+$(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a: $(libtransistor_TARGET_NSO)
+	install -TD $< $@
+
+.PHONY: dist_transistor
+dist_transistor: $(DIST_TRANSISTOR)
 
 # CLEAN RULES
 
