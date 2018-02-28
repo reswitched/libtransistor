@@ -1,12 +1,12 @@
 # SDL2
 
-$(LIB_DEP_SDL2): $(BUILD_DIR)/sdl2/Makefile
+$(LIB_DEP_SDL2): $(BUILD_DIR)/sdl2/Makefile $(DIST_TRANSISTOR_HEADERS)
 	$(MAKE) -C $(BUILD_DIR)/sdl2/
 	$(MAKE) -C $(BUILD_DIR)/sdl2/ install
 
 # "LDFLAGS=-L$(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/ -lc -lm" \
 
-$(BUILD_DIR)/sdl2/Makefile: $(DIST_NEWLIB) $(DIST_TRANSISTOR_SUPPORT) $(DIST_TRANSISTOR_HEADERS)
+$(BUILD_DIR)/sdl2/Makefile: $(DIST_NEWLIB) $(DIST_TRANSISTOR_SUPPORT)
 	mkdir -p $(@D)
 	cd $(@D); $(realpath $(SOURCE_ROOT))/sdl2/configure \
 		"CFLAGS=$(CFLAGS)" \
