@@ -13,7 +13,7 @@ typedef ipc_object_t ifilesystem_t;
 
 // TODO: Codegen structs
 
-result_t ifilesystem_create_file(ifilesystem_t obj, uint64_t in_mode, uint32_t in_size, const uint8_t in_path[0x301]);
+result_t ifilesystem_create_file(ifilesystem_t obj, uint32_t in_mode, uint64_t in_size, const uint8_t in_path[0x301]);
 result_t ifilesystem_delete_file(ifilesystem_t obj, const uint8_t in_path[0x301]);
 result_t ifilesystem_create_directory(ifilesystem_t obj, const uint8_t in_path[0x301]);
 result_t ifilesystem_delete_directory(ifilesystem_t obj, const uint8_t in_path[0x301]);

@@ -7,17 +7,17 @@
 #include<libtransistor/ipc/fs/ifilesystem.h>
 #include<string.h>
 
-result_t ifilesystem_create_file(ifilesystem_t obj, uint64_t in_mode, uint32_t in_size, const uint8_t in_path[0x301]) {
+result_t ifilesystem_create_file(ifilesystem_t obj, uint32_t in_mode, uint64_t in_size, const uint8_t in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 0;
 
-	uint8_t raw[12];
+	uint8_t raw[16];
 	rq.raw_data = raw;
-	rq.raw_data_size = 12;
+	rq.raw_data_size = 16;
 
-	*(uint64_t*)(raw + 0) = in_mode;
-	*(uint32_t*)(raw + 8) = in_size;
+	*(uint32_t*)(raw + 0) = in_mode;
+	*(uint64_t*)(raw + 8) = in_size;
 	ipc_buffer_t in_path_buf = {
 		.addr = in_path,
 		.size = 769,
