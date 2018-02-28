@@ -57,7 +57,7 @@ result_t ifile_write(ifile_t obj, uint32_t in_unk0, uint64_t in_offset, uint64_t
 
 	*(uint32_t*)(raw + 0) = in_unk0;
 	*(uint64_t*)(raw + 8) = in_offset;
-	*(uint32_t*)(raw + 16) = in_size;
+	*(uint64_t*)(raw + 16) = in_size;
 	ipc_buffer_t in_buf_buf = {
 		.addr = in_buf,
 		.size = in_buf_size,
