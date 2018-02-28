@@ -1,4 +1,4 @@
-LIBTRANSISTOR_HOME=../../
+LIBTRANSISTOR_HOME=../../dist/
 LIBNRO_SERVER_OBJ := nro.o sha256.o http.o server.o common_setup.o common_memory.o
 LIBNRO_SERVER := libnro_server.a
 WK_ACE_OBJ := wk_main.o wk_memory.o wk_asm.o
