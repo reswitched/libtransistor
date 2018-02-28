@@ -62,7 +62,7 @@ static result_t trn_fs_traverse(const char *path, size_t max_len, trn_traverse_t
 
 	result_t r;
 
-	while(segment[0] != 0) {
+	while(max_len > 0 && segment[0] != 0) {
 		seglen = 0;
 		while(max_len > 0 && segment[0] == '/') {
 			max_len--;
@@ -73,7 +73,7 @@ static result_t trn_fs_traverse(const char *path, size_t max_len, trn_traverse_t
 			seglen++;
 		}
 
-		if(max_len == 0 || seglen == 0) { // trailing slash
+		if(seglen == 0) { // trailing slash
 			break;
 		}
 
