@@ -135,12 +135,15 @@ static result_t fspfs_create_directory(void *data, const char *name) {
 	full_name[root_name_len + 1 + name_len] = '\0';
 	//full_name_len = root_name_len + 1 + name_len;
 
-	if ((r = ifilesystem_create_directory(inode->fs, full_name)) != RESULT_OK) {
-		printf("Got an error: %x\n", r);
-		return -EIO;
+	switch (r = ifilesystem_create_directory(inode->fs, full_name)) {
+		case RESULT_OK:
+			return RESULT_OK;
+		case FSPSRV_ERR_EXISTS:
+			return LIBTRANSISTOR_ERR_FS_PATH_EXISTS;
+		default:
+			printf("Got an error: %x\n", r);
+			return -EIO;
 	}
-
-	return RESULT_OK;
 }
 
 static result_t fspfs_open_as_file(void *data, int flags, int *fd) {

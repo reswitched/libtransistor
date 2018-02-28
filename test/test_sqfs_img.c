@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 	printf("fread: %d: %.*s\n", rd, rd, buf);
 
 	printf("Creating test directory\n");
-	if (mkdir("/sd/test_dir", 0777) == -1) {
+	if (mkdir("/sd/test_dir", 0777) == -1 && errno != EEXIST) {
 		printf("mkdir failure: %d\n", errno);
 		return 1;
 	}

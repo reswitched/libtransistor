@@ -380,6 +380,9 @@ int mkdir(const char *path, mode_t mode) {
 	switch(trn_fs_mkdir(path)) {
 	case RESULT_OK:
 		return 0;
+	case LIBTRANSISTOR_ERR_FS_PATH_EXISTS:
+		errno = EEXIST;
+		return -1;
 	}
 	errno = ENOSYS;
 	return -1;
