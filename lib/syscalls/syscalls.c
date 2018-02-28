@@ -307,7 +307,7 @@ char *realpath(const char *path, char *resolved_path) {
 	char **resolved_path_var = &resolved_path;
 	switch(trn_fs_realpath(path, resolved_path_var)) {
 	case RESULT_OK:
-		return resolved_path_var;
+		return *resolved_path_var;
 	case LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG:
 		errno = ENAMETOOLONG;
 		return NULL;
@@ -376,6 +376,11 @@ int closedir(DIR *dirp) {
 }
 
 int mkdir(const char *path, mode_t mode) {
-	errno = EROFS;
+	printf("Attempting to create directory %s\n", path);
+	switch(trn_fs_mkdir(path)) {
+	case RESULT_OK:
+		return 0;
+	}
+	errno = ENOSYS;
 	return -1;
 }

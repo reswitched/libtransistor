@@ -174,6 +174,57 @@ fail: // release inodes that were opened during traversal
 	return r;
 }
 
+void get_path_parent_child(char *path, char **out_parent, size_t *out_len_parent, char **out_child, size_t *out_child_len) {
+	char *path_end = path + strlen(path) - 1;
+	char *child;
+
+	while (path < path_end && *path_end == '/') {
+		// Skip trailing slashes
+		path_end--;
+	}
+
+	child = path_end;
+	while (path < child && *child != '/') {
+		// Get child path
+		child--;
+	}
+	*out_child = child + 1;
+	*out_child_len = (path_end - child + 1);
+	if (path < child - 1) {
+		// We have a parent
+		*out_parent = path;
+		*out_len_parent = child - path;
+	} else {
+		// Parent is CWD
+		*out_parent = "";
+		*out_len_parent = 0;
+	}
+}
+
+result_t trn_fs_mkdir(const char *path) {
+	result_t r;
+	trn_traverse_t traverse[MAX_RECURSION];
+	int borrowed_recursion = 0;
+	int traverse_recursion = 0;
+	char *parent_path, *child_path;
+	size_t parent_path_size, child_path_size;
+
+	get_path_parent_child(path, &parent_path, &parent_path_size, &child_path, &child_path_size);
+	printf("Parent is %.*s, child is %.*s\n", parent_path_size, parent_path, child_path_size, child_path);
+	if((r = trn_fs_traverse(parent_path, parent_path_size, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+		return r;
+	}
+
+	printf("Creating child\n");
+	r = traverse[traverse_recursion].inode.ops->create_directory(traverse[traverse_recursion].inode.data, child_path);
+
+	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
+		traverse[i].inode.ops->release(traverse[i].inode.data);
+	}
+	
+	return r;
+}
+
 result_t trn_fs_open(int *fd, const char *path, int flags) {
 	result_t r;
 	trn_traverse_t traverse[MAX_RECURSION];
@@ -182,31 +233,29 @@ result_t trn_fs_open(int *fd, const char *path, int flags) {
 
 	if (flags & O_CREAT) {
 		// Create file if it does not exist. First traverse to the parent.
-		char *last_component = strrchr(path, '/');
-		if (last_component == NULL) {
-			// create file named PATH in current directory
-		} else {
-			// TODO: Handle trailing slash case.
+		char *parent_path, *child;
+		size_t parent_path_size, child_path_size;
+		get_path_parent_child(path, &parent_path, &parent_path_size, &child, &child_path_size);
 
-			// Get inode of parent
-			if ((r = trn_fs_traverse(path, last_component - path, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK)
-				return r;
+		if ((r = trn_fs_traverse(parent_path, parent_path_size, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK)
+			return r;
 
-			// Create the child (fail if it already exists).
-			r = traverse[traverse_recursion].inode.ops->create_file(traverse[traverse_recursion].inode.data, last_component + 1);
+		// Create the child (fail if it already exists).
+		r = traverse[traverse_recursion].inode.ops->create_file(traverse[traverse_recursion].inode.data, child);
 
-			// TODO: Reuse borrow to open the file ?
-			for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
-				traverse[i].inode.ops->release(traverse[i].inode.data);
-			}
+		// TODO: Reuse borrow to open the file ?
+		for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
+			traverse[i].inode.ops->release(traverse[i].inode.data);
+		}
 
-			if (r != RESULT_OK) {
-				// Failed to create the file. If it's because it already exists,
-				// we should *not*, in fact, fail. < TODO
-				return r;
-			}
+		if (r != RESULT_OK) {
+			// Failed to create the file. If it's because it already exists,
+			// we should *not*, in fact, fail. < TODO
+			return r;
 		}
 	}
+
+	// TODO: Handle O_TRUNC
 
 	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;

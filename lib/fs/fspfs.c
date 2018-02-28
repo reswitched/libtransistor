@@ -109,6 +109,35 @@ static result_t fspfs_create_file(void *data, const char *name) {
 	return RESULT_OK;
 }
 
+static result_t fspfs_create_directory(void *data, const char *name) {
+	struct inode *inode = (struct inode*)data;
+	result_t r;
+	char full_name[0x301];
+	size_t name_len = strlen(name), root_name_len;
+	char *root_name;
+
+	if (strcmp(inode->name, "/") == 0) {
+		root_name = "";
+		root_name_len = 0;
+	} else {
+		root_name = inode->name;
+		root_name_len = inode->name_len;
+	}
+
+	strncpy(full_name, root_name, root_name_len);
+	full_name[root_name_len] = '/';
+	strncpy(full_name + root_name_len + 1, name, name_len);
+	full_name[root_name_len + 1 + name_len] = '\0';
+	//full_name_len = root_name_len + 1 + name_len;
+
+	if ((r = ifilesystem_create_directory(inode->fs, full_name)) != RESULT_OK) {
+		printf("Got an error: %x\n", r);
+		return -EIO;
+	}
+
+	return RESULT_OK;
+}
+
 static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	struct inode *inode = (struct inode*)data;
 	result_t r;
@@ -283,6 +312,7 @@ static trn_inode_ops_t fspfs_inode_ops = {
 	.lookup = fspfs_lookup,
 	.release = fspfs_release,
 	.create_file = fspfs_create_file,
+	.create_directory = fspfs_create_directory,
 	.open_as_file = fspfs_open_as_file,
 	.open_as_dir = fspfs_open_as_dir
 };

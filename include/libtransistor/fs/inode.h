@@ -31,6 +31,7 @@ typedef struct trn_inode_ops_t {
 	result_t (*lookup)(void *inode, trn_inode_t *out, const char *name, size_t name_length);
 	result_t (*release)(void *inode);
 	result_t (*create_file)(void *inode, const char *name);
+	result_t (*create_directory)(void *inode, const char *name);
 
 	/*
 	  Objects returned from these functions must not be invalidated if the inode is closed

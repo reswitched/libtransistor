@@ -8,6 +8,7 @@
 #include<dirent.h>
 #include<fcntl.h>
 #include<unistd.h>
+#include<string.h>
 
 #include"../lib/squashfs/squashfuse.h"
 
@@ -74,6 +75,26 @@ int main(int argc, char *argv[]) {
 	}
 	printf("fread: %d: %.*s\n", rd, rd, buf);
 
+	printf("Creating test directory\n");
+	if (mkdir("/sd/test_dir", 0777) == -1) {
+		printf("mkdir failure: %d\n", errno);
+		return 1;
+	}
+
+	printf("Trying to write file on sd\n");
+	char *msg = "This is a cute test\n";
+	f = fopen("/sd/test_dir/test.txt", "wb");
+	if (f == NULL) {
+		printf("fopen failure: %d\n", errno);
+		return 1;
+	}
+	rd = fwrite(msg, 1, strlen(msg), f);
+	if(rd == 0) {
+		printf("fwrite failure\n");
+		return 1;
+	}
+	fclose(f);
+
 	printf("Opening /sd through Unix\n");
 	if (ls("/sd"))
 		printf("WTF ERROR\n");
@@ -81,7 +102,7 @@ int main(int argc, char *argv[]) {
 		printf("WTF ERROR2\n");
 
 	printf("Tryng to open file on sd\n");
-	f = fopen("/sd/test.txt", "rb");
+	f = fopen("/sd/test_dir/test.txt", "rb");
 	if(f == NULL) {
 		printf("fopen failure: %d\n", errno);
 		return 1;
@@ -91,5 +112,5 @@ int main(int argc, char *argv[]) {
 		printf("fread failure\n");
 		return 1;
 	}
-	return 0;
+	fclose(f);
 }
