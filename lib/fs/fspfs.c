@@ -67,9 +67,12 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 	new_inode->name[root_name_len + 1 + name_len] = '\0';
 	new_inode->name_len = l;
 
-	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->name)) != RESULT_OK)
+	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->name)) != RESULT_OK) {
+		printf("Got an error: %x\n", r);
+		r = -EIO;
 		// TODO: ERRNOTFOUND
 		goto fail;
+	}
 
 	new_inode->is_dir = type == 0;
 
@@ -103,8 +106,10 @@ static result_t fspfs_create_file(void *data, const char *name) {
 	full_name[root_name_len + 1 + name_len] = '\0';
 	//full_name_len = root_name_len + 1 + name_len;
 
-	if ((r = ifilesystem_create_file(inode->fs, 0, 0, full_name)) != RESULT_OK)
-		return r;
+	if ((r = ifilesystem_create_file(inode->fs, 0, 0, full_name)) != RESULT_OK) {
+		printf("Got an error: %x\n", r);
+		return -EIO;
+	}
 
 	return RESULT_OK;
 }
@@ -159,8 +164,11 @@ static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	if (f == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
-	if ((r = ifilesystem_open_file(inode->fs, &f->file, ifs_flags, inode->name)) != RESULT_OK)
+	if ((r = ifilesystem_open_file(inode->fs, &f->file, ifs_flags, inode->name)) != RESULT_OK) {
+		printf("Got an error: %x\n", r);
+		r = -EIO;
 		goto fail;
+	}
 
 	// TODO: if O_APPEND is set, we should set head to the end.
 	f->head = 0;
@@ -189,8 +197,11 @@ static result_t fspfs_open_as_dir(void *data, trn_dir_t *out) {
 	if (dir == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
-	if ((r = ifilesystem_open_directory(inode->fs, dir, 3, inode->name)) != RESULT_OK)
+	if ((r = ifilesystem_open_directory(inode->fs, dir, 3, inode->name)) != RESULT_OK) {
+		printf("Got an error: %x\n", r);
+		r = -EIO;
 		goto fail;
+	}
 
 	out->data = (void*)dir;
 	out->ops = &trn_fspfs_dir_ops;
