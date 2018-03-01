@@ -225,6 +225,42 @@ result_t trn_fs_mkdir(const char *path) {
 	return r;
 }
 
+result_t trn_fs_unlink(const char *path) {
+	result_t r;
+	trn_traverse_t traverse[MAX_RECURSION];
+	int borrowed_recursion = 0;
+	int traverse_recursion = 0;
+	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+		return r;
+	}
+	
+	r = traverse[traverse_recursion].inode.ops->remove_file(traverse[traverse_recursion].inode.data);
+
+	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
+		traverse[i].inode.ops->release(traverse[i].inode.data);
+	}
+
+	return r;
+}
+
+result_t trn_fs_rmdir(const char *path) {
+	result_t r;
+	trn_traverse_t traverse[MAX_RECURSION];
+	int borrowed_recursion = 0;
+	int traverse_recursion = 0;
+	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+		return r;
+	}
+	
+	r = traverse[traverse_recursion].inode.ops->remove_empty_dir(traverse[traverse_recursion].inode.data);
+
+	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
+		traverse[i].inode.ops->release(traverse[i].inode.data);
+	}
+
+	return r;
+}
+
 result_t trn_fs_open(int *fd, const char *path, int flags) {
 	result_t r;
 	trn_traverse_t traverse[MAX_RECURSION];
@@ -249,13 +285,12 @@ result_t trn_fs_open(int *fd, const char *path, int flags) {
 		}
 
 		if (r != RESULT_OK) {
-			// Failed to create the file. If it's because it already exists,
-			// we should *not*, in fact, fail. < TODO
+			// TODO: Failed to create the file. If it's because it already
+			// exists, we should *not*, in fact, fail, unless O_EXCL was
+			// specified.
 			return r;
 		}
 	}
-
-	// TODO: Handle O_TRUNC
 
 	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;

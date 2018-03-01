@@ -150,6 +150,7 @@ static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	struct inode *inode = (struct inode*)data;
 	result_t r;
 	uint32_t ifs_flags;
+	uint64_t file_size;
 
 	if (inode->is_dir)
 		return LIBTRANSISTOR_ERR_FS_NOT_A_FILE;
@@ -169,12 +170,25 @@ static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 
 	if ((r = ifilesystem_open_file(inode->fs, &f->file, ifs_flags, inode->name)) != RESULT_OK) {
 		printf("Got an error: %x\n", r);
-		r = -EIO;
 		goto fail;
 	}
 
-	// TODO: if O_APPEND is set, we should set head to the end.
-	f->head = 0;
+	if (flags & O_TRUNC) {
+		if ((r = ifile_set_size(f->file, 0)) != RESULT_OK) {
+			printf("Got an error: %x\n", r);
+			goto fail;
+		}
+	}
+
+	if (flags & O_APPEND) {
+		if ((r = ifile_get_size(f->file, &file_size)) != RESULT_OK) {
+			printf("Got an error: %x\n", r);
+			goto fail;
+		}
+		f->head = file_size;
+	} else {
+		f->head = 0;
+	}
 
 	*fd = fd_create_file(&fspfs_file_ops, f);
 	if (*fd < 0)
