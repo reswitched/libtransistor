@@ -60,7 +60,7 @@ install:
     - export PATH=$PATH:$DOXY_BINPATH
 
 before_script:
-  - wget $(curl -s https://api.github.com/repos/reswitched/Mephisto/releases/latest | jq -r '.assets[] | select(.name=="ctu_$TRAVIS_OS_NAME") | .browser_download_url')
+  - wget $(curl -s https://api.github.com/repos/reswitched/Mephisto/releases/latest | jq -r ".assets[] | select(.name==\"ctu_$TRAVIS_OS_NAME\") | .browser_download_url")
   - chmod +x ctu_$TRAVIS_OS_NAME
   - sudo pip3 install -r  requirements.txt
   
