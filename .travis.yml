@@ -30,6 +30,7 @@ addons:
       - graphviz
       - python3
       - python3-pip
+      - jq
 install:
     # Set postfix variable
     - export LLVM_POSTFIX=-5.0
@@ -59,19 +60,11 @@ install:
     - export PATH=$PATH:$DOXY_BINPATH
 
 before_script:
-  - git clone https://github.com/reswitched/unicorn.git
-  - cd unicorn
-  - UNICORN_ARCHS="aarch64" ./make.sh
-  - sudo ./make.sh install
-  - cd ..
-  - git clone https://github.com/reswitched/Mephisto.git
-  - cd Mephisto
-  - sudo pip2 install -r  requirements.txt
-  - make CC=clang++$LLVM_POSTFIX LD=ld.lld$LLVM_POSTFIX
-  - cd ..
+  - wget `curl -s https://api.github.com/repos/reswitched/Mephisto/releases/latest | jq -r '.assets[] | select(.name=="ctu_$TRAVIS_OS_NAME") | .browser_download_url'`
+  - chmod +x ctu_$TRAVIS_OS_NAME
   - sudo pip3 install -r  requirements.txt
   
-script:  make LD=ld.lld$LLVM_POSTFIX && LD=ld.lld$LLVM_POSTFIX make -C projects/ace_loader && make run_tests MEPHISTO=./Mephisto/ctu
+script:  make LD=ld.lld$LLVM_POSTFIX && LD=ld.lld$LLVM_POSTFIX make -C projects/ace_loader && make run_tests MEPHISTO=./ctu_$TRAVIS_OS_NAME
 
 after_success:
   # Once the build has passed, build the docs
@@ -80,7 +73,13 @@ after_success:
   - cd build/test/
   - tar czvf tests_nro.tar.gz test_*.nro
   - tar czvf tests_nso.tar.gz test_*.nso
+  - zip tests_nro.zip test_*.nro
+  - zip tests_nso.zip test_*.nso
   - cd ../../
+  - cd dist/
+  - tar czvf ../libtransistor_$TRAVIS_TAG.tar.gz ./
+  - zip -r ../libtransistor_$TRAVIS_TAG.zip ./
+  - cd ../
   
 deploy:
   - provider: pages
@@ -94,9 +93,14 @@ deploy:
   - provider: releases
     api_key: $GITHUB_TOKEN
     file:
-      - "projects/ace_loader/ace.nro"
+      - "projects/ace_loader/wk_ace.nro"
+      - "projects/ace_loader/sysmod_ace.nro"
+      - "libtransistor_$TRAVIS_TAG.tar.gz"
       - "build/test/tests_nro.tar.gz"
       - "build/test/tests_nso.tar.gz"
+      - "libtransistor_$TRAVIS_TAG.zip"
+      - "build/test/tests_nro.zip"
+      - "build/test/tests_nso.zip"
     skip-cleanup: true
     draft: true
     tag_name: $TRAVIS_TAG
