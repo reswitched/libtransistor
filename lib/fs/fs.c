@@ -284,10 +284,7 @@ result_t trn_fs_open(int *fd, const char *path, int flags) {
 			traverse[i].inode.ops->release(traverse[i].inode.data);
 		}
 
-		if (r != RESULT_OK) {
-			// TODO: Failed to create the file. If it's because it already
-			// exists, we should *not*, in fact, fail, unless O_EXCL was
-			// specified.
+		if (r != RESULT_OK && (flags & O_EXCL || r != LIBTRANSISTOR_ERR_FS_PATH_EXISTS)) {
 			return r;
 		}
 	}
