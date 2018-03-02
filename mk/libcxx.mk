@@ -25,7 +25,8 @@ DIST_LIBUNWIND := $(LIB_DEP_LIBUNWIND) \
 	$(LIBTRANSISTOR_HOME)/include/__libunwind_config.h
 
 $(LIBTRANSISTOR_HOME)/include/%: $(SOURCE_ROOT)/libunwind/include/%
-	install -TD $< $@
+	install -d $(@D)
+	install $< $@
 
 .PHONY: dist_libcxx dist_libcxxabi dist_libunwind
 dist_libcxx: $(DIST_LIBCXX)

@@ -30,10 +30,12 @@ DIST_PTHREAD_HEADERS := $(addprefix $(LIBTRANSISTOR_HOME)/include/,$(pthread_HEA
 DIST_PTHREAD := $(LIBTRANSISTOR_HOME)/lib/libpthread.a
 
 $(LIBTRANSISTOR_HOME)/lib/libpthread.a: $(pthread_TARGET)
-	install -TD $< $@
+	install -d $(@D)
+	install $< $@
 
 $(LIBTRANSISTOR_HOME)/include/%: $(SOURCE_ROOT)/pthread/include/%
-	install -TD $< $@
+	install -d $(@D)
+	install $< $@
 
 .PHONY: dist_pthread_headers dist_pthread
 dist_pthread_headers: $(DIST_PTHREAD_HEADERS)

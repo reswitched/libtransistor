@@ -12,19 +12,20 @@ DIST_TRANSISTOR_SUPPORT := $(addprefix $(LIBTRANSISTOR_HOME)/include/,$(libtrans
 	$(LIBTRANSISTOR_HOME)/tools/elf2nxo.py
 
 $(LIBTRANSISTOR_HOME)/libtransistor.mk: libtransistor.mk
-	install -TD $< $@
+	install $< $@
 
 $(LIBTRANSISTOR_HOME)/link.T: link.T
-	install -TD $< $@
+	install $< $@
 
 $(LIBTRANSISTOR_HOME)/fs.T: fs.T
-	install -TD $< $@
+	install $< $@
 
 $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py: tools/elf2nxo.py
-	install -TD $< $@
+	install -d $(@D)
+	install $< $@
 
 $(LIBTRANSISTOR_HOME)/include/%: $(SOURCE_ROOT)/include/%
-	install -TD $< $@
+	install $< $@
 
 .PHONY: dist_transistor_support
 dist_transistor_support: $(DIST_TRANSISTOR_SUPPORT)

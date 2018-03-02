@@ -5,7 +5,8 @@ libtransistor_HEADER_NAMES := alloc_pages.h gpu/gpu.h gpu/nv_ioc.h ipc.h fs/squa
 DIST_TRANSISTOR_HEADERS := $(addprefix $(LIBTRANSISTOR_HOME)/include/libtransistor/,$(libtransistor_HEADER_NAMES))
 
 $(LIBTRANSISTOR_HOME)/include/%: $(SOURCE_ROOT)/include/%
-	install -TD $< $@
+	install -d $(@D)
+	install $< $@
 
 .PHONY: dist_transistor_headers
 dist_transistor_headers: $(DIST_TRANSISTOR_HEADERS)

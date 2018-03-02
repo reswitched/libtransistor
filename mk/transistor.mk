@@ -47,10 +47,12 @@ DIST_TRANSISTOR := $(DIST_TRANSISTOR_HEADERS) $(DIST_TRANSISTOR_SUPPORT) \
 	$(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a \
 
 $(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.a: $(libtransistor_TARGET_NRO)
-	install -TD $< $@
+	install -d $(@D)
+	install $< $@
 
 $(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a: $(libtransistor_TARGET_NSO)
-	install -TD $< $@
+	install -d $(@D)
+	install $< $@
 
 .PHONY: dist_transistor
 dist_transistor: $(DIST_TRANSISTOR)

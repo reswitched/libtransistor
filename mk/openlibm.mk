@@ -26,13 +26,15 @@ DIST_OPENLIBM := $(LIBTRANSISTOR_HOME)/lib/libm.a $(LIBTRANSISTOR_HOME)/openlibm
 # this is terrible.
 # force newlib to install before us
 $(DIST_OPENLIBM): $(LIBTRANSISTOR_HOME)/lib/libc.a $(BUILD_DIR)/openlibm/libm.a
-	install -TD $(LIBTRANSISTOR_HOME)/lib/libm.a $(BUILD_DIR)/openlibm/libm.a
-	install -Dt $(LIBTRANSISTOR_HOME)/include/ $(addprefix $(SOURCE_ROOT)/openlibm/include/,$(openlibm_HEADERS))
+	install -d $(@D)
+	install $(BUILD_DIR)/openlibm/libm.a $(LIBTRANSISTOR_HOME)/lib/libm.a
+	install $(addprefix $(SOURCE_ROOT)/openlibm/include/,$(openlibm_HEADERS)) $(LIBTRANSISTOR_HOME)/include/
 	touch $(LIBTRANSISTOR_HOME)/openlibm_flag
 	touch $(LIBTRANSISTOR_HOME)/lib/libm.a
 
 $(LIBTRANSISTOR_HOME)/include/%: $(SOURCE_ROOT)/openlibm/include/%
-	install -TD $< $@
+	install -d $(@D)
+	install $< $@
 
 .PHONY: dist_openlibm
 dist_openlibm: $(DIST_OPENLIBM)
