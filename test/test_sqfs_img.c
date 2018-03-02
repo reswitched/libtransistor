@@ -113,4 +113,93 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	fclose(f);
+	if (strncmp(buf, "This is a cute test\n", sizeof(*buf)) != 0)
+		printf("We read something different!\n");
+
+	printf("Attempting to append to file!\n");
+	fd = open("/sd/test_dir/test.txt", O_WRONLY | O_APPEND);
+	msg = "And this is a cute append\n";
+	if (write(fd, msg, sizeof(msg)) <= 0)
+		printf("Failed to write! %d\n", errno);
+	close(fd);
+	f = fopen("/sd/test_dir/test.txt", "rb");
+	if(f == NULL) {
+		printf("fopen failure: %d\n", errno);
+		return 1;
+	}
+	rd = fread(buf, sizeof(*buf), sizeof(buf)/sizeof(*buf), f);
+	if(rd == 0) {
+		printf("fread failure\n");
+		return 1;
+	}
+	fclose(f);
+	if (strncmp(buf, "This is a cute test\nAnd this is a cute append\n", rd) != 0) {
+		printf("We read something different!\n");
+		return 1;
+	}
+
+	printf("Finally, let's do a truncating open!\n");
+	fd = open("/sd/test_dir/test.txt", O_WRONLY | O_TRUNC);
+	msg = "A cute truncation now\n";
+	if (write(fd, msg, sizeof(msg)) <= 0) {
+		printf("Failed to write! %d\n", errno);
+		return 1;
+	}
+	close(fd);
+	f = fopen("/sd/test_dir/test.txt", "rb");
+	if(f == NULL) {
+		printf("fopen failure: %d\n", errno);
+		return 1;
+	}
+	rd = fread(buf, sizeof(*buf), sizeof(buf)/sizeof(*buf), f);
+	if(rd == 0) {
+		printf("fread failure\n");
+		return 1;
+	}
+	fclose(f);
+	if (strncmp(buf, "A cute truncation now\n", rd) != 0) {
+		printf("We read something different! %.*s\n", rd, buf);
+		return 1;
+	}
+
+	printf("Delete a file now\n");
+	if (unlink("/sd/test_dir/test.txt") == -1) {
+		printf("Error deleting file: %d\n", errno);
+		return 1;
+	}
+
+	struct stat _stat;
+
+	// Make sure the file is deleted by stating it and making sure it returns
+	// ENOENT
+	if (stat("/sd/test_dir/test.txt", &_stat) != -1 || errno != ENOENT) {
+		printf("File was not *actually* deleted! %d\n", errno);
+		return 1;
+	}
+
+	printf("Ensure we fail deleting a non-empty directory\n");
+	fd = open("/sd/test_dir/empty", O_CREAT | O_RDWR);
+	if (fd < 0) {
+		printf("Failed to create file! %d\n", errno);
+		return 1;
+	}
+	close(fd);
+	if (rmdir("/sd/test_dir") == 0 || errno != ENOTEMPTY) {
+		printf("Failed to fail to delete directory!\n");
+		return 1;
+	}
+	if (unlink("/sd/test_dir/empty") < 0) {
+		printf("Error deleting file: %d\n", errno);
+		return 1;
+	}
+	printf("Ensure we can delete a directory\n");
+	if (rmdir("/sd/test_dir") == -1) {
+		printf("Failed to delete directory! %d\n", errno);
+		return 1;
+	}
+	if (stat("/sd/test_dir", &_stat) != -1 || errno != ENOENT) {
+		printf("Directory was not *actually* deleted! %d\n", errno);
+		return 1;
+	}
+	return 0;
 }

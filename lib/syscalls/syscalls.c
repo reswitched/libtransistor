@@ -187,8 +187,13 @@ clock_t _times_r(struct _reent *reent, struct tms *buf) {
 }
 
 int _unlink_r(struct _reent *reent, const char *name) {
-	reent->_errno = ENOSYS;
-	return -1;
+	result_t r;
+
+	if ((r = trn_fs_unlink(name)) != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
+		return -1;
+	}
+	return 0;
 }
 
 int _wait_r(struct _reent *reent, int *status) {
@@ -246,6 +251,16 @@ int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__
 	p->tv_sec = time;
 	// No usec support on here :(.
 	p->tv_usec = 0;
+	return 0;
+}
+
+int rmdir(const char *path) {
+	result_t r;
+
+	if ((r = trn_fs_rmdir(path)) != RESULT_OK) {
+		errno = trn_result_to_errno(r);
+		return -1;
+	}
 	return 0;
 }
 

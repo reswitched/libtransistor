@@ -252,7 +252,7 @@ result_t trn_fs_rmdir(const char *path) {
 		return r;
 	}
 	
-	r = traverse[traverse_recursion].inode.ops->remove_empty_dir(traverse[traverse_recursion].inode.data);
+	r = traverse[traverse_recursion].inode.ops->remove_empty_directory(traverse[traverse_recursion].inode.data);
 
 	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
 		traverse[i].inode.ops->release(traverse[i].inode.data);

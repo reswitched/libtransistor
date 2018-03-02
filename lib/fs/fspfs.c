@@ -132,6 +132,20 @@ static result_t fspfs_create_directory(void *data, const char *name) {
 	return ifilesystem_create_directory(inode->fs, full_name);
 }
 
+static result_t fspfs_remove_file(void *data) {
+	struct inode *inode = (struct inode*)data;
+	result_t r;
+
+	return ifilesystem_delete_file(inode->fs, inode->name);
+}
+
+static result_t fspfs_remove_empty_directory(void *data) {
+	struct inode *inode = (struct inode*)data;
+	result_t r;
+
+	return ifilesystem_delete_directory(inode->fs, inode->name);
+}
+
 static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	struct inode *inode = (struct inode*)data;
 	result_t r;
@@ -325,6 +339,8 @@ static trn_inode_ops_t fspfs_inode_ops = {
 	.release = fspfs_release,
 	.create_file = fspfs_create_file,
 	.create_directory = fspfs_create_directory,
+	.remove_file = fspfs_remove_file,
+	.remove_empty_directory = fspfs_remove_empty_directory,
 	.open_as_file = fspfs_open_as_file,
 	.open_as_dir = fspfs_open_as_dir
 };
