@@ -63,6 +63,17 @@ result_t trn_fs_set_root(trn_inode_t *new_root);
  * Note that the current implementation is relatively simple: it forwards the
  * call to mount to the root filesystem - if it is a rootfs. If you have swapped
  * out the root filesystem with `trn_fs_set_root`, this will not work.
+ *
+ * You could mount the game card partition (assuming correct privilege) like so:
+ *
+ * @code{.c}
+ * ifilesystem_t gamecard_ifs;
+ * trn_inode_t gamecard_inode;
+ *
+ * fsp_srv_mount_game_card_partition(&gamecard_inode, 0, 0);
+ * trn_fspfs_create(&gamecard_inode, gamecard_ifs);
+ * trn_fs_mount("/gamecard", &gamecard_inode);
+ * @endcode
  */
 result_t trn_fs_mount(const char *name, trn_inode_t *root);
 
