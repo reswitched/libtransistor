@@ -261,6 +261,36 @@ result_t trn_fs_rmdir(const char *path) {
 	return r;
 }
 
+// TODO: Does not work in the case of nested rootfs, or if trn_fs_set_root was
+// called.
+result_t trn_fs_rename(const char *oldpath, const char *newpath) {
+	result_t r;
+	trn_traverse_t traverse[MAX_RECURSION];
+
+	// Find handle to old path
+	int borrowed_recursion = 0;
+	int traverse_recursion = 0;
+	if((r = trn_fs_traverse(oldpath, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
+		return r;
+	}
+
+	// Skip the first element, of newpath, as that's the rootfs.
+	// TODO: Find a better way to find the common ancestor in the face of
+	// mountpoints...
+	while (*newpath == '/')
+		newpath++;
+	while (*newpath != '/' && *newpath != '\0')
+		newpath++;
+
+	r = traverse[traverse_recursion].inode.ops->rename(traverse[traverse_recursion].inode.data, newpath);
+
+	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
+		traverse[i].inode.ops->release(traverse[i].inode.data);
+	}
+
+	return r;
+}
+
 result_t trn_fs_open(int *fd, const char *path, int flags) {
 	result_t r;
 	trn_traverse_t traverse[MAX_RECURSION];

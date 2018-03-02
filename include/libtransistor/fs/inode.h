@@ -34,6 +34,7 @@ typedef struct trn_inode_ops_t {
 	result_t (*create_directory)(void *inode, const char *name);
 	result_t (*remove_file)(void *inode);
 	result_t (*remove_empty_directory)(void *inode);
+	result_t (*rename)(void *inode, const char *newname);
 
 	/*
 	  Objects returned from these functions must not be invalidated if the inode is closed

@@ -162,8 +162,20 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	printf("Move the file around\n");
+	if (rename("/sd/test_dir/test.txt", "/sd/test_dir/newname.txt") == -1) {
+		printf("Error moving the file: %d\n", errno);
+		return 1;
+	}
+
+	printf("Move the directory around\n");
+	if (rename("/sd/test_dir", "/sd/newtest_dir") == -1) {
+		printf("Error moving the directory: %d\n", errno);
+		return 1;
+	}
+
 	printf("Delete a file now\n");
-	if (unlink("/sd/test_dir/test.txt") == -1) {
+	if (unlink("/sd/newtest_dir/newname.txt") == -1) {
 		printf("Error deleting file: %d\n", errno);
 		return 1;
 	}
@@ -172,32 +184,32 @@ int main(int argc, char *argv[]) {
 
 	// Make sure the file is deleted by stating it and making sure it returns
 	// ENOENT
-	if (stat("/sd/test_dir/test.txt", &_stat) != -1 || errno != ENOENT) {
+	if (stat("/sd/newtest_dir/newname.txt", &_stat) != -1 || errno != ENOENT) {
 		printf("File was not *actually* deleted! %d\n", errno);
 		return 1;
 	}
 
 	printf("Ensure we fail deleting a non-empty directory\n");
-	fd = open("/sd/test_dir/empty", O_CREAT | O_RDWR);
+	fd = open("/sd/newtest_dir/empty", O_CREAT | O_RDWR);
 	if (fd < 0) {
 		printf("Failed to create file! %d\n", errno);
 		return 1;
 	}
 	close(fd);
-	if (rmdir("/sd/test_dir") == 0 || errno != ENOTEMPTY) {
+	if (rmdir("/sd/newtest_dir") == 0 || errno != ENOTEMPTY) {
 		printf("Failed to fail to delete directory!\n");
 		return 1;
 	}
-	if (unlink("/sd/test_dir/empty") < 0) {
+	if (unlink("/sd/newtest_dir/empty") < 0) {
 		printf("Error deleting file: %d\n", errno);
 		return 1;
 	}
 	printf("Ensure we can delete a directory\n");
-	if (rmdir("/sd/test_dir") == -1) {
+	if (rmdir("/sd/newtest_dir") == -1) {
 		printf("Failed to delete directory! %d\n", errno);
 		return 1;
 	}
-	if (stat("/sd/test_dir", &_stat) != -1 || errno != ENOENT) {
+	if (stat("/sd/newtest_dir", &_stat) != -1 || errno != ENOENT) {
 		printf("Directory was not *actually* deleted! %d\n", errno);
 		return 1;
 	}

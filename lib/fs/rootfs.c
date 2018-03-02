@@ -107,6 +107,10 @@ static result_t trn_rootfs_open_as_file(void *data, int mode, int *fd) {
 	return LIBTRANSISTOR_ERR_FS_NOT_A_FILE;
 }
 
+static result_t trn_rootfs_rename(void *inode, const char *newpath) {
+	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+}
+
 static result_t trn_rootfs_remove_file(void *inode) {
 	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
 }
@@ -154,6 +158,7 @@ static struct trn_inode_ops_t rootfs_inode_ops = {
 	.release = trn_rootfs_release,
 	.create_file = trn_rootfs_create_file,
 	.create_directory = trn_rootfs_create_directory,
+	.rename = trn_rootfs_rename,
 	.remove_file = trn_rootfs_remove_file,
 	.remove_empty_directory = trn_rootfs_remove_empty_directory,
 	.open_as_file = trn_rootfs_open_as_file,

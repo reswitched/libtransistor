@@ -373,3 +373,12 @@ int mkdir(const char *path, mode_t mode) {
 	}
 	return 0;
 }
+
+int rename(const char *oldpath, const char *newpath) {
+	result_t r;
+	if ((r = trn_fs_rename(oldpath, newpath)) != RESULT_OK) {
+		errno = trn_result_to_errno(r);
+		return -1;
+	}
+	return 0;
+}

@@ -146,6 +146,31 @@ static result_t fspfs_remove_empty_directory(void *data) {
 	return ifilesystem_delete_directory(inode->fs, inode->name);
 }
 
+static result_t fspfs_rename(void *data, const char *newpath) {
+	struct inode *inode = (struct inode*)data;
+	result_t r;
+	char newpath_buf[0x301];
+
+	if (sizeof(newpath_buf) < strlen(newpath))
+		return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;
+	strncpy(newpath_buf, newpath, 0x301);
+
+	if (inode->is_dir)
+		// newpath must not exist, or be an existing empty directory.
+		r = ifilesystem_rename_directory(inode->fs, inode->name, newpath_buf);
+	else
+		// newpath will be replaced with oldpath. The behavior if newpath is a
+		// directory isn't really specified...
+		r = ifilesystem_rename_file(inode->fs, inode->name, newpath_buf);
+
+	// If this is a success, we need to fix this... Also, might want to have a
+	// way to invalidate the traversal.
+	if (r == RESULT_OK)
+		strncpy(inode->name, newpath, 0x301);
+
+	return r;
+}
+
 static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	struct inode *inode = (struct inode*)data;
 	result_t r;
@@ -339,6 +364,7 @@ static trn_inode_ops_t fspfs_inode_ops = {
 	.release = fspfs_release,
 	.create_file = fspfs_create_file,
 	.create_directory = fspfs_create_directory,
+	.rename = fspfs_rename,
 	.remove_file = fspfs_remove_file,
 	.remove_empty_directory = fspfs_remove_empty_directory,
 	.open_as_file = fspfs_open_as_file,
