@@ -67,12 +67,8 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 	new_inode->name[root_name_len + 1 + name_len] = '\0';
 	new_inode->name_len = l;
 
-	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->name)) != RESULT_OK) {
-		printf("Got an error: %x\n", r);
-		r = -EIO;
-		// TODO: ERRNOTFOUND
+	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->name)) != RESULT_OK)
 		goto fail;
-	}
 
 	new_inode->is_dir = type == 0;
 
@@ -106,12 +102,10 @@ static result_t fspfs_create_file(void *data, const char *name) {
 	full_name[root_name_len + 1 + name_len] = '\0';
 	//full_name_len = root_name_len + 1 + name_len;
 
-	if ((r = ifilesystem_create_file(inode->fs, 0, 0, full_name)) != RESULT_OK) {
-		printf("Got an error: %x\n", r);
-		return -EIO;
-	}
-
-	return RESULT_OK;
+	if ((r = ifilesystem_create_file(inode->fs, 0, 0, full_name)) == FSPSRV_ERR_EXISTS)
+		return LIBTRANSISTOR_ERR_FS_PATH_EXISTS;
+	else
+		return r;
 }
 
 static result_t fspfs_create_directory(void *data, const char *name) {
@@ -135,15 +129,7 @@ static result_t fspfs_create_directory(void *data, const char *name) {
 	full_name[root_name_len + 1 + name_len] = '\0';
 	//full_name_len = root_name_len + 1 + name_len;
 
-	switch (r = ifilesystem_create_directory(inode->fs, full_name)) {
-		case RESULT_OK:
-			return RESULT_OK;
-		case FSPSRV_ERR_EXISTS:
-			return LIBTRANSISTOR_ERR_FS_PATH_EXISTS;
-		default:
-			printf("Got an error: %x\n", r);
-			return -EIO;
-	}
+	return ifilesystem_create_directory(inode->fs, full_name);
 }
 
 static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
@@ -168,10 +154,8 @@ static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	if (f == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
-	if ((r = ifilesystem_open_file(inode->fs, &f->file, ifs_flags, inode->name)) != RESULT_OK) {
-		printf("Got an error: %x\n", r);
+	if ((r = ifilesystem_open_file(inode->fs, &f->file, ifs_flags, inode->name)) != RESULT_OK)
 		goto fail;
-	}
 
 	if (flags & O_TRUNC) {
 		if ((r = ifile_set_size(f->file, 0)) != RESULT_OK) {
@@ -191,8 +175,11 @@ static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	}
 
 	*fd = fd_create_file(&fspfs_file_ops, f);
-	if (*fd < 0)
+	if (*fd < 0) {
+		// TODO: We should have an errno_to_result
+		r = LIBTRANSISTOR_ERR_UNSPECIFIED;
 		goto fail_ifs;
+	}
 
 	return RESULT_OK;
 
@@ -214,11 +201,8 @@ static result_t fspfs_open_as_dir(void *data, trn_dir_t *out) {
 	if (dir == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
-	if ((r = ifilesystem_open_directory(inode->fs, dir, 3, inode->name)) != RESULT_OK) {
-		printf("Got an error: %x\n", r);
-		r = -EIO;
+	if ((r = ifilesystem_open_directory(inode->fs, dir, 3, inode->name)) != RESULT_OK)
 		goto fail;
-	}
 
 	out->data = (void*)dir;
 	out->ops = &trn_fspfs_dir_ops;

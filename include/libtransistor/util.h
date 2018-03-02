@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <libtransistor/err.h>
+
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
 
@@ -53,6 +55,16 @@ void hexnum(int num);
  * @param len Length of the string
  */
 int log_string(const char *string, size_t len);
+
+/**
+ * @brief Turns a libtransistor result_t into a POSIX errno. The POSIX errno
+ * will be positive. You might want to negate it before returning!
+ *
+ * @param r The libtransistor result to transform
+ */
+int trn_result_to_errno(result_t r);
+
+// TODO: A perror for result_t.
 
 #define STB_SPRINTF_DECORATE(name) dbg_##name
 #include "stb_sprintf.h"
