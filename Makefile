@@ -1,11 +1,7 @@
 SOURCE_ROOT := ./
 BUILD_DIR := $(SOURCE_ROOT)/build/
 
-ifeq ($(LIBTRANSISTOR_HOME),)
-    LIBTRANSISTOR_HOME := $(realpath .)/dist
-else
-    LIBTRANSISTOR_HOME := $(realpath $(LIBTRANSISTOR_HOME))
-endif
+LIBTRANSISTOR_HOME := $(realpath .)/dist
 
 ifeq ($(shell id -u), 0)
    $(error "This script must not be run as root")
