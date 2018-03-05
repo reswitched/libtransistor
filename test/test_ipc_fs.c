@@ -27,9 +27,10 @@ int main() {
 	uint64_t out_entries;
 	for (int it = 0; it < 100; it++) {
 		ASSERT_OK(fail_dir, idirectory_read(root_dir, &out_entries, &entry, 1 * sizeof(idirectoryentry_t)));
-		if (out_entries == 0);
-			break;
 		printf("Out entries = %lu\n", out_entries);
+		if (out_entries == 0) {
+			break;
+		}
 		printf("%.*s\n", 0x300, entry.path);
 	}
 
@@ -40,5 +41,6 @@ fail_sd:
 fail_fsp:
 	fsp_srv_finalize();
 fail:
+	printf("exiting with 0x%x\n", r);
 	return r != RESULT_OK;
 }
