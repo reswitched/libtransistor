@@ -12,7 +12,7 @@
 
 struct mountpoint {
 	struct mountpoint *next;
-	const char *name; // TODO: Static array ?
+	char name[256]; // TODO: Static array ?
 	trn_inode_t *fs;
 	trn_inode_ops_t ops_clone;
 };
@@ -24,7 +24,6 @@ static result_t empty_release(void *inode) {
 	return RESULT_OK;
 }
 
-// This borrows the name. Maybe I should make a copy?
 // It takes ownership of the mountpoint, and will call release on it automatically
 // on umount.
 result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mountpoint) {
@@ -43,10 +42,16 @@ result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mo
 	size_t i;
 	for (i = 0; name[i] == '/'; i++) ;
 	for (size_t j = i; name[j] != '\0'; j++) {
-		if (name[j] == '/')
+		if(j >= sizeof(m->name)-1) {
+			return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;
+		}
+		if(name[j] == '/') {
 			return LIBTRANSISTOR_ERR_FS_INVALID_PATH;
+		}
 	}
-	m->name = name + i;
+	strncpy(m->name, name + i, sizeof(m->name));
+	m->name[sizeof(m->name)-1] = '\0'; // just making sure
+	
 	m->fs = mountpoint;
 	m->ops_clone = *m->fs->ops;
 	m->fs->ops->release = empty_release;
@@ -96,11 +101,11 @@ static result_t trn_mountfs_release(void *data) {
 }
 
 static result_t trn_mountfs_create_file(void *data, const char *name) {
-	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+	return LIBTRANSISTOR_ERR_FS_ACCESS_DENIED;
 }
 
 static result_t trn_mountfs_create_directory(void *data, const char *name) {
-	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+	return LIBTRANSISTOR_ERR_FS_ACCESS_DENIED;
 }
 
 static result_t trn_mountfs_open_as_file(void *data, int mode, int *fd) {
@@ -108,15 +113,15 @@ static result_t trn_mountfs_open_as_file(void *data, int mode, int *fd) {
 }
 
 static result_t trn_mountfs_rename(void *inode, const char *newpath) {
-	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+	return LIBTRANSISTOR_ERR_FS_ACCESS_DENIED;
 }
 
 static result_t trn_mountfs_remove_file(void *inode) {
-	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+	return LIBTRANSISTOR_ERR_FS_ACCESS_DENIED;
 }
 
 static result_t trn_mountfs_remove_empty_directory(void *inode) {
-	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+	return LIBTRANSISTOR_ERR_FS_ACCESS_DENIED;
 }
 
 static result_t trn_mountfs_open_as_dir(void *data, trn_dir_t *out) {

@@ -28,5 +28,8 @@
  * Note that the ownership of the ifilesystem_t is transfered to the fspfs!
  * When the filesystem is released, it will automatically close the
  * ifilesystem_t handle.
+ *
+ * @param out Output for the root inode of the new filesystem. This function will initialize the trn_inode_t struct.
+ * @param fs The IFileSystem to bind. Ownership of the IFileSystem is transferred to the fspfs.
  */
 result_t trn_fspfs_create(trn_inode_t *out, ifilesystem_t fs);

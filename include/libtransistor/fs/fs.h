@@ -79,7 +79,7 @@ result_t trn_fs_mount(const char *name, trn_inode_t *root);
 
 // The rest of those functions should probably not be directly used. Instead,
 // use the standard posix calls of the same name...
-// Maybe we should still men
+// Maybe we should still document them
 result_t trn_fs_realpath(const char *path, char **resolved_path);
 result_t trn_fs_open(int *fd, const char *path, int flags);
 result_t trn_fs_opendir(trn_dir_t *dir, const char *path);

@@ -11,8 +11,6 @@
 
 #include<libtransistor/fs/inode.h>
 
-// TODO: Rename mountfs I guess.
-
 /**
  * @brief Create a mountfs filesystem
  */
@@ -28,5 +26,13 @@ result_t trn_mountfs_create(trn_inode_t *out);
  *
  * This takes ownership of the passed trn_inode_t; it will call the close
  * release method automatically when the mountfs itself is released.
+ *
+ * The \ref name parameter is copied and does not need to live longer than
+ * the invocation of this function.
+ *
+ * @param fs The mountfs to mount under.
+ * @param name The name of the directory to mount under.
+ * @param mountpoint The filesystem to mount under the mountfs. The mountfs will take ownership of this filesystem.
+ *
  */
 result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mountpoint);

@@ -182,6 +182,10 @@ int trn_result_to_errno(result_t r) {
 			return ENAMETOOLONG;
 		case FSPSRV_ERR_DIRECTORY_NOT_EMPTY:
 			return ENOTEMPTY;
+		case LIBTRANSISTOR_ERR_FS_READ_ONLY:
+			return EROFS;
+		case LIBTRANSISTOR_ERR_FS_ACCESS_DENIED:
+			return EACCES;
 		default:
 			// Make the debugger's life easy: print his error before turning it
 			// into a useless code...
