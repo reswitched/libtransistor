@@ -44,4 +44,4 @@ dist_openlibm: $(DIST_OPENLIBM)
 .PHONY: clean_openlibm
 
 clean_openlibm:
-	rm -fr build/openlibm
+	rm -rf $(BUILD_DIR)/openlibm
