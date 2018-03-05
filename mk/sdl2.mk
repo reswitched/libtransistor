@@ -1,16 +1,17 @@
 # SDL2
 
-$(LIBTRANSISTOR_HOME)/build/sdl2_install/lib/libSDL2.a: $(LIBTRANSISTOR_HOME)/build/sdl2/Makefile
-	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl2/
-	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/sdl2/ install
+$(LIB_DEP_SDL2): $(BUILD_DIR)/sdl2/Makefile $(DIST_TRANSISTOR_HEADERS)
+	$(MAKE) -C $(BUILD_DIR)/sdl2/
+	$(MAKE) -C $(BUILD_DIR)/sdl2/ install
 
-$(LIBTRANSISTOR_HOME)/build/sdl2/Makefile: $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libm.a $(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/libc.a
+# "LDFLAGS=-L$(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/ -lc -lm" \
+
+$(BUILD_DIR)/sdl2/Makefile: $(DIST_NEWLIB) $(DIST_TRANSISTOR_SUPPORT)
 	mkdir -p $(@D)
-	cd $(@D); $(LIBTRANSISTOR_HOME)/sdl2/configure \
+	cd $(@D); $(realpath $(SOURCE_ROOT))/sdl2/configure \
 		"CFLAGS=$(CFLAGS)" \
 		"CC=$(CC)" "AR=$(AR)" \
 		"RANLIB=$(RANLIB)" \
-		"LDFLAGS=-L$(LIBTRANSISTOR_HOME)/build/newlib/aarch64-none-switch/newlib/ -lc -lm" \
 		--host=aarch64-none-switch \
 		--disable-audio \
 		--disable-joystick \
@@ -22,7 +23,14 @@ $(LIBTRANSISTOR_HOME)/build/sdl2/Makefile: $(LIBTRANSISTOR_HOME)/build/newlib/aa
 		--enable-video \
 		--disable-shared \
 		--enable-static \
-		--prefix=$(LIBTRANSISTOR_HOME)/build/sdl2_install/
+		--prefix=$(LIBTRANSISTOR_HOME)
+
+# DIST RULES
+
+DIST_SDL2 := $(LIB_DEP_SDL2)
+
+.PHONY: dist_sdl2
+dist_sdl2: $(LIB_DEP_SDL2)
 
 # CLEAN RULES
 

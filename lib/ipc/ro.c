@@ -3,6 +3,7 @@
 #include <libtransistor/ipc.h>
 #include <libtransistor/err.h>
 #include <libtransistor/util.h>
+#include <libtransistor/internal_util.h>
 #include <libtransistor/ipc/sm.h>
 #include <libtransistor/ipc/ro.h>
 
@@ -77,6 +78,8 @@ static __attribute__((destructor)) void ro_destruct() {
 }
 
 result_t ro_load_nro(void **nro_base, void *nro_heap, uint64_t nro_size, void *nro_bss, uint64_t bss_size) {
+	INITIALIZATION_GUARD(ro);
+	
 	result_t r;
 	uint64_t response;
 	uint64_t raw[] = {0, (uint64_t) nro_heap, nro_size, (uint64_t) nro_bss, bss_size};
@@ -102,6 +105,8 @@ result_t ro_load_nro(void **nro_base, void *nro_heap, uint64_t nro_size, void *n
 }
 
 result_t ro_unload_nro(void *nro_base, void *nro_heap) {
+	INITIALIZATION_GUARD(ro);
+
 	result_t r;
 	uint64_t raw[] = {0, (uint64_t) nro_base, (uint64_t) nro_heap};
 	ipc_request_t rq = ipc_default_request;
@@ -121,6 +126,8 @@ result_t ro_unload_nro(void *nro_base, void *nro_heap) {
 }
 
 result_t ro_load_nrr(void *nrr_heap, uint64_t nrr_size) {
+	INITIALIZATION_GUARD(ro);
+	
 	result_t r;
 	uint64_t raw[] = {0, (uint64_t) nrr_heap, nrr_size};
 	ipc_request_t rq = ipc_default_request;
@@ -140,6 +147,8 @@ result_t ro_load_nrr(void *nrr_heap, uint64_t nrr_size) {
 }
 
 result_t ro_unload_nrr(void *nrr_heap) {
+	INITIALIZATION_GUARD(ro);
+	
 	result_t r;
 	uint64_t raw[] = {0, (uint64_t) nrr_heap};
 	ipc_request_t rq = ipc_default_request;

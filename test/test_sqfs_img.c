@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 	struct dirent *dent;
 	printf("Reading dir through unix\n");
 	while((dent = readdir(d)) != NULL) {
-		printf("dent: %.*s\n", dent->d_namlen, dent->d_name);
+		printf("dent: %.*s\n", (int) dent->d_namlen, dent->d_name);
 	}
 	closedir(d);
 	

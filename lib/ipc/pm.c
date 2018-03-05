@@ -2,6 +2,7 @@
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/pm.h>
 
@@ -36,6 +37,8 @@ fail:
 }
 
 result_t pm_terminate_process_by_title_id(uint64_t title_id) {
+	INITIALIZATION_GUARD(pm);
+	
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 2;
 	rq.raw_data_size = sizeof(title_id);

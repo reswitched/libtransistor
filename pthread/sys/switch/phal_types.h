@@ -1,9 +1,10 @@
 #pragma once
 
-#include <libtransistor/nx.h>
+#include<stdint.h>
+#include<stdatomic.h>
 
 typedef struct {
-	thread_h id;
+	uint32_t id;
 	void *stack;
 } phal_tid;
 

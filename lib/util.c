@@ -78,7 +78,7 @@ int log_string(const char *string, size_t len) {
 	return 4;
 }
 
-void hexdump(const void *rawbuf, size_t size) {
+static void hexdump_impl(const void *rawbuf, size_t size, bool dbg) {
 	const uint8_t *buf = rawbuf;
 	char line[0x31 + 4 + 0x10 + 1];
 	int i = 0;
@@ -127,8 +127,20 @@ void hexdump(const void *rawbuf, size_t size) {
 
 		line[i++] = 0;
 
-		printf("%s\n", line);
+		if(dbg) {
+			log_string(line, i);
+		} else {
+			printf("%s\n", line);
+		}
 	}
+}
+
+void hexdump(const void *rawbuf, size_t size) {
+	hexdump_impl(rawbuf, size, false);
+}
+
+void hexdump_dbg(const void *rawbuf, size_t size) {
+	hexdump_impl(rawbuf, size, true);
 }
 
 void hexnum(int num) {

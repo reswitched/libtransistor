@@ -7,3 +7,12 @@
 [submodule "sdl"]
 	path = sdl2
 	url = https://github.com/reswitched/sdl-libtransistor.git
+[submodule "libcxx"]
+	path = libcxx
+	url = https://github.com/llvm-mirror/libcxx
+[submodule "libcxxabi"]
+	path = libcxxabi
+	url = https://github.com/llvm-mirror/libcxxabi
+[submodule "libunwind"]
+	path = libunwind
+	url = https://github.com/llvm-mirror/libunwind

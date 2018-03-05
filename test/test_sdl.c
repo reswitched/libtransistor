@@ -22,6 +22,11 @@ int main(int argc, char *argv[]) {
 	
 	window_surface = SDL_GetWindowSurface(window);
 
+	if(window_surface == NULL) {
+		printf("failed to create window surface\n");
+		return 1;
+	}
+	
 	printf("got window surface\n");
 	
 	SDL_FillRect(window_surface, NULL, SDL_MapRGBA(window_surface->format, 0x7F, 0xFF, 0x00, 0xFF));

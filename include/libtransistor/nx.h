@@ -11,6 +11,7 @@ extern "C" {
 
 #include<libtransistor/types.h>
 #include<libtransistor/loader_config.h>
+#include<libtransistor/alloc_pages.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/tls.h>

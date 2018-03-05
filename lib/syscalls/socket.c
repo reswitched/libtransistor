@@ -40,11 +40,14 @@ int socket(int domain, int type, int protocol) {
 
 int connect(int socket, const struct sockaddr *address, socklen_t address_len) {
 	struct file *f = fd_file_get(socket);
+	if (f == NULL) {
+		errno = EBADF;
+		return -1;
+	}
 	int bsd_fd = *((int*)f->data);
 	if (f->ops != &socket_fops) {
 		fd_file_put(f);
-		// TODO: Set errno
-		errno = ENOSYS;
+		errno = ENOTSOCK;
 		return -1;
 	}
 	fd_file_put(f);
@@ -53,6 +56,122 @@ int connect(int socket, const struct sockaddr *address, socklen_t address_len) {
 		return -1;
 	}
 	return 0;
+}
+
+int accept(int socket, struct sockaddr *address, socklen_t *address_len) {
+	struct file *f = fd_file_get(socket);
+	if (f == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+	int bsd_fd = *((int*)f->data);
+	int bsd_client_fd = -1;
+	if (f->ops != &socket_fops) {
+		fd_file_put(f);
+		errno = ENOTSOCK;
+		return -1;
+	}
+	fd_file_put(f);
+	if ((bsd_client_fd = bsd_accept(bsd_fd, address, address_len)) < 0) {
+		errno = bsd_errno;
+		return -1;
+	}
+
+	int fd = socket_from_bsd(bsd_client_fd);
+	if (fd < 0) {
+		bsd_close(bsd_client_fd);
+		return -1;
+	}
+	return fd;
+}
+
+int bind(int socket, const struct sockaddr *address, socklen_t address_len) {
+	struct file *f = fd_file_get(socket);
+	if (f == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+	int bsd_fd = *((int*)f->data);
+	if (f->ops != &socket_fops) {
+		fd_file_put(f);
+		errno = ENOTSOCK;
+		return -1;
+	}
+	fd_file_put(f);
+	if (bsd_bind(bsd_fd, address, address_len) < 0) {
+		errno = bsd_errno;
+		return -1;
+	}
+	return 0;
+}
+
+int listen(int socket, int backlog) {
+	struct file *f = fd_file_get(socket);
+	if (f == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+	int bsd_fd = *((int*)f->data);
+	if (f->ops != &socket_fops) {
+		fd_file_put(f);
+		errno = ENOTSOCK;
+		return -1;
+	}
+	fd_file_put(f);
+
+	if (bsd_listen(bsd_fd, backlog) < 0) {
+		errno = bsd_errno;
+		return -1;
+	}
+	return 0;
+}
+
+ssize_t recv(int socket, void *message, size_t length, int flags) {
+	struct file *f = fd_file_get(socket);
+	if (f == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+	int bsd_fd = *((int*)f->data);
+	ssize_t ret;
+
+	if (f->ops != &socket_fops) {
+		fd_file_put(f);
+		errno = ENOTSOCK;
+		return -1;
+	}
+	fd_file_put(f);
+
+	ret = bsd_recv(bsd_fd, message, length, flags);
+	if (ret < 0) {
+		ret = -1;
+		errno = bsd_errno;
+	}
+	return ret;
+}
+
+ssize_t send(int socket, const void *data, size_t length, int flags) {
+	struct file *f = fd_file_get(socket);
+	if (f == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+	int bsd_fd = *((int*)f->data);
+	ssize_t ret;
+
+	if (f->ops != &socket_fops) {
+		fd_file_put(f);
+		errno = ENOTSOCK;
+		return -1;
+	}
+	fd_file_put(f);
+
+	ret = bsd_send(bsd_fd, data, length, flags);
+	if (ret < 0) {
+		ret = -1;
+		errno = bsd_errno;
+	}
+	return ret;
 }
 
 ssize_t __socket_read(void *data, char *buf, size_t len) {

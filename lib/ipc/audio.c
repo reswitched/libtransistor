@@ -3,6 +3,7 @@
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/audio.h>
 
@@ -39,6 +40,8 @@ fail:
 }
 
 result_t audio_ipc_list_outputs(char (*names)[0x20], int max_names, uint32_t *num_names) {
+	INITIALIZATION_GUARD(audio_ipc);
+	
 	ipc_buffer_t names_buffer;
 	names_buffer.addr = names;
 	names_buffer.size = sizeof(names[0]) * max_names;
@@ -59,6 +62,8 @@ result_t audio_ipc_list_outputs(char (*names)[0x20], int max_names, uint32_t *nu
 }
 
 result_t audio_ipc_open_output(const char name[0x20], audio_output_t *out) {
+	INITIALIZATION_GUARD(audio_ipc);
+
 	ipc_buffer_t name_in_buffer;
 	name_in_buffer.addr = (char*) name;
 	name_in_buffer.size = 0x20;
@@ -117,6 +122,8 @@ result_t audio_ipc_open_output(const char name[0x20], audio_output_t *out) {
 }
 
 result_t audio_ipc_output_get_state(audio_output_t *out, audio_output_state_t *state) {
+	INITIALIZATION_GUARD(audio_ipc);
+
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 0;
 
@@ -128,6 +135,8 @@ result_t audio_ipc_output_get_state(audio_output_t *out, audio_output_state_t *s
 }
 
 result_t audio_ipc_output_start(audio_output_t *out) {
+	INITIALIZATION_GUARD(audio_ipc);
+
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 1;
 
@@ -135,6 +144,8 @@ result_t audio_ipc_output_start(audio_output_t *out) {
 }
 
 result_t audio_ipc_output_stop(audio_output_t *out) {
+	INITIALIZATION_GUARD(audio_ipc);
+
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 2;
 
@@ -142,6 +153,8 @@ result_t audio_ipc_output_stop(audio_output_t *out) {
 }
 
 result_t audio_ipc_output_register_buffer_event(audio_output_t *out, handle_t *event) {
+	INITIALIZATION_GUARD(audio_ipc);
+
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 4;
 
@@ -153,6 +166,8 @@ result_t audio_ipc_output_register_buffer_event(audio_output_t *out, handle_t *e
 }
 
 result_t audio_ipc_output_append_buffer(audio_output_t *out, audio_output_buffer_t *buffer) {
+	INITIALIZATION_GUARD(audio_ipc);
+
 	uint64_t key = (uint64_t) buffer; // this meaning is guessed
 
 	static_assert(sizeof(*buffer) == 0x28, "audio_output_buffer_t is 0x28 bytes long");
@@ -175,6 +190,8 @@ result_t audio_ipc_output_append_buffer(audio_output_t *out, audio_output_buffer
 }
 
 result_t audio_ipc_output_get_released_buffer(audio_output_t *out, uint32_t *num_released, audio_output_buffer_t **buffer) {
+	INITIALIZATION_GUARD(audio_ipc);
+
 	ipc_buffer_t ipc_buffer;
 	ipc_buffer.addr = buffer;
 	ipc_buffer.size = sizeof(*buffer);
@@ -195,6 +212,8 @@ result_t audio_ipc_output_get_released_buffer(audio_output_t *out, uint32_t *num
 }
 
 result_t audio_ipc_output_contains_buffer(audio_output_t *out, audio_output_buffer_t *buffer, bool *contains) {
+	INITIALIZATION_GUARD(audio_ipc);
+
 	uint64_t key = (uint64_t) buffer; // this meaning is guessed
 	
 	ipc_request_t rq = ipc_default_request;

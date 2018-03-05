@@ -1,71 +1,79 @@
 OUTPUT_FORMAT(elf64-littleaarch64)
+OUTPUT_ARCH(aarch64)
+ENTRY(_start)
+
+PHDRS
+{
+  text PT_LOAD FLAGS(5);
+  rodata PT_LOAD FLAGS(4);
+  data PT_LOAD FLAGS(6);
+  bss PT_LOAD FLAGS(6);
+}
 
 SECTIONS
 {
+  . = 0;
+
   .text : ALIGN(0x1000) {
-NORELOC_TEXT_START_ = .;
-    KEEP(crt0.nso.o(.text*))
-    KEEP(crt0.nro.o(.text*))
-    *(.text .text*)
-    *(.plt .plt*)
-NORELOC_TEXT_END_ = .;
+    __text_start = .;
+    KEEP(crt0.nso.o(.text.jmp))
+    KEEP(crt0.nro.o(.text.jmp))
+
+    . = 0x80;
+
+    *(.text .text.*)
+    *(.plt .plt.*)
   }
 
-  .rodata : ALIGN(0x1000) {
-NORELOC_RODATA_START_ = .;
-    *(.rodata .rodata*)
-NORELOC_RODATA_END_ = .;
+  /* Read-only sections */
+
+  . = ALIGN(0x1000);
+
+  .rodata : { *(.rodata .rodata.*) } :rodata
+  .mod0 : {
+    KEEP(crt0.nso.o(.data.mod0))
+    KEEP(crt0.nro.o(.data.mod0))
+  }
+  .hash : { *(.hash) }
+  .dynsym : { *(.dynsym .dynsym.*) }
+  .dynstr : { *(.dynstr .dynstr.*) }
+  .rela.dyn : { *(.rela.dyn) }
+
+  .eh_frame : {
+    __eh_frame_start = .;
+    *(.eh_frame .eh_frame.*)
+    __eh_frame_end = .;
   }
 
-  .rela.dyn : ALIGN(8) {
-NORELOC_RELA_START_ = .;
-    *(.rela.dyn)
+  .eh_frame_hdr : {
+    __eh_frame_hdr_start = .;
+    *(.eh_frame_hdr .eh_frame_hdr.*)
+    __eh_frame_hdr_end = .;
   }
 
-  .data : ALIGN(0x1000) {
-NORELOC_DATA_START_ = .;
-    KEEP(crt0.nso.o(.data))
-    KEEP(crt0.nro.o(.data))
-    *(.data .data*)
-NORELOC_GOT_START_ = .;
-    *(.got .got*)
-NORELOC_GOT_PLT_START_ = .;
-    *(.got.plt .got.plt*)
-NORELOC_DATA_END_ = .;
-  }
+  /* Read-write sections */
 
-  .dynamic : ALIGN(0x8) {
-NORELOC_DYNAMIC_START_ = .;
+   . = ALIGN(0x1000);
+
+  .data : {
+    *(.data .data.*)
+    *(.got .got.*)
+    *(.got.plt .got.plt.*)
+  } :data
+
+  .dynamic : {
+    __dynamic_start = .;
     *(.dynamic)
-NORELOC_DYNAMIC_END_ = .;
   }
 
-  .dynsym : ALIGN(0x1000) {
-NORELOC_DYNSYM_START_ = .;
-    *(.dynsym .dynsym*)
-NORELOC_DYNSYM_END_ = .;
-  }
+  /* BSS section */
 
-  .dynstr : ALIGN(0x8) {
-NORELOC_DYNSTR_START_ = .;
-    *(.dynstr .dynstr*)
-NORELOC_DYNSTR_END_ = .;
-  }
+  . = ALIGN(0x1000);
 
-  .bss : ALIGN(0x1000) {
-NORELOC_BSS_START_ = .;
-    *(.bss)
+  .bss : {
+    __bss_start = .;
+    *(.bss .bss.*)
     *(COMMON)
-NORELOC_BSS_END_ = .;
-  }
-
-  .hash : {
-    *(.hash)
-  }
-
-  /DISCARD/ : {
-    *(.comment)
-    *(.note.GNU-stack)
-    *(.eh_frame)
-  }
+    __bss_end = .;
+  } :bss
 }

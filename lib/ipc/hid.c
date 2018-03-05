@@ -3,6 +3,7 @@
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
+#include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/hid.h>
 
@@ -62,6 +63,8 @@ fail:
 }
 
 result_t hid_ipc_get_shared_memory_handle(shared_memory_h *handle) {
+	INITIALIZATION_GUARD(hid_ipc);
+	
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 0;
 

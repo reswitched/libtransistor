@@ -1,3 +1,12 @@
+SOURCE_ROOT := ./
+BUILD_DIR := $(SOURCE_ROOT)/build/
+
+LIBTRANSISTOR_HOME := $(realpath .)/dist
+
+ifeq ($(shell id -u), 0)
+   $(error "This script must not be run as root")
+endif
+
 include libtransistor.mk
 
 # for building newlib and sdl
@@ -16,19 +25,31 @@ export CFLAGS_FOR_TARGET = $(CC_FLAGS) -Wno-unused-command-line-argument -Wno-er
 .SUFFIXES: # disable built-in rules
 .SECONDARY: # don't delete intermediate files
 
-.PHONY: all
+.PHONY: default
 
 default:
 
-include mk/lib.mk
-include mk/tests.mk
-include mk/pthread.mk
+include mk/transistor_support.mk
 include mk/newlib.mk
+include mk/transistor_headers.mk
+include mk/pthread.mk
 include mk/compiler-rt.mk
-include mk/sdl2.mk
 include mk/liblzma.mk
+include mk/sdl2.mk
+include mk/openlibm.mk
+include mk/libcxx.mk
+include mk/transistor.mk
 
-clean: clean_lib clean_test
+DIST := $(DIST_TRANSISTOR_HEADERS) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREAD) $(DIST_NEWLIB) $(DIST_COMPILER_RT) $(DIST_LIBLZMA) $(DIST_OPENLIBM) $(DIST_LIBCXX) $(DIST_LIBCXXABI) $(DIST_LIBUNWIND) $(DIST_TRANSISTOR) $(DIST_SDL2)
+
+include mk/tests.mk
+
+dist: $(DIST)
+.PHONY: dist
+
+default: $(DIST)
+
+clean: clean_transistor clean_test
 	rm -rf $(LIBTRANSISTOR_HOME)/docs
 
 distclean: clean clean_newlib clean_compiler-rt clean_pthread clean_sdl2

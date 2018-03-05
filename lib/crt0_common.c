@@ -2,6 +2,7 @@
 #include<libtransistor/util.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
+#include<libtransistor/tls.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/fs/blobfd.h>
@@ -11,6 +12,7 @@
 #include<libtransistor/fs/fspfs.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/fd.h>
+#include<libtransistor/alloc_pages.h>
 
 #include<sys/socket.h>
 #include<assert.h>
@@ -24,6 +26,7 @@
 
 #include "default_squashfs_image.h"
 #include "squashfs/squashfuse.h"
+
 
 int main(int argc, char **argv);
 
@@ -70,6 +73,11 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 	uint64_t rela_count = 0;
 	bool found_rela = false;
 
+	const char mod_magic[] = "MOD0";
+	if(mod_header->magic != *((uint32_t*) mod_magic)) {
+		return true;
+	}
+	
 	while(dynamic->d_tag > 0) {
 		switch(dynamic->d_tag) {
 		case 4: // DT_HASH
@@ -267,6 +275,8 @@ static result_t lconfig_parse(loader_config_entry_t *config);
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 static int make_dbg_log_fd();
 
+extern void _cleanup_mapped_heap();
+
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
 	dyn_info_t dyn_info;
 	dyn_info.init_array = NULL;
@@ -318,6 +328,12 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	memcpy(tls_backup, get_tls(), 0x200);
 	memset(get_tls(), 0, 0x200);
 	
+	dbg_printf("init alloc_pages");
+	ret = ap_init();
+	if(ret != RESULT_OK) {
+		return ret;
+	}
+	
 	dbg_printf("init threads");
 	phal_tid tid = { .id = loader_config.main_thread, .stack = NULL };
 	_rthread_internal_init(tid);
@@ -342,6 +358,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		setup_stdio_socket("stdout", loader_config.socket_stdout, STDOUT_FILENO);
 		setup_stdio_socket("stdin",  loader_config.socket_stdin,  STDIN_FILENO);
 		setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
+		dbg_set_bsd_log(loader_config.socket_stdout);
 	} else {
 
 		// TODO: Create a fake FD for bsslog
@@ -386,6 +403,10 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 				}
 			}
 		}
+
+		dbg_printf("cleaning up mapped heap");
+		_cleanup_mapped_heap();
+		dbg_printf("cleaned heap");
 	} else {
 		printf("crt0: cleanup kludge active, please fix this ASAP\n");
 	}
@@ -538,7 +559,17 @@ static result_t lconfig_parse(loader_config_entry_t *config) {
 			}
 			// TODO: initialize bsd
 			break;
-				
+
+		case LCONFIG_KEY_ALLOC_PAGES:
+			loader_config.has_alloc_pages = true;
+			loader_config.alloc_pages = entry->alloc_pages.alloc_pages;
+			loader_config.free_pages = entry->alloc_pages.free_pages;
+			break;
+
+		case LCONFIG_KEY_LOCK_REGION:
+			ap_lock_region(entry->lock_region.addr, entry->lock_region.size);
+			break;
+			
 		default: {
 			bool recognition_mandatory = entry->flags & LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
 			if(recognition_mandatory) {

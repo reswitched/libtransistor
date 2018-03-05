@@ -21,6 +21,8 @@
 #include<libtransistor/ipc/time.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/svc.h>
+#include<libtransistor/util.h>
+#include<libtransistor/alloc_pages.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/util.h>
 
@@ -137,37 +139,105 @@ finalize:
 	return res;
 }
 
-static size_t data_size = 0;
-static size_t actual_data_size = 0; // used if not overriding heap
-static void *heap_addr = NULL;
-#define HEAP_SIZE_INCREMENT 0x2000000
+static void *map_addr = NULL;
+static ssize_t map_size = 0;
+static ssize_t map_limit = 0;
+static size_t reported_size = 0;
+
+typedef struct {
+	void *dst;
+	void *src;
+	size_t size;
+} map_entry_t;
+
+static map_entry_t map_entries[512];
+static int num_map_entries = 0;
 
 void *_sbrk_r(struct _reent *reent, ptrdiff_t incr) {
-	void *addr;
-	if(loader_config.heap_overridden) {
-		if(data_size + incr > loader_config.heap_size) {
+	result_t r;
+	if(map_addr == NULL) {
+		if((r = svcGetInfo((uint64_t*) &map_addr, 14, 0xFFFF8001, 0)) != RESULT_OK) {
 			reent->_errno = ENOMEM;
 			return (void*) -1;
 		}
-		
-		addr = loader_config.heap_base + data_size;
-		data_size+= incr;
-		return addr;
-	} else {
-		if(data_size + incr > actual_data_size || heap_addr == NULL) {
-			ptrdiff_t corrected_incr = data_size + incr - actual_data_size;
-			ptrdiff_t rounded_incr = (corrected_incr + HEAP_SIZE_INCREMENT - 1) & ~(HEAP_SIZE_INCREMENT-1);
-			result_t r = svcSetHeapSize(&heap_addr, actual_data_size + rounded_incr);
-			if(r != RESULT_OK) {
+		if((r = svcGetInfo(&map_limit, 15, 0xFFFF8001, 0)) != RESULT_OK) {
+			reent->_errno = ENOMEM;
+			return (void*) -1;
+		}
+		dbg_printf("map addr: %p, limit: 0x%zx\n", map_addr, map_limit);
+
+		memory_info_t minfo;
+		uint32_t pinfo;
+
+		// the loader may have already mapped pages at the start of this region
+		while(1) {
+			if((r = svcQueryMemory(&minfo, &pinfo, map_addr)) != RESULT_OK) {
 				reent->_errno = ENOMEM;
 				return (void*) -1;
 			}
-			actual_data_size+= rounded_incr;
+			if(minfo.memory_type != 0) {
+				map_limit-= (minfo.base_addr + minfo.size) - (map_addr);
+				if(map_limit < 0 || minfo.base_addr + minfo.size < map_addr) {
+					reent->_errno = ENOMEM;
+					return (void*) -1;
+				}
+				map_addr = minfo.base_addr + minfo.size;
+			} else {
+				break;
+			}
 		}
-		
-		addr = heap_addr + data_size;
-		data_size+= incr;
-		return addr;
+	}
+
+	if(reported_size + incr > map_size) {
+		ptrdiff_t corrected_incr = reported_size + incr - map_size;
+		ptrdiff_t rounded_incr = ((corrected_incr + 0xfff) >> 12) << 12;
+	
+		if(map_size + rounded_incr > map_limit) {
+			dbg_printf("hit mapping limit");
+			reent->_errno = ENOMEM;
+			return (void*) -1;
+		}
+
+		while(rounded_incr > 0) {
+			if(num_map_entries >= ARRAY_LENGTH(map_entries)) {
+				reent->_errno = ENOMEM;
+				return (void*) -1;
+			}
+
+			size_t src_size;
+			void *src = alloc_pages(0x1000, rounded_incr, &src_size);
+			r = svcMapMemory(map_addr + map_size, src, src_size);
+			if(r != RESULT_OK) {
+				dbg_printf("map memory failed: 0x%x", r);
+				reent->_errno = ENOMEM;
+				return (void*) -1;
+			}
+			map_entry_t entry = {
+				.dst = map_addr + map_size,
+				.src = src,
+				.size = src_size
+			};
+			map_entries[num_map_entries++] = entry;
+			map_size+= src_size;
+			rounded_incr-= src_size;
+		}
+	}
+
+	void *addr = map_addr + reported_size;
+	reported_size+= incr;
+	return addr;
+}
+
+void _cleanup_mapped_heap() {
+	result_t r;
+	
+	for(int i = 0; i < num_map_entries; i++) {
+		map_entry_t e = map_entries[i];
+		if((r = svcUnmapMemory(e.dst, e.src, e.size)) != RESULT_OK) {
+			dbg_printf("failed to unmap %p -> %p, 0x%x\n", e.src, e.dst, e.size);
+		} else {
+			free_pages(e.src);
+		}
 	}
 }
 

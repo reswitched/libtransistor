@@ -4,11 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "defs.h"
 #include "server.h"
 #include "memory.h"
 #include "nro.h"
-#include "http.h"
 
 typedef struct
 {
@@ -24,10 +24,13 @@ extern struct sockaddr_in stdout_server_addr;
 static int sck_bkup;
 static int is_silent;
 
+static uint8_t recv_buffer[RECV_BLOCKSIZE];
+
+static_assert(sizeof(recv_buffer) >= sizeof(nro_header_t), "recv_buffer needs to be able to hold an entire NRO header");
+
 void func_help(char*);
 void func_echo(char*);
 void func_stdout(char*);
-void func_exec(char*);
 void func_meminfo(char*);
 void func_stats(char*);
 void func_reboot(char*);
@@ -39,7 +42,6 @@ static const scmd_t server_commands[] =
 	{func_echo, "echo", NULL},
 	{NULL, "exit", "exit loader"},
 	{func_stdout, "stdout", "reconnect / disconnect / connect to stdout server"},
-	{func_exec, "exec", "load and run NRO from HTTP server"},
 	{func_meminfo, "meminfo", "print memory map using svcQueryMemory"},
 	{func_stats, "stats", "print statistics"},
 	{func_reboot, "reboot", "reboot the console"},
@@ -80,17 +82,20 @@ int server_init()
 	};
 
 	sck = bsd_socket(2, 1, 6); // AF_INET, SOCK_STREAM, PROTO_TCP
+	printf("- server socket: %d, 0x%x, %d\n", sck, bsd_result, bsd_errno);
 	if(sck < 0)
 		return 1;
 
 	if(bsd_bind(sck, (struct sockaddr *)&server_addr, sizeof(server_addr)))
 	{
+		printf("- bind failure\n");
 		bsd_close(sck);
 		return 2;
 	}
 
 	if(bsd_listen(sck, 1) < 0)
 	{
+		printf("- listen failure\n");
 		bsd_close(sck);
 		return 3;
 	}
@@ -105,11 +110,18 @@ void server_loop()
 	struct sockaddr_in client_addr;
 	int ret;
 	uint32_t idx;
-	void *ptr = NULL;
-	uint64_t size = 0;
 	uint32_t ip;
 	result_t r;
 
+	void *nro_buf = NULL;
+	size_t nro_size;
+
+	bool is_command_mode;
+
+	void *recv_ptr; // start of command/NRO buffer
+	size_t recv_size; // size of received data
+	size_t recv_remaining; // remaining space in command/NRO buffer
+	
 	printf("- starting push server ...\n");
 	r = nifm_get_ip_address(&ip);
 	if (r)
@@ -134,18 +146,21 @@ void server_loop()
 			}
 			sockets[1] = ret;
 			printf("- client %i.%i.%i.%i:%i connected\n", client_addr.sin_addr.s_addr & 0xFF, (client_addr.sin_addr.s_addr >> 8) & 0xFF, (client_addr.sin_addr.s_addr >> 16) & 0xFF, client_addr.sin_addr.s_addr >> 24, ntohs(client_addr.sin_port));
-			// reset pointer
-			ptr = heap_base;
-			size = heap_size;
+
+			recv_ptr = recv_buffer;
+			recv_size = 0;
+			recv_remaining = sizeof(recv_buffer);
+			is_command_mode = false;
+			nro_buf = NULL;
 		} else
 		{
 			// client
-			ret = bsd_recv(sockets[1], ptr, RECV_BLOCKSIZE, 0);
+			ret = bsd_recv(sockets[1], recv_ptr + recv_size, recv_remaining, 0);
 			if(ret < 0)
 			{
 				bsd_close(sockets[1]);
 				sockets[1] = -1;
-				printf("- client dropped\n");
+				printf("- client dropped (%d, 0x%x, %d)\n", ret, bsd_result, bsd_errno);
 				continue;
 			}
 			if(ret == 0)
@@ -154,35 +169,62 @@ void server_loop()
 				sockets[1] = -1;
 				printf("- client disconnected\n");
 				// load and run NRO
-				if(size != heap_size && size != 0xFFFFFFFF)
-				{
-					size = nro_execute(heap_base, (int)(ptr - heap_base));
-					printf("- NRO returned 0x%016lX\n", size);
+				if(!is_command_mode) {
+					uint64_t r = nro_execute(nro_buf, recv_size);
+					printf("- NRO returned 0x%016lX\n", r);
+					free_pages(nro_buf);
+					nro_buf = NULL;
 				}
 				continue;
 			}
-			// check for command
-			if(size == heap_size)
-			{
-				if(ret < 0x14 || *(uint32_t*)(ptr+0x10) != NRO_MAGIC)
-					// it's not NRO, enable command mode
-					size = 0xFFFFFFFF;
+			recv_size+= ret;
+			recv_remaining-= ret;
+			
+			// is this an NRO?
+			if(recv_size < sizeof(nro_header_t) || ((nro_header_t*) recv_ptr)->magic != NRO_MAGIC) {
+				// it's not NRO, enable command mode
+				is_command_mode = true;
+			} else if(!nro_buf) {
+				printf("- detected NRO\n");
+				
+				// this is an NRO, let's allocate some space for it
+				is_command_mode = false; // just to make sure
+				nro_size = ((nro_header_t*) recv_ptr)->nro_size;
+				nro_buf = alloc_pages(nro_size + 0x1000, nro_size + 0x1000, NULL);
+				
+				if(nro_buf == NULL) {
+					printf("- failed to allocate memory for NRO (size 0x%lx); dropping client\n", nro_size);
+					bsd_close(sockets[1]);
+					sockets[1] = -1;
+					ap_dump_info();
+					continue;
+				}
+
+				printf("- nro buffer %p\n", nro_buf);
+				
+				// use our newly allocated NRO buffer for receiving
+				memcpy(nro_buf, recv_ptr, recv_size);
+				recv_ptr = nro_buf;
+				recv_remaining = (nro_size - recv_size) + 0x1000;
+				continue;
 			}
-			if(size == 0xFFFFFFFF)
+			
+			if(is_command_mode)
 			{
-				// in commad mode
+				// in command mode
 				unsigned int i;
-				uint8_t *tmp = ptr;
+				char *command_start = recv_ptr;
+				char *tmp = recv_ptr;
 
 				// check for 'silent' commands
 				if(tmp[0] == '!')
 				{
-					ptr++;
+					command_start++;
 					is_silent = 1;
 				} else
 					is_silent = 0;
 				// terminate string
-				tmp[ret] = 0;
+				tmp[recv_size] = 0;
 				// terminate at first newline
 				while(*tmp)
 				{
@@ -195,7 +237,7 @@ void server_loop()
 				// find command
 				for(i = 0; i < NUM_CMDS; i++)
 				{
-					int len = cmd_compare(server_commands[i].cmd, ptr);
+					int len = cmd_compare(server_commands[i].cmd, command_start);
 					if(len)
 					{
 						// found command, execute
@@ -219,9 +261,9 @@ void server_loop()
 							printf("- exit loader\n");
 							return;
 						}
-						if(*(uint8_t*)(ptr+len) == ' ')
+						if(command_start[len] == ' ')
 						{
-							server_commands[i].func(ptr + len + 1);
+							server_commands[i].func(recv_ptr + len + 1);
 						} else
 							server_commands[i].func(NULL);
 
@@ -242,19 +284,20 @@ void server_loop()
 					}
 					printf("- unknown command from client\n");
 				}
-				// restore pointer - might be changed
-				ptr = heap_base;
+
+				// compact buffer
+				recv_size-= ((void*) tmp - recv_ptr);
+				memmove(recv_ptr, tmp, recv_size);
+				
 				// let client know command has finished
 				if(is_silent)
 					bsd_send(sockets[1], "- done\n", 7, 0);
 				// original NRO loading is disabled now
 				continue;
 			}
-			// move pinter
-			size -= ret;
-			ptr += ret;
+
 			// memory check
-			if(size < RECV_BLOCKSIZE)
+			if(recv_remaining <= 0)
 			{
 				bsd_close(sockets[1]);
 				sockets[1] = -1;
@@ -409,35 +452,9 @@ void func_args(char *par)
 		nro_arg_name(arg);
 }
 
-void func_exec(char *par)
-{
-	int ret;
-	char *name = par;
-
-	if(!par)
-	{
-		printf("specify server side path\n");
-		return;
-	}
-
-	// parse name and arguments
-	func_args(par);
-
-	// load & run
-	ret = http_get_file(name, heap_base, heap_size);
-	if(ret > 0)
-	{
-		uint64_t r;
-		printf("- starting NRO\n");
-		r = nro_execute(heap_base, ret);
-		printf("- NRO returned 0x%016lX\n", r);
-	} else
-		printf("- get NRO error %i\n", -ret);
-}
-
 void func_meminfo(char *par)
 {
-	mem_info();
+	ap_dump_info();
 }
 
 void func_stats(char *par)

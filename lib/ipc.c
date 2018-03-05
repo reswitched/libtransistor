@@ -1007,7 +1007,7 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
 		ipc_debug_flag = 1;
 	}
 	r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session); if(r) {
-		hexdump(tls, 0x50);
+		hexdump_dbg(tls, 0x50);
 		return r;
 	}
 	if(ipc_debug_flag) {

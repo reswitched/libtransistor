@@ -4,11 +4,9 @@
 #include<libtransistor/ipc/vi.h>
 #include<libtransistor/display/graphic_buffer_queue.h>
 #include<libtransistor/display/surface.h>
+#include<libtransistor/alloc_pages.h>
 
-#include<malloc.h>
 #include<stdio.h>
-
-static uint8_t __attribute__((aligned(0x1000))) gpu_buffer_memory[0x780000];
 
 result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp) {
 	surface->layer_id = layer_id;
@@ -31,17 +29,11 @@ result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp) {
 		goto fail_connect;
 	}
 
-	// TODO: malloc_aligned?
-	//surface->gpu_buffer_memory_alloc = malloc(0x780000 + 0xfff);
-	//if(surface->gpu_buffer_memory_alloc == NULL) {
-	//	return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-	//}
-	//printf("gpu_buffer_memory_alloc: %p\n", surface->gpu_buffer_memory_alloc);
-	//surface->gpu_buffer_memory = (uint32_t*) (((uint64_t) surface->gpu_buffer_memory_alloc + 0xfff) & 0xFFFFFFFFFFFFF000);
-	//printf("gpu_buffer_memory: %p\n", surface->gpu_buffer_memory);
+	surface->gpu_buffer_memory = alloc_pages(0x780000, 0x780000, NULL);
+	if(surface->gpu_buffer_memory == NULL) {
+		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+	}
 
-	surface->gpu_buffer_memory = gpu_buffer_memory;
-	
 	if((r = svcSetMemoryAttribute(surface->gpu_buffer_memory, 0x780000, 0x8, 0x8)) != RESULT_OK) {
 		printf("failed svcsma\n");
 		goto fail_memory;
@@ -82,7 +74,7 @@ result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp) {
 fail_memory_attribute:
 	svcSetMemoryAttribute(surface->gpu_buffer_memory, 0x3c0000, 0x0, 0x0);
 fail_memory:
-	//free(surface->gpu_buffer_memory_alloc);
+	free_pages(surface->gpu_buffer_memory);
 fail_connect:
 	igbp_disconnect(&surface->igbp, 2, ALL_LOCAL, &status);
 fail:
@@ -94,13 +86,15 @@ void surface_destroy(surface_t *surface) {
 	int status;
 	igbp_disconnect(&surface->igbp, 2, ALL_LOCAL, &status);
 	vi_adjust_refcount(surface->igbp.igbp_binder.handle, -1, 1);
+	vi_close_layer(surface->layer_id);
 	vi_destroy_managed_layer(surface->layer_id);
 	surface->state = SURFACE_STATE_INVALID;
 	
 	gpu_buffer_destroy(&surface->gpu_buffer, NULL, NULL);
 	
 	svcSetMemoryAttribute(surface->gpu_buffer_memory, 0x780000, 0x0, 0x0);
-	// TODO: free memory
+	
+	free_pages(surface->gpu_buffer_memory);
 }
 
 result_t surface_dequeue_buffer(surface_t *surface, uint32_t **image) {

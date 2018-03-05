@@ -1,11 +1,12 @@
 # COMPILER_RT
 
-$(LIB_DEP_COMPILER_RT_BUILTINS): $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile
-	$(MAKE) -C $(LIBTRANSISTOR_HOME)/build/compiler-rt/
+$(LIB_DEP_COMPILER_RT_BUILTINS): $(BUILD_DIR)/compiler-rt/Makefile
+	$(MAKE) -C $(BUILD_DIR)/compiler-rt/ all install
+	touch $@
 
-$(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
+$(BUILD_DIR)/compiler-rt/Makefile: $(DIST_NEWLIB) $(DIST_TRANSISTOR_SUPPORT)
 	mkdir -p $(@D)
-	cd $(@D); cmake -G "Unix Makefiles" $(LIBTRANSISTOR_HOME)/compiler-rt \
+	cd $(@D); cmake -G "Unix Makefiles" $(realpath $(SOURCE_ROOT))/compiler-rt \
 		-DCOMPILER_RT_BAREMETAL_BUILD=ON \
 		-DCOMPILER_RT_BUILD_BUILTINS=ON \
 		-DCOMPILER_RT_BUILD_SANITIZERS=OFF \
@@ -21,8 +22,17 @@ $(LIBTRANSISTOR_HOME)/build/compiler-rt/Makefile:
 		-DCMAKE_AR="$(AR)" \
 		-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
 		-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
-		-DLLVM_CONFIG_PATH=llvm-config$(LLVM_POSTFIX) \
-		-DCMAKE_SYSTEM_NAME=Linux
+		-DLLVM_CONFIG_PATH=$(LLVM_CONFIG) \
+		-DCMAKE_SYSTEM_NAME=Linux \
+		-DCMAKE_INSTALL_PREFIX=$(LIBTRANSISTOR_HOME) \
+		-DCOMPILER_RT_OS_DIR=.
+
+# DIST RULES
+
+DIST_COMPILER_RT := $(LIB_DEP_COMPILER_RT_BUILTINS)
+
+.PHONY: dist_compiler-rt
+dist_compiler-rt: $(DIST_COMPILER_RT)
 
 # CLEAN RULES
 

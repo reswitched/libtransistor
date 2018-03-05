@@ -42,9 +42,9 @@ int main() {
 
 		hid_touchscreen_t touchscreen = hid_get_shared_memory()->touchscreen;
 		hid_touch_entry_t latest = touchscreen.touch_entry[touchscreen.latest_idx];
-		printf("Touch count: %u %u\n", latest.num_touches, touchscreen.latest_idx);
-		for (int j = 0; j < latest.num_touches; j++) {
-			printf("Touch %u:\t(%u, %u)\n", j, latest.touch_data[j].touch_x, latest.touch_data[j].touch_y);
+		printf("Touch count: %lu %lu\n", latest.num_touches, touchscreen.latest_idx);
+		for (uint64_t j = 0; j < latest.num_touches; j++) {
+			printf("Touch %lu:\t(%u, %u)\n", j, latest.touch_data[j].touch_x, latest.touch_data[j].touch_y);
 		}
 
 		svcSleepThread(50000000);
