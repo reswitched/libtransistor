@@ -15,6 +15,11 @@ run_sfdnsres_test: $(BUILD_DIR)/test/test_sfdnsres.nro
 run_ssp_test: $(BUILD_DIR)/test/test_ssp.nro
 	$(MEPHISTO) --enable-sockets --load-nro $<
 
+run_fs_stress_test: $(BUILD_DIR)/test/test_fs_stress.nro
+	mkdir -p $(BUILD_DIR)/SwitchFS/SDCard/
+	echo "test text" > $(BUILD_DIR)/SwitchFS/SDCard/test_file
+	cd $(BUILD_DIR); $(realpath $(MEPHISTO)) --load-nro $(realpath $<)
+
 run_%_test: $(BUILD_DIR)/test/test_%.nro
 	$(MEPHISTO) --load-nro $<
 
