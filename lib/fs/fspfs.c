@@ -3,6 +3,7 @@
 #include <libtransistor/fd.h>
 #include <libtransistor/fs/fspfs.h>
 #include <libtransistor/ipc/fs/ifilesystem.h>
+#include <libtransistor/ipc/fs/err.h>
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>

@@ -1,8 +1,10 @@
 #include<libtransistor/types.h>
+#include<libtransistor/err.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/util.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/bsd.h>
+#include<libtransistor/ipc/fs/err.h>
 
 #include<stdlib.h>
 #include<stdio.h>
