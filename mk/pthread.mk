@@ -56,4 +56,4 @@ $(BUILD_DIR)/pthread/%.o: $(SOURCE_ROOT)/pthread/%.c $(pthread_BUILD_DEPS) $(DIS
 .PHONY: clean_pthread
 
 clean_pthread:
-	rm -fr build/pthread
+	rm -rf $(BUILD_DIR)/pthread

@@ -52,4 +52,5 @@ default: $(DIST)
 clean: clean_transistor clean_test
 	rm -rf $(LIBTRANSISTOR_HOME)/docs
 
-distclean: clean clean_newlib clean_compiler-rt clean_pthread clean_sdl2
+distclean: clean clean_newlib clean_compiler-rt clean_pthread clean_sdl2 clean_libcxx clean_liblzma clean_openlibm
+	rm -rf $(LIBTRANSISTOR_HOME)/dist

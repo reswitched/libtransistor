@@ -95,3 +95,10 @@ $(BUILD_DIR)/libunwind/Makefile: $(DIST_LIBCXX) $(DIST_TRANSISTOR_SUPPORT)
 		-DLLVM_CONFIG_PATH=llvm-config$(LLVM_POSTFIX) \
 		-DCMAKE_SYSTEM_NAME=Linux \
 		-DCMAKE_INSTALL_PREFIX=$(LIBTRANSISTOR_HOME)
+
+# CLEAN RULES
+
+.PHONY: clean_libcxx clean
+
+clean_libcxx:
+	rm -rf $(BUILD_DIR)/libcxx $(BUILD_DIR)/libcxxabi $(BUILD_DIR)/libunwind

@@ -37,4 +37,4 @@ dist_sdl2: $(LIB_DEP_SDL2)
 .PHONY: clean_sdl2
 
 clean_sdl2:
-	rm -rf build/sdl2 build/sdl2_install
+	rm -rf $(BUILD_DIR)/sdl2 $(BUILD_DIR)/sdl2_install
