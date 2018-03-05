@@ -50,21 +50,23 @@ void print_file(char *name, int indent) {
 	int fd = open(name, O_RDONLY);
 	if (fd < 0) {
 		perror("error: open");
-		exit(0);
+		exit(1);
 	}
 	hash_file(hash, fd);
 	tohex(hash, 32, hashstr, 65);
 	printf("%*s- %s: %s\n", indent, "", name, hashstr);
 }
 
-void listdir(const char *name, int indent)
+int listdir(const char *name, int indent)
 {
 	DIR *dir;
 	struct dirent *entry;
 	struct stat file_stat;
 
+	int ret = 0;
+	
 	if (!(dir = opendir(name)))
-		return;
+		return 1;
 
 	while ((entry = readdir(dir)) != NULL) {
 		char path[1024];
@@ -75,20 +77,22 @@ void listdir(const char *name, int indent)
 		// TODO: Implement d_type in dentry
 		if (stat(path, &file_stat) == -1) {
 			perror("Stat error");
-			exit(0);
+			exit(1);
 		}
 
 		if (S_ISDIR(file_stat.st_mode)) {
 			printf("%*s[%s]\n", indent, "", entry->d_name);
-			listdir(path, indent + 2);
+			ret|= listdir(path, indent + 2);
 		} else {
 			print_file(path, indent);
 		}
 	}
 	closedir(dir);
+
+	return ret;
 }
 
 // Read every file into a buffer.
 int main(int argc, char *argv[]) {
-	listdir("/", 0);
+	return listdir("/", 0);
 }
