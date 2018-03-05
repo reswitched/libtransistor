@@ -205,23 +205,23 @@ static result_t trn_sqfs_open_as_dir(void *data, trn_dir_t *out) {
 }
 
 static result_t trn_sqfs_create_file(void *data, const char *name) {
-    return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+    return LIBTRANSISTOR_ERR_FS_READ_ONLY;
 }
 
 static result_t trn_sqfs_create_directory(void *data, const char *name) {
-    return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+    return LIBTRANSISTOR_ERR_FS_READ_ONLY;
 }
 
 static result_t trn_sqfs_rename(void *data, const char *newpath) {
-    return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+    return LIBTRANSISTOR_ERR_FS_READ_ONLY;
 }
 
 static result_t trn_sqfs_remove_file(void *inode) {
-	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
 }
 
 static result_t trn_sqfs_remove_empty_directory(void *inode) {
-	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
 }
 
 static trn_inode_ops_t trn_sqfs_inode_ops = {
