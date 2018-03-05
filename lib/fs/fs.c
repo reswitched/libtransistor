@@ -1,7 +1,7 @@
 #include<libtransistor/types.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/fs/inode.h>
-#include<libtransistor/fs/rootfs.h>
+#include<libtransistor/fs/mountfs.h>
 #include<libtransistor/err.h>
 
 #include<stdio.h>
@@ -39,7 +39,7 @@ result_t trn_fs_set_root(trn_inode_t *new_root) {
 // This will only work if trn_fs_set_root has not been called!
 result_t trn_fs_mount(const char *mount_name, trn_inode_t *mount) {
 	if (root != NULL)
-		return trn_rootfs_mount_fs(root, mount_name, mount);
+		return trn_mountfs_mount_fs(root, mount_name, mount);
 	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
 }
 
@@ -261,7 +261,7 @@ result_t trn_fs_rmdir(const char *path) {
 	return r;
 }
 
-// TODO: Does not work in the case of nested rootfs, or if trn_fs_set_root was
+// TODO: Does not work in the case of nested mountfs, or if trn_fs_set_root was
 // called.
 result_t trn_fs_rename(const char *oldpath, const char *newpath) {
 	result_t r;
@@ -274,7 +274,7 @@ result_t trn_fs_rename(const char *oldpath, const char *newpath) {
 		return r;
 	}
 
-	// Skip the first element, of newpath, as that's the rootfs.
+	// Skip the first element, of newpath, as that's the mountfs.
 	// TODO: Find a better way to find the common ancestor in the face of
 	// mountpoints...
 	while (*newpath == '/')

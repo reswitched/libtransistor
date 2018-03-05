@@ -33,7 +33,7 @@
 /**
  * @brief Change filesystem root.
  *
- * In libtransistor, the default root filesystem is rootfs. That filesystem is
+ * In libtransistor, the default root filesystem is mountfs. That filesystem is
  * not very special: it's a filesystem containing only directories, each being
  * a mountpoint. However, this behavior might not fit what all application's
  * needs. For instance, when porting software, you might need to place some
@@ -61,7 +61,7 @@ result_t trn_fs_set_root(trn_inode_t *new_root);
  * should be a full path.
  *
  * Note that the current implementation is relatively simple: it forwards the
- * call to mount to the root filesystem - if it is a rootfs. If you have swapped
+ * call to mount to the root filesystem - if it is a mountfs. If you have swapped
  * out the root filesystem with `trn_fs_set_root`, this will not work.
  *
  * You could mount the game card partition (assuming correct privilege) like so:

@@ -17,8 +17,8 @@ struct mountpoint {
 	trn_inode_ops_t ops_clone;
 };
 
-static struct trn_inode_ops_t rootfs_inode_ops;
-static trn_dir_ops_t trn_rootfs_dir_ops;
+static struct trn_inode_ops_t mountfs_inode_ops;
+static trn_dir_ops_t trn_mountfs_dir_ops;
 
 static result_t empty_release(void *inode) {
 	return RESULT_OK;
@@ -27,8 +27,8 @@ static result_t empty_release(void *inode) {
 // This borrows the name. Maybe I should make a copy?
 // It takes ownership of the mountpoint, and will call release on it automatically
 // on umount.
-result_t trn_rootfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mountpoint) {
-	if (fs == NULL || fs->ops != &rootfs_inode_ops)
+result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mountpoint) {
+	if (fs == NULL || fs->ops != &mountfs_inode_ops)
 		return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
 
 	struct mountpoint **cur_root = (struct mountpoint**)fs->data;
@@ -58,13 +58,13 @@ result_t trn_rootfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mou
 	return RESULT_OK;
 }
 
-static result_t trn_rootfs_is_dir(void *data, bool *out) {
-	// Everything is a dir in rootfs.
+static result_t trn_mountfs_is_dir(void *data, bool *out) {
+	// Everything is a dir in mountfs.
 	*out = 1;
 	return RESULT_OK;
 }
 
-static result_t trn_rootfs_lookup(void *data, trn_inode_t *out, const char *name, size_t name_length) {
+static result_t trn_mountfs_lookup(void *data, trn_inode_t *out, const char *name, size_t name_length) {
 	// This should only have a single inode ever. So I don't need to check the data out.
 	struct mountpoint **mounts = (struct mountpoint**)data;
 	struct mountpoint *cur_mount = *mounts;
@@ -80,7 +80,7 @@ static result_t trn_rootfs_lookup(void *data, trn_inode_t *out, const char *name
 	return RESULT_OK;
 }
 
-static result_t trn_rootfs_release(void *data) {
+static result_t trn_mountfs_release(void *data) {
 	struct mountpoint **mounts = (struct mountpoint**)data;
 	struct mountpoint *cur_mount = *mounts;
 	result_t r;
@@ -95,44 +95,44 @@ static result_t trn_rootfs_release(void *data) {
 	return RESULT_OK;
 }
 
-static result_t trn_rootfs_create_file(void *data, const char *name) {
+static result_t trn_mountfs_create_file(void *data, const char *name) {
 	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
 }
 
-static result_t trn_rootfs_create_directory(void *data, const char *name) {
+static result_t trn_mountfs_create_directory(void *data, const char *name) {
 	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
 }
 
-static result_t trn_rootfs_open_as_file(void *data, int mode, int *fd) {
+static result_t trn_mountfs_open_as_file(void *data, int mode, int *fd) {
 	return LIBTRANSISTOR_ERR_FS_NOT_A_FILE;
 }
 
-static result_t trn_rootfs_rename(void *inode, const char *newpath) {
+static result_t trn_mountfs_rename(void *inode, const char *newpath) {
 	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
 }
 
-static result_t trn_rootfs_remove_file(void *inode) {
+static result_t trn_mountfs_remove_file(void *inode) {
 	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
 }
 
-static result_t trn_rootfs_remove_empty_directory(void *inode) {
+static result_t trn_mountfs_remove_empty_directory(void *inode) {
 	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
 }
 
-static result_t trn_rootfs_open_as_dir(void *data, trn_dir_t *out) {
+static result_t trn_mountfs_open_as_dir(void *data, trn_dir_t *out) {
 	// TODO: Clone the linked list.
-	// TODO: Same comment as trn_rootfs_create below.
+	// TODO: Same comment as trn_mountfs_create below.
 	struct mountpoint **mounts = malloc(sizeof(struct mountpoint*));
 	if (mounts == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
 	*mounts = *(struct mountpoint**)data;
 	out->data = mounts;
-	out->ops = &trn_rootfs_dir_ops;
+	out->ops = &trn_mountfs_dir_ops;
 	return RESULT_OK;
 }
 
-static result_t trn_rootfs_dir_next(void *data, trn_dirent_t *dirent) {
+static result_t trn_mountfs_dir_next(void *data, trn_dirent_t *dirent) {
 	struct mountpoint **mount = (struct mountpoint**)data;
 	if (*mount == NULL)
 		return LIBTRANSISTOR_ERR_FS_OUT_OF_DIR_ENTRIES;
@@ -147,25 +147,25 @@ static result_t trn_rootfs_dir_next(void *data, trn_dirent_t *dirent) {
 	return RESULT_OK;
 }
 
-static trn_dir_ops_t trn_rootfs_dir_ops = {
-	.next = trn_rootfs_dir_next,
+static trn_dir_ops_t trn_mountfs_dir_ops = {
+	.next = trn_mountfs_dir_next,
 	.close = free,
 };
 
-static struct trn_inode_ops_t rootfs_inode_ops = {
-	.is_dir = trn_rootfs_is_dir,
-	.lookup = trn_rootfs_lookup,
-	.release = trn_rootfs_release,
-	.create_file = trn_rootfs_create_file,
-	.create_directory = trn_rootfs_create_directory,
-	.rename = trn_rootfs_rename,
-	.remove_file = trn_rootfs_remove_file,
-	.remove_empty_directory = trn_rootfs_remove_empty_directory,
-	.open_as_file = trn_rootfs_open_as_file,
-	.open_as_dir = trn_rootfs_open_as_dir
+static struct trn_inode_ops_t mountfs_inode_ops = {
+	.is_dir = trn_mountfs_is_dir,
+	.lookup = trn_mountfs_lookup,
+	.release = trn_mountfs_release,
+	.create_file = trn_mountfs_create_file,
+	.create_directory = trn_mountfs_create_directory,
+	.rename = trn_mountfs_rename,
+	.remove_file = trn_mountfs_remove_file,
+	.remove_empty_directory = trn_mountfs_remove_empty_directory,
+	.open_as_file = trn_mountfs_open_as_file,
+	.open_as_dir = trn_mountfs_open_as_dir
 };
 
-result_t trn_rootfs_create(trn_inode_t *out) {
+result_t trn_mountfs_create(trn_inode_t *out) {
 	// TODO: This is a bit dumb. Functions should be passed a pointer to their
 	// data so they can change it directly. This would avoid this allocation.
 	struct mountpoint **mountpoint = malloc(sizeof(struct mountpoint*));
@@ -174,6 +174,6 @@ result_t trn_rootfs_create(trn_inode_t *out) {
 
 	*mountpoint = NULL;
 	out->data = mountpoint;
-	out->ops = &rootfs_inode_ops;
+	out->ops = &mountfs_inode_ops;
 	return RESULT_OK;
 }

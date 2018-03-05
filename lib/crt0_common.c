@@ -7,7 +7,7 @@
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
-#include<libtransistor/fs/rootfs.h>
+#include<libtransistor/fs/mountfs.h>
 #include<libtransistor/fs/fspfs.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/fd.h>
@@ -185,13 +185,13 @@ bool setup_fs() {
 	}
 
 	result_t r;
-	// Setup rootfs
-	if((r = trn_rootfs_create(&root_inode)) != RESULT_OK) {
-		printf("Failed to create rootfs: %x\n", r);
+	// Setup mountfs
+	if((r = trn_mountfs_create(&root_inode)) != RESULT_OK) {
+		printf("Failed to create mountfs: %x\n", r);
 		return true;
 	}
 	if((r = trn_fs_set_root(&root_inode)) != RESULT_OK) {
-		printf("Failed to set rootfs as root: %x\n", r);
+		printf("Failed to set mountfs as root: %x\n", r);
 		return true;
 	}
 
