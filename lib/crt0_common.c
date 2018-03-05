@@ -216,8 +216,6 @@ bool setup_fs() {
 	}
 
 	// Mount sdcardfs to /sd
-	// TODO: We probably shouldn't fail entirely if those operations don't work
-	// out.
 	if((r = fsp_srv_init(0)) != RESULT_OK) {
 		printf("Failed to open connection to fsp-srv: %x\n", r);
 		goto fail_mounted_sqfs;
