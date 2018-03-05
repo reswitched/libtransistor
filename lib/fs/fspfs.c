@@ -369,8 +369,9 @@ result_t trn_fspfs_create(trn_inode_t *out, ifilesystem_t fs) {
 
 	inode->is_dir = true;
 	inode->fs = fs;
-	inode->path_len = 0;
-	inode->path[0] = '\0';
+	inode->path_len = 1;
+	inode->path[0] = '/';
+	inode->path[1] = '\0';
 
 	out->data = inode;
 	out->ops = &fspfs_inode_ops;
