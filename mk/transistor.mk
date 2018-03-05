@@ -9,8 +9,8 @@ libtransistor_BUILD_DEPS := $(DIST_NEWLIB) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREA
 
 # ARCHIVE RULES
 
-libtransistor_TARGET_NRO := $(BUILD_DIR)/libtransistor.nro.a
-libtransistor_TARGET_NSO := $(BUILD_DIR)/libtransistor.nso.a
+libtransistor_TARGET_NRO := $(BUILD_DIR)/transistor/libtransistor.nro.a
+libtransistor_TARGET_NSO := $(BUILD_DIR)/transistor/libtransistor.nso.a
 
 $(libtransistor_TARGET_NRO): $(BUILD_DIR)/transistor/crt0.nro.o $(libtransistor_OBJECT_FILES)
 	mkdir -p $(@D)
