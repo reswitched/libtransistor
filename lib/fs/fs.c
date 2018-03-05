@@ -3,11 +3,15 @@
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/mountfs.h>
 #include<libtransistor/err.h>
+#include<libtransistor/util.h>
 
 #include<stdio.h>
 #include<string.h>
 #include<sys/stat.h>
 #include<fcntl.h>
+
+#define TRN_FS_DEBUG_ENABLED 0
+#define TRN_FS_DEBUG(...) if(TRN_FS_DEBUG_ENABLED) dbg_printf(__VA_ARGS__)
 
 #define MAX_RECURSION 256
 
@@ -137,7 +141,7 @@ result_t trn_fs_realpath(const char *path, char **resolved_path) {
 	int borrowed_recursion;
 	int traverse_recursion;
 
-	printf("realpath(\"%s\")\n", path);
+	TRN_FS_DEBUG("realpath(\"%s\")\n", path);
 	
 	if((r = trn_fs_traverse(path, SIZE_MAX, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;
@@ -174,7 +178,7 @@ fail: // release inodes that were opened during traversal
 	return r;
 }
 
-void get_path_parent_child(char *path, char **out_parent, size_t *out_len_parent, char **out_child, size_t *out_child_len) {
+static void get_path_parent_child(char *path, char **out_parent, size_t *out_len_parent, char **out_child, size_t *out_child_len) {
 	char *path_end = path + strlen(path) - 1;
 	char *child;
 
@@ -210,12 +214,12 @@ result_t trn_fs_mkdir(const char *path) {
 	size_t parent_path_size, child_path_size;
 
 	get_path_parent_child(path, &parent_path, &parent_path_size, &child_path, &child_path_size);
-	printf("Parent is %.*s, child is %.*s\n", parent_path_size, parent_path, child_path_size, child_path);
+	TRN_FS_DEBUG("Parent is %.*s, child is %.*s\n", parent_path_size, parent_path, child_path_size, child_path);
 	if((r = trn_fs_traverse(parent_path, parent_path_size, traverse, &borrowed_recursion, &traverse_recursion)) != RESULT_OK) {
 		return r;
 	}
 
-	printf("Creating child\n");
+	TRN_FS_DEBUG("Creating child\n");
 	r = traverse[traverse_recursion].inode.ops->create_directory(traverse[traverse_recursion].inode.data, child_path);
 
 	for(int i = borrowed_recursion + 1; i <= traverse_recursion; i++) {
@@ -365,7 +369,7 @@ result_t trn_fs_chdir(const char *path) {
 	
 	cwd_recursion = traverse_recursion;
 	memcpy(cwd, traverse, (cwd_recursion + 1) * sizeof(cwd[0]));
-	printf("chdir, cwd_recursion is now %d\n", cwd_recursion);
+	TRN_FS_DEBUG("chdir, cwd_recursion is now %d\n", cwd_recursion);
 
 	return RESULT_OK;
 }
