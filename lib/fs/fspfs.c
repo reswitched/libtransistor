@@ -242,7 +242,10 @@ fail:
 static result_t fspfs_release(void *data) {
 	struct inode *inode = (struct inode*)data;
 
-	ipc_close(inode->fs);
+	if(inode->path_len == 0) { // is this the root inode?
+		ipc_close(inode->fs);
+	}
+	
 	free(data);
 	return RESULT_OK;
 }
