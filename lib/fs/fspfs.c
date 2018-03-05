@@ -13,8 +13,8 @@
 struct inode {
 	bool is_dir;
 	ifilesystem_t fs;
-	size_t name_len;
-	char name[0x301];// TODO: Static ? PTR ?
+	size_t path_len;
+	char path[0x301];// TODO: Static ? PTR ?
 };
 
 struct ifs_file {
@@ -39,21 +39,15 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 	struct inode *new_inode;
 	uint32_t type;
 	result_t r;
-	const char *root_name;
-	size_t root_name_len;
+	const char *base_path;
+	size_t base_path_len;
 
-	// Ugly hack to strip leading /
-	if (strcmp(inode->name, "/") == 0) {
-		root_name = "";
-		root_name_len = 0;
-	} else {
-		root_name = inode->name;
-		root_name_len = inode->name_len;
-	}
+	base_path = inode->path;
+	base_path_len = inode->path_len;
 
 	// First, calculate len
-	size_t l = root_name_len + name_len + 1;
-	if (l >= sizeof(new_inode->name) - 1)
+	size_t l = base_path_len + name_len + 1;
+	if (l >= sizeof(new_inode->path) - 1)
 		return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;
 
 	new_inode = malloc(sizeof(struct inode));
@@ -62,13 +56,13 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 
 	new_inode->fs = inode->fs;
 
-	strncpy(new_inode->name, root_name, root_name_len);
-	new_inode->name[root_name_len] = '/';
-	strncpy(new_inode->name + root_name_len + 1, name, name_len);
-	new_inode->name[root_name_len + 1 + name_len] = '\0';
-	new_inode->name_len = l;
+	strncpy(new_inode->path, base_path, base_path_len);
+	new_inode->path[base_path_len] = '/';
+	strncpy(new_inode->path + base_path_len + 1, name, name_len);
+	new_inode->path[base_path_len + 1 + name_len] = '\0';
+	new_inode->path_len = l;
 
-	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->name)) != RESULT_OK)
+	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->path)) != RESULT_OK)
 		goto fail;
 
 	new_inode->is_dir = type == 0;
@@ -85,25 +79,21 @@ fail:
 static result_t fspfs_create_file(void *data, const char *name) {
 	struct inode *inode = (struct inode*)data;
 	result_t r;
-	char full_name[0x301];
-	size_t name_len = strlen(name), root_name_len;
-	char *root_name;
+	char full_path[0x301];
+	size_t name_len = strlen(name);
+	
+	char *base_path;
+	size_t base_path_len;
 
-	if (strcmp(inode->name, "/") == 0) {
-		root_name = "";
-		root_name_len = 0;
-	} else {
-		root_name = inode->name;
-		root_name_len = inode->name_len;
-	}
+	base_path = inode->path;
+	base_path_len = inode->path_len;
 
-	strncpy(full_name, root_name, root_name_len);
-	full_name[root_name_len] = '/';
-	strncpy(full_name + root_name_len + 1, name, name_len);
-	full_name[root_name_len + 1 + name_len] = '\0';
-	//full_name_len = root_name_len + 1 + name_len;
+	strncpy(full_path, base_path, base_path_len);
+	full_path[base_path_len] = '/';
+	strncpy(full_path + base_path_len + 1, name, name_len);
+	full_path[base_path_len + 1 + name_len] = '\0';
 
-	if ((r = ifilesystem_create_file(inode->fs, 0, 0, full_name)) == FSPSRV_ERR_EXISTS)
+	if ((r = ifilesystem_create_file(inode->fs, 0, 0, full_path)) == FSPSRV_ERR_EXISTS)
 		return LIBTRANSISTOR_ERR_FS_PATH_EXISTS;
 	else
 		return r;
@@ -112,39 +102,35 @@ static result_t fspfs_create_file(void *data, const char *name) {
 static result_t fspfs_create_directory(void *data, const char *name) {
 	struct inode *inode = (struct inode*)data;
 	result_t r;
-	char full_name[0x301];
-	size_t name_len = strlen(name), root_name_len;
-	char *root_name;
+	char full_path[0x301];
+	size_t name_len = strlen(name);
 
-	if (strcmp(inode->name, "/") == 0) {
-		root_name = "";
-		root_name_len = 0;
-	} else {
-		root_name = inode->name;
-		root_name_len = inode->name_len;
-	}
+	char *base_path;
+	size_t base_path_len;
 
-	strncpy(full_name, root_name, root_name_len);
-	full_name[root_name_len] = '/';
-	strncpy(full_name + root_name_len + 1, name, name_len);
-	full_name[root_name_len + 1 + name_len] = '\0';
-	//full_name_len = root_name_len + 1 + name_len;
+	base_path = inode->path;
+	base_path_len = inode->path_len;
 
-	return ifilesystem_create_directory(inode->fs, full_name);
+	strncpy(full_path, base_path, base_path_len);
+	full_path[base_path_len] = '/';
+	strncpy(full_path + base_path_len + 1, name, name_len);
+	full_path[base_path_len + 1 + name_len] = '\0';
+
+	return ifilesystem_create_directory(inode->fs, full_path);
 }
 
 static result_t fspfs_remove_file(void *data) {
 	struct inode *inode = (struct inode*)data;
 	result_t r;
 
-	return ifilesystem_delete_file(inode->fs, inode->name);
+	return ifilesystem_delete_file(inode->fs, inode->path);
 }
 
 static result_t fspfs_remove_empty_directory(void *data) {
 	struct inode *inode = (struct inode*)data;
 	result_t r;
 
-	return ifilesystem_delete_directory(inode->fs, inode->name);
+	return ifilesystem_delete_directory(inode->fs, inode->path);
 }
 
 static result_t fspfs_rename(void *data, const char *newpath) {
@@ -158,16 +144,16 @@ static result_t fspfs_rename(void *data, const char *newpath) {
 
 	if (inode->is_dir)
 		// newpath must not exist, or be an existing empty directory.
-		r = ifilesystem_rename_directory(inode->fs, inode->name, newpath_buf);
+		r = ifilesystem_rename_directory(inode->fs, inode->path, newpath_buf);
 	else
 		// newpath will be replaced with oldpath. The behavior if newpath is a
 		// directory isn't really specified...
-		r = ifilesystem_rename_file(inode->fs, inode->name, newpath_buf);
+		r = ifilesystem_rename_file(inode->fs, inode->path, newpath_buf);
 
 	// If this is a success, we need to fix this... Also, might want to have a
 	// way to invalidate the traversal.
 	if (r == RESULT_OK)
-		strncpy(inode->name, newpath, 0x301);
+		strncpy(inode->path, newpath, 0x301);
 
 	return r;
 }
@@ -194,7 +180,7 @@ static result_t fspfs_open_as_file(void *data, int flags, int *fd) {
 	if (f == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
-	if ((r = ifilesystem_open_file(inode->fs, &f->file, ifs_flags, inode->name)) != RESULT_OK)
+	if ((r = ifilesystem_open_file(inode->fs, &f->file, ifs_flags, inode->path)) != RESULT_OK)
 		goto fail;
 
 	if (flags & O_TRUNC) {
@@ -241,7 +227,7 @@ static result_t fspfs_open_as_dir(void *data, trn_dir_t *out) {
 	if (dir == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
-	if ((r = ifilesystem_open_directory(inode->fs, dir, 3, inode->name)) != RESULT_OK)
+	if ((r = ifilesystem_open_directory(inode->fs, dir, 3, inode->path)) != RESULT_OK)
 		goto fail;
 
 	out->data = (void*)dir;
@@ -380,9 +366,8 @@ result_t trn_fspfs_create(trn_inode_t *out, ifilesystem_t fs) {
 
 	inode->is_dir = true;
 	inode->fs = fs;
-	inode->name_len = 1;
-	inode->name[0] = '/';
-	inode->name[1] = '\0';
+	inode->path_len = 0;
+	inode->path[0] = '\0';
 
 	out->data = inode;
 	out->ops = &fspfs_inode_ops;
