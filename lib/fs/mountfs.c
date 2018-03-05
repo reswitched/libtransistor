@@ -36,16 +36,20 @@ result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mo
 	if (m == NULL)
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 
-	if (name[0] != '/')
+	if (name[0] != '/') {
+		free(m);
 		return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
+	}
 
 	size_t i;
 	for (i = 0; name[i] == '/'; i++) ;
 	for (size_t j = i; name[j] != '\0'; j++) {
 		if(j >= sizeof(m->name)-1) {
+			free(m);
 			return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;
 		}
 		if(name[j] == '/') {
+			free(m);
 			return LIBTRANSISTOR_ERR_FS_INVALID_PATH;
 		}
 	}

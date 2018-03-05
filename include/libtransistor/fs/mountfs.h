@@ -24,8 +24,10 @@ result_t trn_mountfs_create(trn_inode_t *out);
  * name. Note that it is *not* possible to have hierarchies in the mountfs: all
  * filesystems have to be mounted directly at the root of the MountFS.
  *
- * This takes ownership of the passed trn_inode_t; it will call the close
- * release method automatically when the mountfs itself is released.
+ * If successful, this takes ownership of the passed trn_inode_t; it will call the
+ * release method automatically when the mountfs itself is released. If anything
+ * except RESULT_OK is returned, it is still the caller's responsiblity to release
+ * the inode.
  *
  * The \ref name parameter is copied and does not need to live longer than
  * the invocation of this function.

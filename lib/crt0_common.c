@@ -181,29 +181,29 @@ bool setup_fs() {
 	err = sqfs_init(&fs, sqfs_img_fd, 0);
 	if(err != SQFS_OK) {
 		printf("failed to open SquashFS image: %x\n", err);
-		return true;
+		goto fail_sqfs_image_fd;
 	}
 
 	result_t r;
 	// Setup mountfs
 	if((r = trn_mountfs_create(&root_inode)) != RESULT_OK) {
 		printf("Failed to create mountfs: %x\n", r);
-		return true;
+		goto fail_sqfs;
 	}
 	if((r = trn_fs_set_root(&root_inode)) != RESULT_OK) {
 		printf("Failed to set mountfs as root: %x\n", r);
-		return true;
+		goto fail_mountfs;
 	}
 
 	// Mounting squashfs to /squash
 	if((r = trn_sqfs_open_root(&squash_inode, &fs)) != RESULT_OK) {
 		printf("failed to open SquashFS root: %x\n", r);
-		return true;
+		goto fail_mountfs;
 	}
 
 	if((r = trn_fs_mount("/squashfs", &squash_inode)) != RESULT_OK) {
 		printf("failed to mount SquashFS: %x\n", r);
-		return true;
+		goto fail_trn_sqfs;
 	}
 
 	// Mount sdcardfs to /sd
@@ -211,21 +211,41 @@ bool setup_fs() {
 	// out.
 	if((r = fsp_srv_init(0)) != RESULT_OK) {
 		printf("Failed to open connection to fsp-srv: %x\n", r);
-		return true;
+		goto fail_mounted_sqfs;
 	}
 	if((r = fsp_srv_mount_sd_card(&sdcard_ifs)) != RESULT_OK) {
 		printf("Failed to mount sdcard on fsp-srv: %x\n", r);
-		return true;
+		goto fail_fsp_srv;
 	}
 	if((r = trn_fspfs_create(&sdcard_inode, sdcard_ifs)) != RESULT_OK) {
 		printf("Failed to create fsp-srv vfs: %x\n", r);
-		return true;
+		goto fail_sdcard_ifs;
 	}
 	if((r = trn_fs_mount("/sd", &sdcard_inode)) != RESULT_OK) {
 		printf("failed to mount sdcard: %x\n", r);
-		return true;
+		goto fail_fspfs;
 	}
+
 	return false;
+
+fail_fspfs:
+	sdcard_inode.ops->release(sdcard_inode.data);
+fail_sdcard_ifs:
+	ipc_close(sdcard_ifs);
+fail_fsp_srv:
+	fsp_srv_finalize();
+fail_mounted_sqfs:
+	return false; // these are not fatal errors
+	
+fail_trn_sqfs:
+	squash_inode.ops->release(squash_inode.data);
+fail_mountfs:
+	root_inode.ops->release(root_inode.data);
+fail_sqfs:
+	sqfs_destroy(&fs);
+fail_sqfs_image_fd:
+	close(sqfs_img_fd);
+	return true;
 }
 
 static jmp_buf exit_jmpbuf;
