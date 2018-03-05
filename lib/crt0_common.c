@@ -395,6 +395,9 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	}
 
 	if(!_crt0_kludge_skip_cleanup) { // TODO: remove cleanup kludge ASAP
+		// Clean up FS
+		root_inode.ops->release(root_inode.data);
+
 		dbg_set_bsd_log(-1);
 
 		if(dyn_info.fini_array != NULL) {
@@ -411,9 +414,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	} else {
 		printf("crt0: cleanup kludge active, please fix this ASAP\n");
 	}
-
-	// Clean up FS
-	root_inode.ops->release(root_inode.data);
 
 fail_bsd:
 	/*
