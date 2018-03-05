@@ -1,11 +1,14 @@
 #include<libtransistor/types.h>
+#include<libtransistor/err.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/util.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/bsd.h>
+#include<libtransistor/ipc/fs/err.h>
 
 #include<stdlib.h>
 #include<stdio.h>
+#include<errno.h>
 
 void *find_empty_memory_block(size_t len) {
 	// find a suitable address for mapping the shared memory
@@ -58,18 +61,20 @@ char log_buffer[0x20000];
 int log_string(const char *string, size_t len) {
 	svcOutputDebugString((char*) string, len);
 	size_t start = log_length;
-	for(size_t i = 0; i < len; i++) {
+	for(size_t i = 0; i < len && log_length < sizeof(log_buffer) - 2; i++) {
 		if(string[i] == 0) { break; }
 		log_buffer[log_length++] = string[i];
 	}
-	log_buffer[log_length++] = '\n';
+	if (log_length < sizeof(log_buffer) - 1)
+		log_buffer[log_length++] = '\n';
 	if(bsd_log >= 0) {
 		int olddebug = ipc_debug_flag;
 		ipc_debug_flag = 0;
 		bsd_send(bsd_log, log_buffer + start, log_length - start, 0);
 		ipc_debug_flag = olddebug;
 	}
-	log_buffer[log_length] = 0;
+	if (log_length < sizeof(log_buffer))
+		log_buffer[log_length] = 0;
 	return 4;
 }
 
@@ -168,4 +173,35 @@ int dbg_printf(char const *fmt, ...) {
 	log_string(buf, ret+1);
 	va_end(vl);
 	return ret;
+}
+
+int trn_result_to_errno(result_t r) {
+	switch (r) {
+		case RESULT_OK:
+			return 0;
+		case FSPSRV_ERR_NOT_FOUND:
+		case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
+		case LIBTRANSISTOR_ERR_FS_INVALID_PATH:
+			return ENOENT;
+		case FSPSRV_ERR_EXISTS:
+		case LIBTRANSISTOR_ERR_FS_PATH_EXISTS:
+			return EEXIST;
+		case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
+			return ENOTDIR;
+		case LIBTRANSISTOR_ERR_OUT_OF_MEMORY:
+			return ENOMEM;
+		case LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG:
+			return ENAMETOOLONG;
+		case FSPSRV_ERR_DIRECTORY_NOT_EMPTY:
+			return ENOTEMPTY;
+		case LIBTRANSISTOR_ERR_FS_READ_ONLY:
+			return EROFS;
+		case LIBTRANSISTOR_ERR_FS_ACCESS_DENIED:
+			return EACCES;
+		default:
+			// Make the debugger's life easy: print his error before turning it
+			// into a useless code...
+			printf("UNSUPPORTED ERROR: %x\n", r);
+			return ENOSYS;
+	}
 }

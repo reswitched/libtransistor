@@ -5,9 +5,12 @@
 #include<libtransistor/tls.h>
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
+#include<libtransistor/ipc/fs.h>
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
+#include<libtransistor/fs/mountfs.h>
+#include<libtransistor/fs/fspfs.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/alloc_pages.h>
@@ -175,30 +178,81 @@ static size_t dbg_log_write(void *v, const char *ptr, size_t len) {
 static blob_file sqfs_blob;
 static sqfs fs;
 static trn_inode_t root_inode;
+static trn_inode_t squash_inode;
+static trn_inode_t sdcard_inode;
 
 bool setup_fs() {
 	size_t sqfs_size = ((uint8_t*) &_libtransistor_squashfs_image_end) - ((uint8_t*) &_libtransistor_squashfs_image); // TODO: not this
 	int sqfs_img_fd = blobfd_create(&sqfs_blob, &_libtransistor_squashfs_image, sqfs_size);
 	sqfs_err err = SQFS_OK;
+	ifilesystem_t sdcard_ifs;
 
 	err = sqfs_init(&fs, sqfs_img_fd, 0);
 	if(err != SQFS_OK) {
-		printf("failed to open SquashFS image\n");
-		return true;
+		printf("failed to open SquashFS image: %x\n", err);
+		goto fail_sqfs_image_fd;
 	}
 
 	result_t r;
-	if((r = trn_sqfs_open_root(&root_inode, &fs)) != RESULT_OK) {
-		printf("failed to open SquashFS root\n");
-		return true;
+	// Setup mountfs
+	if((r = trn_mountfs_create(&root_inode)) != RESULT_OK) {
+		printf("Failed to create mountfs: %x\n", r);
+		goto fail_sqfs;
+	}
+	if((r = trn_fs_set_root(&root_inode)) != RESULT_OK) {
+		printf("Failed to set mountfs as root: %x\n", r);
+		goto fail_mountfs;
 	}
 
-	if((r = trn_fs_set_root(&root_inode)) != RESULT_OK) {
-		printf("failed to set SquashFS root\n");
-		return true;
+	// Mounting squashfs to /squash
+	if((r = trn_sqfs_open_root(&squash_inode, &fs)) != RESULT_OK) {
+		printf("failed to open SquashFS root: %x\n", r);
+		goto fail_mountfs;
+	}
+
+	if((r = trn_fs_mount("/squashfs", &squash_inode)) != RESULT_OK) {
+		printf("failed to mount SquashFS: %x\n", r);
+		goto fail_trn_sqfs;
+	}
+
+	// Mount sdcardfs to /sd
+	if((r = fsp_srv_init(0)) != RESULT_OK) {
+		printf("Failed to open connection to fsp-srv: %x\n", r);
+		goto fail_mounted_sqfs;
+	}
+	if((r = fsp_srv_mount_sd_card(&sdcard_ifs)) != RESULT_OK) {
+		printf("Failed to mount sdcard on fsp-srv: %x\n", r);
+		goto fail_fsp_srv;
+	}
+	if((r = trn_fspfs_create(&sdcard_inode, sdcard_ifs)) != RESULT_OK) {
+		printf("Failed to create fsp-srv vfs: %x\n", r);
+		goto fail_sdcard_ifs;
+	}
+	if((r = trn_fs_mount("/sd", &sdcard_inode)) != RESULT_OK) {
+		printf("failed to mount sdcard: %x\n", r);
+		goto fail_fspfs;
 	}
 
 	return false;
+
+fail_fspfs:
+	sdcard_inode.ops->release(sdcard_inode.data);
+fail_sdcard_ifs:
+	ipc_close(sdcard_ifs);
+fail_fsp_srv:
+	fsp_srv_finalize();
+fail_mounted_sqfs:
+	return false; // these are not fatal errors
+	
+fail_trn_sqfs:
+	squash_inode.ops->release(squash_inode.data);
+fail_mountfs:
+	root_inode.ops->release(root_inode.data);
+fail_sqfs:
+	sqfs_destroy(&fs);
+fail_sqfs_image_fd:
+	close(sqfs_img_fd);
+	return true;
 }
 
 static jmp_buf exit_jmpbuf;
@@ -305,6 +359,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
 		dbg_set_bsd_log(loader_config.socket_stdout);
 	} else {
+
 		// TODO: Create a fake FD for bsslog
 		dbg_printf("using bsslog stdout");
 		int fd = make_dbg_log_fd();
@@ -338,7 +393,11 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	}
 
 	if(!_crt0_kludge_skip_cleanup) { // TODO: remove cleanup kludge ASAP
+		// Clean up FS
+		root_inode.ops->release(root_inode.data);
+
 		dbg_set_bsd_log(-1);
+
 		if(dyn_info.fini_array != NULL) {
 			if(dyn_info.fini_array_size != -1) {
 				for(size_t i = 0; i < dyn_info.fini_array_size/sizeof(dyn_info.fini_array[0]); i++) {
@@ -353,7 +412,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	} else {
 		printf("crt0: cleanup kludge active, please fix this ASAP\n");
 	}
-	
+
 fail_bsd:
 	/*
 	  at this point, bsd and sm have already been destructed, but just in case we

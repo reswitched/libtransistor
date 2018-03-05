@@ -42,23 +42,8 @@ static result_t trn_sqfs_dir_next(void *data, trn_dirent_t *dirent) {
 		}
 	}
 	
-	trn_sqfs_inode_t *out_data = malloc(sizeof(*out_data));
-	if(out_data == NULL) {
-		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-	}
-	
-	dirent->inode.data = out_data;
-	err = sqfs_inode_get(dir->fs, &out_data->inode, dir->dentry.inode);
-	if(err) {
-		free(out_data);
-		return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
-	}
-	dirent->inode.ops = &trn_sqfs_inode_ops;
-
-	if(dir->dentry.name_size >= sizeof(dirent->name)-1) {
-		free(out_data);
+	if(dir->dentry.name_size >= sizeof(dirent->name)-1)
 		return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;
-	}
 	
 	memcpy(dirent->name, dir->dentry.name, dir->dentry.name_size);
 	dirent->name_size = dir->dentry.name_size;
@@ -219,10 +204,35 @@ static result_t trn_sqfs_open_as_dir(void *data, trn_dir_t *out) {
 	return RESULT_OK;
 }
 
+static result_t trn_sqfs_create_file(void *data, const char *name) {
+    return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
+static result_t trn_sqfs_create_directory(void *data, const char *name) {
+    return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
+static result_t trn_sqfs_rename(void *data, const char *newpath) {
+    return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
+static result_t trn_sqfs_remove_file(void *inode) {
+	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
+static result_t trn_sqfs_remove_empty_directory(void *inode) {
+	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
 static trn_inode_ops_t trn_sqfs_inode_ops = {
 	.is_dir = trn_sqfs_is_dir,
 	.lookup = trn_sqfs_lookup,
 	.release = trn_sqfs_release,
+	.create_file = trn_sqfs_create_file,
+	.create_directory = trn_sqfs_create_directory,
+	.rename = trn_sqfs_rename,
+	.remove_file = trn_sqfs_remove_file,
+	.remove_empty_directory = trn_sqfs_remove_empty_directory,
 	.open_as_file = trn_sqfs_open_as_file,
 	.open_as_dir = trn_sqfs_open_as_dir,
 };

@@ -24,6 +24,7 @@
 #include<libtransistor/util.h>
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/fs/fs.h>
+#include<libtransistor/util.h>
 
 void _exit(); // implemented in libtransistor crt0
 
@@ -106,19 +107,13 @@ finalize:
 
 int _open_r(struct _reent *reent, const char *name, int flags, int mode) {
 	int fd;
-	switch(trn_fs_open(&fd, name, flags)) {
-	case RESULT_OK:
-		return fd;
-	case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
-		reent->_errno = -ENOTDIR;
-		break;
-	case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
-		reent->_errno = -ENOENT;
-		break;
-	default:
-		reent->_errno = ENOSYS;
+	result_t r;
+
+	if ((r = trn_fs_open(&fd, name, flags)) != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
+		return -1;
 	}
-	return -1;
+	return fd;
 }
 
 ssize_t _read_r(struct _reent *reent, int file, void *ptr, size_t len) {
@@ -247,20 +242,13 @@ void _cleanup_mapped_heap() {
 }
 
 int _stat_r(struct _reent *reent, const char *file, struct stat *st) {
-	switch(trn_fs_stat(file, st)) {
-	case RESULT_OK:
-		return 0;
-	case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
-		reent->_errno = ENOTDIR;
-		break;
-	case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
-		reent->_errno = ENOENT;
-		break;
-	default:
-		reent->_errno = ENOSYS;
-		break;
+	result_t r;
+
+	if ((r = trn_fs_stat(file, st)) != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
+		return -1;
 	}
-	return -1;
+	return 0;
 }
 
 clock_t _times_r(struct _reent *reent, struct tms *buf) {
@@ -269,8 +257,13 @@ clock_t _times_r(struct _reent *reent, struct tms *buf) {
 }
 
 int _unlink_r(struct _reent *reent, const char *name) {
-	reent->_errno = ENOSYS;
-	return -1;
+	result_t r;
+
+	if ((r = trn_fs_unlink(name)) != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
+		return -1;
+	}
+	return 0;
 }
 
 int _wait_r(struct _reent *reent, int *status) {
@@ -331,6 +324,16 @@ int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__
 	return 0;
 }
 
+int rmdir(const char *path) {
+	result_t r;
+
+	if ((r = trn_fs_rmdir(path)) != RESULT_OK) {
+		errno = trn_result_to_errno(r);
+		return -1;
+	}
+	return 0;
+}
+
 long sysconf(int name) {
 	switch(name) {
 	case _SC_PAGESIZE:
@@ -375,16 +378,13 @@ ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize) 
 
 char *realpath(const char *path, char *resolved_path) {
 	char **resolved_path_var = &resolved_path;
-	switch(trn_fs_realpath(path, resolved_path_var)) {
-	case RESULT_OK:
-		return resolved_path_var;
-	case LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG:
-		errno = ENAMETOOLONG;
+	result_t r;
+
+	if ((r = trn_fs_realpath(path, resolved_path_var)) != RESULT_OK) {
+		errno = trn_result_to_errno(r);
 		return NULL;
-	case LIBTRANSISTOR_ERR_OUT_OF_MEMORY:
-		errno = ENOMEM;
 	}
-	return NULL;
+	return *resolved_path_var;
 }
 
 DIR *opendir(const char *name) {
@@ -395,41 +395,36 @@ DIR *opendir(const char *name) {
 	}
 
 	result_t r;
-	switch(r = trn_fs_opendir(&dir->dir, name)) {
-	case RESULT_OK:
-		return dir;
-	case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
-	case LIBTRANSISTOR_ERR_FS_INVALID_PATH:
-		errno = ENOENT;
-		break;
-	case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
-		errno = ENOTDIR;
-		break;
-	default:
-		printf("unspec err: 0x%x\n", r);
-		errno = EIO;
-		break;
+	if ((r = trn_fs_opendir(&dir->dir, name)) != RESULT_OK) {
+		errno = trn_result_to_errno(r);
+		free(dir);
+		return NULL;
 	}
-	free(dir);
-	return NULL;
+	return dir;
 }
 
 struct dirent *readdir(DIR *dirp) {
 	trn_dirent_t trn_dirent;
-	
-	switch(dirp->dir.ops->next(dirp->dir.data, &trn_dirent)) {
+	result_t r;
+
+	switch((r = dirp->dir.ops->next(dirp->dir.data, &trn_dirent))) {
 	case RESULT_OK:
 		break;
 	case LIBTRANSISTOR_ERR_FS_OUT_OF_DIR_ENTRIES:
 		return NULL;
 	default:
-		errno = ENOSYS; // TODO: find a better errno
+		errno = trn_result_to_errno(r);
 		return NULL;
 	}
 
 	dirp->ent.d_ino = 0;
 	dirp->ent.d_namlen = trn_dirent.name_size;
 	memcpy(dirp->ent.d_name, trn_dirent.name, 256);
+	if (trn_dirent.name_size >= 256)
+		dirp->ent.d_name[255] = '\0';
+	else
+		dirp->ent.d_name[trn_dirent.name_size] = '\0';
+
 	return &dirp->ent;
 }
 
@@ -441,6 +436,19 @@ int closedir(DIR *dirp) {
 }
 
 int mkdir(const char *path, mode_t mode) {
-	errno = EROFS;
-	return -1;
+	result_t r;
+	if ((r = trn_fs_mkdir(path)) != RESULT_OK) {
+		errno = trn_result_to_errno(r);
+		return -1;
+	}
+	return 0;
+}
+
+int rename(const char *oldpath, const char *newpath) {
+	result_t r;
+	if ((r = trn_fs_rename(oldpath, newpath)) != RESULT_OK) {
+		errno = trn_result_to_errno(r);
+		return -1;
+	}
+	return 0;
 }
