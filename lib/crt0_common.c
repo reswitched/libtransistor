@@ -396,8 +396,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		// Clean up FS
 		root_inode.ops->release(root_inode.data);
 
-		dbg_set_bsd_log(-1);
-
 		if(dyn_info.fini_array != NULL) {
 			if(dyn_info.fini_array_size != -1) {
 				for(size_t i = 0; i < dyn_info.fini_array_size/sizeof(dyn_info.fini_array[0]); i++) {

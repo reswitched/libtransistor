@@ -70,6 +70,19 @@ void hexnum(int num);
 int log_string(const char *string, size_t len);
 
 /**
+ * @brief Connect the debug log over a socket
+ *
+ * @param host Host to connect to
+ * @param port Port to connect to
+ */
+result_t dbg_connect(const char *host, const char *port);
+
+/**
+ * @brief Disconnect the debug log from the socket
+ */
+void dbg_disconnect();
+
+/**
  * @brief Turns a libtransistor result_t into a POSIX errno. The POSIX errno
  * will be positive. You might want to negate it before returning!
  *

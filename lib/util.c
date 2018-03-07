@@ -9,6 +9,7 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include<errno.h>
+#include<string.h>
 
 void *find_empty_memory_block(size_t len) {
 	// find a suitable address for mapping the shared memory
@@ -50,9 +51,64 @@ char nybble2hex(uint8_t nybble) {
 }
 
 static int bsd_log = -1;
+static bool dbg_owns_bsd_log = false;
 
 void dbg_set_bsd_log(int fd) {
+	dbg_disconnect();
 	bsd_log = fd;
+}
+
+result_t dbg_connect(const char *host, const char *port) {
+	result_t r;
+
+	if((r = bsd_init()) != RESULT_OK) {
+		goto fail;
+	}
+
+	struct addrinfo *ai = NULL;
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+
+	int e = bsd_getaddrinfo(host, port, &hints, &ai);
+	if(e) {
+		r = bsd_result;
+		goto fail;
+	}
+
+	if(ai == NULL) {
+		goto fail;
+	}
+
+	bsd_log = bsd_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+	if(bsd_log < 0) {
+		goto fail_ai;
+	}
+
+	if(bsd_connect(bsd_log, ai->ai_addr, ai->ai_addrlen) < 0) {
+		goto fail_socket;
+	}
+
+	bsd_freeaddrinfo(ai);
+	dbg_owns_bsd_log = true;
+	
+	return RESULT_OK;
+	
+fail_socket:
+	bsd_close(bsd_log);
+	bsd_log = -1;
+fail_ai:
+	bsd_freeaddrinfo(ai);
+fail:
+	return r;
+}
+
+__attribute__((destructor)) void dbg_disconnect() {
+	if(dbg_owns_bsd_log && bsd_log >= 0) {
+		bsd_close(bsd_log);
+		dbg_owns_bsd_log = false;
+	}
 }
 
 size_t log_length = 0;
