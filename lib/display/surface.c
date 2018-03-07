@@ -5,6 +5,7 @@
 #include<libtransistor/display/graphic_buffer_queue.h>
 #include<libtransistor/display/surface.h>
 #include<libtransistor/alloc_pages.h>
+#include<libtransistor/util.h>
 
 #include<stdio.h>
 
@@ -29,12 +30,15 @@ result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp) {
 		goto fail_connect;
 	}
 
-	surface->gpu_buffer_memory = alloc_pages(0x780000, 0x780000, NULL);
+	const uint64_t num_buffers = ARRAY_LENGTH(surface->graphic_buffers);
+	size_t buffer_size = num_buffers * 0x3c0000;
+	
+	surface->gpu_buffer_memory = alloc_pages(buffer_size, buffer_size, NULL);
 	if(surface->gpu_buffer_memory == NULL) {
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 	}
 
-	if((r = svcSetMemoryAttribute(surface->gpu_buffer_memory, 0x780000, 0x8, 0x8)) != RESULT_OK) {
+	if((r = svcSetMemoryAttribute(surface->gpu_buffer_memory, buffer_size, 0x8, 0x8)) != RESULT_OK) {
 		printf("failed svcsma\n");
 		goto fail_memory;
 	}
@@ -44,7 +48,7 @@ result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp) {
 	if((r = gpu_buffer_initialize(
 		    &surface->gpu_buffer,
 		    surface->gpu_buffer_memory,
-		    0x780000, 0, 0, 0x1000, 0)) != RESULT_OK) {
+		    buffer_size, 0, 0, 0x1000, 0)) != RESULT_OK) {
 		goto fail_memory_attribute;
 	}
 
@@ -56,12 +60,12 @@ result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp) {
 	gb_common.usage = 0xb00;
 	gb_common.gpu_buffer = &surface->gpu_buffer;
 
-	for(int i = 0; i < 2; i++) {
+	for(int i = 0; i < ARRAY_LENGTH(surface->graphic_buffers); i++) {
 		surface->graphic_buffers[i] = gb_common;
 		surface->graphic_buffers[i].unknown = 0x3c0000 * i; // TODO: this isn't unknown; this is the offset within the gpu_buffer where the pixel data lives
 	}
 
-	for(int i = 0; i < 2; i++) {
+	for(int i = 0; i < ARRAY_LENGTH(surface->graphic_buffers); i++) {
 		if((r = igbp_set_preallocated_buffer(&surface->igbp, i, &surface->graphic_buffers[i])) != RESULT_OK) {
 			goto fail_memory_attribute;
 		}
@@ -92,7 +96,7 @@ void surface_destroy(surface_t *surface) {
 	
 	gpu_buffer_destroy(&surface->gpu_buffer, NULL, NULL);
 	
-	svcSetMemoryAttribute(surface->gpu_buffer_memory, 0x780000, 0x0, 0x0);
+	svcSetMemoryAttribute(surface->gpu_buffer_memory, 0x3c0000 * ARRAY_LENGTH(surface->graphic_buffers), 0x0, 0x0);
 	
 	free_pages(surface->gpu_buffer_memory);
 }

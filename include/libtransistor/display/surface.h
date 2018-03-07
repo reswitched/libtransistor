@@ -34,7 +34,7 @@ typedef struct {
 	uint32_t *gpu_buffer_memory;
 	uint32_t *gpu_buffer_memory_alloc;
 
-	graphic_buffer_t graphic_buffers[2];
+	graphic_buffer_t graphic_buffers[3];
 } surface_t;
 
 /**
