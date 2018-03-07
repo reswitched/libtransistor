@@ -137,7 +137,7 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 			rela_count = dynamic->d_val;
 			break;
 		default:
-			dbg_printf("unknown dynamic tag: %d\n", dynamic->d_tag);
+			return true;
 		}
 		dynamic++;
 	}
