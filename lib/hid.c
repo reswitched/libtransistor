@@ -65,8 +65,8 @@ hid_shared_memory_t *hid_get_shared_memory() {
 static void hid_force_finalize() {
 	svcUnmapSharedMemory(shared_memory_handle, shared_memory, SHARED_MEMORY_SIZE);
 	shared_memory = NULL;
-	shared_memory_handle = 0;
 	svcCloseHandle(shared_memory_handle);
+	shared_memory_handle = 0;
 	hid_ipc_finalize();
 	hid_initializations = 0;
 }
