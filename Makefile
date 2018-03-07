@@ -1,4 +1,4 @@
-SOURCE_ROOT := ./
+SOURCE_ROOT := .
 BUILD_DIR := $(SOURCE_ROOT)/build/
 
 LIBTRANSISTOR_HOME := $(realpath .)/dist
@@ -50,7 +50,8 @@ dist: $(DIST)
 default: $(DIST)
 
 clean: clean_transistor clean_test
-	rm -rf $(LIBTRANSISTOR_HOME)/docs
+	rm -rf $(SOURCE_ROOT)/docs
 
-distclean: clean clean_newlib clean_compiler-rt clean_pthread clean_sdl2 clean_libcxx clean_liblzma clean_openlibm
-	rm -rf $(LIBTRANSISTOR_HOME)/dist
+distclean:
+	rm -rf $(BUILD_DIR)
+	rm -rf $(LIBTRANSISTOR_HOME)
