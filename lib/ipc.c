@@ -1006,8 +1006,8 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
 		memcpy(tls, buf, sizeof(buf));
 		ipc_debug_flag = 1;
 	}
-	r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session); if(r) {
-		hexdump_dbg(tls, 0x50);
+	r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session);
+	if(r) {
 		return r;
 	}
 	if(ipc_debug_flag) {
