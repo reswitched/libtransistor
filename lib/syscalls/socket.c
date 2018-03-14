@@ -5,15 +5,18 @@
 #include<stdlib.h>
 #include<errno.h>
 
-static struct file_operations socket_fops;
+static trn_file_ops_t socket_fops;
 
 int socket_from_bsd(int bsd_fd) {
-	int *bsd_fd_mem = malloc(sizeof(int));
+	int *bsd_fd_mem = malloc(sizeof(*bsd_fd_mem));
+	
 	if (bsd_fd_mem == NULL) {
 		errno = ENOMEM;
 		return -1;
 	}
+	
 	*bsd_fd_mem = bsd_fd;
+	
 	int fd = fd_create_file(&socket_fops, bsd_fd_mem);
 	if (fd < 0) {
 		free(bsd_fd_mem);
@@ -39,7 +42,7 @@ int socket(int domain, int type, int protocol) {
 }
 
 int connect(int socket, const struct sockaddr *address, socklen_t address_len) {
-	struct file *f = fd_file_get(socket);
+	trn_file_t *f = fd_file_get(socket);
 	if (f == NULL) {
 		errno = EBADF;
 		return -1;
@@ -59,7 +62,7 @@ int connect(int socket, const struct sockaddr *address, socklen_t address_len) {
 }
 
 int accept(int socket, struct sockaddr *address, socklen_t *address_len) {
-	struct file *f = fd_file_get(socket);
+	trn_file_t *f = fd_file_get(socket);
 	if (f == NULL) {
 		errno = EBADF;
 		return -1;
@@ -86,7 +89,7 @@ int accept(int socket, struct sockaddr *address, socklen_t *address_len) {
 }
 
 int bind(int socket, const struct sockaddr *address, socklen_t address_len) {
-	struct file *f = fd_file_get(socket);
+	trn_file_t *f = fd_file_get(socket);
 	if (f == NULL) {
 		errno = EBADF;
 		return -1;
@@ -106,7 +109,7 @@ int bind(int socket, const struct sockaddr *address, socklen_t address_len) {
 }
 
 int listen(int socket, int backlog) {
-	struct file *f = fd_file_get(socket);
+	trn_file_t *f = fd_file_get(socket);
 	if (f == NULL) {
 		errno = EBADF;
 		return -1;
@@ -127,7 +130,7 @@ int listen(int socket, int backlog) {
 }
 
 ssize_t recv(int socket, void *message, size_t length, int flags) {
-	struct file *f = fd_file_get(socket);
+	trn_file_t *f = fd_file_get(socket);
 	if (f == NULL) {
 		errno = EBADF;
 		return -1;
@@ -151,7 +154,7 @@ ssize_t recv(int socket, void *message, size_t length, int flags) {
 }
 
 ssize_t send(int socket, const void *data, size_t length, int flags) {
-	struct file *f = fd_file_get(socket);
+	trn_file_t *f = fd_file_get(socket);
 	if (f == NULL) {
 		errno = EBADF;
 		return -1;
@@ -174,37 +177,43 @@ ssize_t send(int socket, const void *data, size_t length, int flags) {
 	return ret;
 }
 
-ssize_t __socket_read(void *data, char *buf, size_t len) {
+static result_t __socket_read(void *data, char *buf, size_t len, size_t *bytes_read) {
 	int bsd_sock = *((int*)data);
 	ssize_t ret;
 
 	ret = bsd_recv(bsd_sock, buf, len, 0);
-	if (ret < 0)
-		ret = -bsd_errno;
-	return ret;
+	if (ret < 0) {
+		return bsd_result;
+	}
+
+	*bytes_read = ret;
+	return RESULT_OK;
 }
 
-ssize_t __socket_write(void *data, const char *buf, size_t len) {
+static result_t __socket_write(void *data, const char *buf, size_t len, size_t *bytes_written) {
 	int bsd_sock = *((int*)data);
 	ssize_t ret;
 
 	ret = bsd_send(bsd_sock, buf, len, 0);
-	if (ret < 0)
-		ret = -bsd_errno;
-	return ret;
+	if (ret < 0) {
+		return bsd_result;
+	}
+
+	*bytes_written = ret;
+	return RESULT_OK;
 }
 
-int __socket_release(struct file *f) {
+static result_t __socket_release(trn_file_t *f) {
 	int bsd_sock = *((int*)f->data);
-	int ret = 0;
+	result_t ret = RESULT_OK;
 	if (bsd_close(bsd_sock) < 0)
-		ret = -bsd_errno;
+		ret = bsd_result;
 	// Release the data anyway. We assume close always works.
 	free(f->data);
 	return ret;
 }
 
-static struct file_operations socket_fops = {
+static trn_file_ops_t socket_fops = {
 	.read = __socket_read,
 	.write = __socket_write,
 	.release = __socket_release,

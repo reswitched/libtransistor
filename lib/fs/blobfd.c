@@ -1,10 +1,11 @@
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fd.h>
+#include<libtransistor/err.h>
 #include<errno.h>
 #include<stdio.h>
 #include<string.h>
 
-static off_t blobfd_llseek(void *vfile, off_t offset, int whence) {
+static result_t blobfd_seek(void *vfile, off_t offset, int whence, off_t *position) {
 	blob_file *file = vfile;
 	switch(whence) {
 	case SEEK_SET:
@@ -17,13 +18,13 @@ static off_t blobfd_llseek(void *vfile, off_t offset, int whence) {
 		file->head = file->size + offset;
 		break;
 	default:
-		errno = EINVAL;
-		return -1;
+		return LIBTRANSISTOR_ERR_INVALID_ARGUMENT;
 	}
-	return file->head;
+	*position = file->head;
+	return RESULT_OK;
 }
 
-static ssize_t blobfd_read(void *vfile, char *buffer, size_t size) {
+static result_t blobfd_read(void *vfile, char *buffer, size_t size, size_t *bytes_read) {
 	blob_file *file = vfile;
 	size_t sz = size;
 	if(file->head + sz > file->size) {
@@ -31,27 +32,22 @@ static ssize_t blobfd_read(void *vfile, char *buffer, size_t size) {
 	}
 	memcpy(buffer, file->data + file->head, sz);
 	file->head+= sz;
-	return sz;
+	*bytes_read = sz;
+	return RESULT_OK;
 }
 
-static ssize_t blobfd_write(void *vfile, const char *buffer, size_t size) {
-	return -EROFS;
+static result_t blobfd_write(void *vfile, const char *buffer, size_t size, size_t *bytes_written) {
+	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
 }
 
-static int blobfd_flush(void *vfile) {
-	return 0;
+static result_t blobfd_release(trn_file_t *f) {
+	return RESULT_OK;
 }
 
-struct file;
-static int blobfd_release(struct file *f) {
-	return 0;
-}
-
-static struct file_operations blobfd_ops = {
-	.llseek = blobfd_llseek,
+static trn_file_ops_t blobfd_ops = {
+	.seek = blobfd_seek,
 	.read = blobfd_read,
 	.write = blobfd_write,
-	.flush = blobfd_flush,
 	.release = blobfd_release
 };
 

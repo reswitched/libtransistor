@@ -21,11 +21,11 @@ static void lock_fd(struct fd *fd) {
 	}
 }
 
-int fd_create_file(struct file_operations *fops, void *data) {
+int fd_create_file(trn_file_ops_t *fops, void *data) {
 	if (fops == NULL)
 		return -EINVAL;
 
-	struct file *f = malloc(sizeof(struct file));
+	trn_file_t *f = malloc(sizeof(*f));
 	if (f == NULL)
 		return -ENOMEM;
 
@@ -38,6 +38,7 @@ int fd_create_file(struct file_operations *fops, void *data) {
 	while (fd < FD_MAX && !atomic_compare_exchange_strong(&fds[fd].file, &expected, f)) {
 		fd++;
 	}
+	
 	if (fd < FD_MAX) {
 		return fd;
 	} else {
@@ -46,7 +47,7 @@ int fd_create_file(struct file_operations *fops, void *data) {
 	}
 }
 
-struct file *fd_file_get(int fd) {
+trn_file_t *fd_file_get(int fd) {
 	if (!IS_VALID(fd)) {
 		return NULL;
 	}
@@ -55,7 +56,7 @@ struct file *fd_file_get(int fd) {
 	lock_fd(&fds[fd]);
 
 	// The fd is locked. We can now acquire the underlying file
-	struct file *f = fds[fd].file;
+	trn_file_t *f = fds[fd].file;
 	if (f == NULL)
 		goto end;
 	// And increment its counter
@@ -66,7 +67,7 @@ end:
 	return f;
 }
 
-void fd_file_put(struct file *file) {
+void fd_file_put(trn_file_t *file) {
 	if (file == NULL)
 		return;
 
@@ -87,7 +88,7 @@ int fd_close(int fd) {
 	lock_fd(&fds[fd]);
 
 	// Then, make sure the file is unreachable from this point on.
-	struct file *file = atomic_exchange(&fds[fd].file, NULL);
+	trn_file_t *file = atomic_exchange(&fds[fd].file, NULL);
 	if (file == NULL)
 		return -EBADF;
 
@@ -100,8 +101,8 @@ int fd_close(int fd) {
 }
 
 int dup2(int oldfd, int newfd) {
-	struct file *f;
-	struct file *old;
+	trn_file_t *f;
+	trn_file_t *old;
 
 	if (!IS_VALID(oldfd) || !IS_VALID(newfd)) {
 		errno = EBADF;

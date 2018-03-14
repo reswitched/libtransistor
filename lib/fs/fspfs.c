@@ -23,7 +23,7 @@ struct ifs_file {
 };
 
 
-static struct file_operations fspfs_file_ops;
+static trn_file_ops_t fspfs_file_ops;
 static trn_inode_ops_t fspfs_inode_ops;
 static trn_dir_ops_t trn_fspfs_dir_ops;
 
@@ -278,7 +278,7 @@ static void trn_fspfs_dir_close(void *data) {
 	free(dir);
 }
 
-static off_t fspfs_file_llseek(void *data, off_t offset, int whence) {
+static result_t fspfs_file_seek(void *data, off_t offset, int whence, off_t *position) {
 	struct ifs_file *file = data;
 	uint64_t fsize;
 	result_t r;
@@ -292,54 +292,56 @@ static off_t fspfs_file_llseek(void *data, off_t offset, int whence) {
 		break;
 	case SEEK_END:
 		if ((r = ifile_get_size(file->file, &fsize)) != RESULT_OK)
-			return -EIO;
+			return r;
 		file->head = fsize + offset;
 		break;
 	default:
-		return -EINVAL;
+		return LIBTRANSISTOR_ERR_INVALID_ARGUMENT;
 	}
-	return file->head;
+
+	*position = file->head;
+	return RESULT_OK;
 }
 
-static ssize_t fspfs_file_read(void *data, char *buf, size_t buf_size) {
+static result_t fspfs_file_read(void *data, char *buf, size_t buf_size, size_t *bytes_read) {
 	struct ifs_file *f = data;
 	uint64_t out_size;
 	result_t r;
 
 	if ((r = ifile_read(f->file, &out_size, buf, buf_size, 0, f->head, buf_size)) != RESULT_OK) {
 		printf("Got an error: %x\n", r);
-		return -EIO;
+		return r;
 	}
 	f->head += out_size;
-	return out_size;
+	*bytes_read = out_size;
+	return RESULT_OK;
 }
 
-static ssize_t fspfs_file_write(void *data, const char *buf, size_t buf_size) {
+static result_t fspfs_file_write(void *data, const char *buf, size_t buf_size, size_t *bytes_written) {
 	struct ifs_file *f = data;
 	result_t r;
 
 	if ((r = ifile_write(f->file, 0, f->head, buf_size, buf, buf_size)) != RESULT_OK) {
 		printf("Got an error: %x\n", r);
-		return -EIO;
+		return r;
 	}
 	f->head += buf_size;
-	return buf_size;
+	*bytes_written = buf_size;
+	return RESULT_OK;
 }
 
-static int fspfs_file_release(struct file *file) {
+static result_t fspfs_file_release(trn_file_t *file) {
 	struct ifs_file *f = file->data;
 
 	ipc_close(f->file);
 	free(f);
-	return 0;
+	return RESULT_OK;
 }
 
-static struct file_operations fspfs_file_ops = {
-	.llseek = fspfs_file_llseek,
+static trn_file_ops_t fspfs_file_ops = {
+	.seek = fspfs_file_seek,
 	.read = fspfs_file_read,
 	.write = fspfs_file_write,
-	// TODO: Implement flush ?
-	.flush = NULL,
 	.release = fspfs_file_release
 };
 

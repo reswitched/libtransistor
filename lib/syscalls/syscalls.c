@@ -83,25 +83,29 @@ int _link_r(struct _reent *reent, const char *old, const char *new) {
 }
 
 off_t _lseek_r(struct _reent *reent, int file, off_t pos, int whence) {
-	ssize_t res = 0;
+	off_t res = 0;
 
-	struct file *f = fd_file_get(file);
+	trn_file_t *f = fd_file_get(file);
 	if (f == NULL) {
 		reent->_errno = EBADF;
 		return -1;
 	}
 
-	if (f->ops->llseek == NULL) {
+	if (f->ops->seek == NULL) {
 		res = -ENOSYS;
 		goto finalize;
 	}
-	res = f->ops->llseek(f->data, pos, whence);
+
+	result_t r = f->ops->seek(f->data, pos, whence, &res);
+	
 finalize:
 	fd_file_put(f);
-	if (res < 0) {
-		reent->_errno = -res;
+	
+	if(r != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
 		return -1;
 	}
+	
 	return res;
 }
 
@@ -117,9 +121,9 @@ int _open_r(struct _reent *reent, const char *name, int flags, int mode) {
 }
 
 ssize_t _read_r(struct _reent *reent, int file, void *ptr, size_t len) {
-	ssize_t res = 0;
+	size_t res = 0;
 
-	struct file *f = fd_file_get(file);
+	trn_file_t *f = fd_file_get(file);
 	if (f == NULL) {
 		reent->_errno = EBADF;
 		return -1;
@@ -129,13 +133,17 @@ ssize_t _read_r(struct _reent *reent, int file, void *ptr, size_t len) {
 		res = -ENOSYS;
 		goto finalize;
 	}
-	res = f->ops->read(f->data, (char*)ptr, len);
+	
+	result_t r = f->ops->read(f->data, (char*)ptr, len, &res);
+	
 finalize:
 	fd_file_put(f);
-	if (res < 0) {
-		reent->_errno = -res;
+	
+	if(r != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
 		return -1;
 	}
+	
 	return res;
 }
 
@@ -272,9 +280,9 @@ int _wait_r(struct _reent *reent, int *status) {
 }
 
 ssize_t _write_r(struct _reent *reent, int file, const void *ptr, size_t len) {
-	ssize_t res = 0;
+	size_t res = 0;
 
-	struct file *f = fd_file_get(file);
+	trn_file_t *f = fd_file_get(file);
 	if (f == NULL) {
 		reent->_errno = EBADF;
 		return -1;
@@ -284,13 +292,17 @@ ssize_t _write_r(struct _reent *reent, int file, const void *ptr, size_t len) {
 		res = -ENOSYS;
 		goto finalize;
 	}
-	res = f->ops->write(f->data, (char*)ptr, len);
+	
+	result_t r = f->ops->write(f->data, (char*)ptr, len, &res);
+	
 finalize:
 	fd_file_put(f);
-	if (res < 0) {
-		reent->_errno = -res;
+	
+	if(r != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
 		return -1;
 	}
+	
 	return res;
 }
 
@@ -368,7 +380,7 @@ int posix_memalign (void **memptr, size_t alignment, size_t size) {
 int _rename_r(struct _reent *reent, const char *old, const char *new) {
 	// TODO: implement this
 	reent->_errno = EROFS;
-	return 01;
+	return -1;
 }
 
 ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize) {

@@ -169,9 +169,10 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 	return false;
 }
 
-static size_t dbg_log_write(void *v, const char *ptr, size_t len) {
+static result_t dbg_log_write(void *v, const void *ptr, size_t len, size_t *bytes_written) {
 	log_string(ptr, len);
-	return len;
+	*bytes_written = len;
+	return RESULT_OK;
 }
 
 // filesystem stuff
@@ -461,7 +462,7 @@ static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 }
 
 static int make_dbg_log_fd() {
-	static struct file_operations fops = {
+	static trn_file_ops_t fops = {
 		.write = dbg_log_write
 	};
 	return fd_create_file(&fops, NULL);

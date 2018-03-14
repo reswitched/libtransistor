@@ -2,7 +2,7 @@
  * @file libtransistor/fd.h
  * @brief File operations
  *
- *        Operations that can be performed on an open file
+ * Operations that can be performed on an open file
  */
 
 #pragma once
