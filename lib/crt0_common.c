@@ -24,10 +24,10 @@
 #include<errno.h>
 #include<stdlib.h>
 #include<rthread.h>
+#include<stdnoreturn.h>
 
 #include "default_squashfs_image.h"
 #include "squashfs/squashfuse.h"
-
 
 int main(int argc, char **argv);
 
@@ -255,6 +255,12 @@ fail_sqfs_image_fd:
 	return true;
 }
 
+typedef enum {
+	NOT_EXITING = 0,
+	NORMAL_EXIT = 1,
+	DIRTY_EXIT = 2,
+} exit_mode_t; // used for setjmp/longjmp
+
 static jmp_buf exit_jmpbuf;
 static int exit_value;
 
@@ -264,9 +270,6 @@ static bool nro_syscalls[0xFF] = {};
 static bool nso_syscalls[0xFF] = {};
 
 static uint8_t tls_backup[0x200];
-
-bool _crt0_kludge_skip_cleanup = false; // TODO: REMOVE THIS ASAP
-
 
 static void lconfig_init_default(uint64_t thread_handle);
 static result_t lconfig_parse(loader_config_entry_t *config);
@@ -376,8 +379,9 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		ret = -14;
 		goto fail_bsd;
 	}
-	
-	if(setjmp(exit_jmpbuf) == 0) {
+
+	exit_mode_t exit_mode = setjmp(exit_jmpbuf);
+	if(exit_mode == NOT_EXITING) {
 		if(dyn_info.init_array != NULL) {
 			if(dyn_info.init_array_size != -1) {
 				for(size_t i = 0; i < dyn_info.init_array_size/sizeof(dyn_info.init_array[0]); i++) {
@@ -388,11 +392,13 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 
 		ret = main(loader_config.argc, loader_config.argv);
 		exit(ret);
-	} else {
+	} else if(exit_mode == NORMAL_EXIT || exit_mode == DIRTY_EXIT) {
 		ret = exit_value;
+	} else {
+		ret = LIBTRANSISTOR_ERR_UNSPECIFIED;
 	}
 
-	if(!_crt0_kludge_skip_cleanup) { // TODO: remove cleanup kludge ASAP
+	if(exit_mode == NORMAL_EXIT) {
 		// Clean up FS
 		root_inode.ops->release(root_inode.data);
 
@@ -407,8 +413,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		dbg_printf("cleaning up mapped heap");
 		_cleanup_mapped_heap();
 		dbg_printf("cleaned heap");
-	} else {
-		printf("crt0: cleanup kludge active, please fix this ASAP\n");
 	}
 
 fail_bsd:
@@ -428,7 +432,12 @@ restore_tls:
 
 void _exit(int ret) {
 	exit_value = ret;
-	longjmp(exit_jmpbuf, 1);
+	longjmp(exit_jmpbuf, NORMAL_EXIT);
+}
+
+noreturn void trn_dirty_exit(int ret) {
+	exit_value = ret;
+	longjmp(exit_jmpbuf, DIRTY_EXIT);
 }
 
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
