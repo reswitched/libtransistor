@@ -30,7 +30,7 @@ thread_h aceloader_main_thread_handle;
 // TODO: I'd like this to be static...
 uint64_t reg_backups[13];
 
-static uint64_t nro_thunk(uint64_t (*entry)(loader_config_entry_t*, thread_h), loader_config_entry_t *config, thread_h thrd);
+uint64_t nro_thunk(uint64_t (*entry)(loader_config_entry_t*, thread_h), loader_config_entry_t *config, thread_h thrd);
 
 asm(".text\n"
 	".globl nro_thunk\n"
