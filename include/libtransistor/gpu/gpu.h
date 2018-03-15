@@ -5,8 +5,11 @@
 
 #pragma once
 
-#include<libtransistor/types.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#include<libtransistor/types.h>
 
 /**
 * @struct gpu_buffer_t
@@ -64,3 +67,7 @@ result_t gpu_buffer_initialize_from_id(gpu_buffer_t *gpu_b, uint32_t id);
 * @brief Finalize GPU
 */
 void gpu_finalize();
+
+#ifdef __cplusplus
+}
+#endif

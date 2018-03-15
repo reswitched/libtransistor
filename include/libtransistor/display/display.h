@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/display/surface.h>
 
@@ -47,3 +51,7 @@ void display_close_layer(surface_t *surface);
 * @brief Finalize Display
 */
 void display_finalize();
+
+#ifdef __cplusplus
+}
+#endif

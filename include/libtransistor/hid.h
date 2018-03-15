@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 /**
@@ -167,3 +171,7 @@ hid_shared_memory_t *hid_get_shared_memory();
  * @brief Finalize HID
  */
 void hid_finalize();
+
+#ifdef __cplusplus
+}
+#endif

@@ -5,8 +5,11 @@
 
 #pragma once
 
-#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
 /**
  * @brief Finds an empty memory block
@@ -100,3 +103,7 @@ int trn_result_to_errno(result_t r);
 int dbg_printf(char const *fmt, ...);
 int dbg_vprintf(char const *fmt, va_list va);
 void dbg_set_bsd_log(int fd);
+
+#ifdef __cplusplus
+}
+#endif

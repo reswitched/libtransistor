@@ -1,4 +1,13 @@
+/**
+ * @file libtransistor/loader_config.h
+ * @brief Homebrew ABI configuration
+ */
+
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // homebrew ABI as of http://switchbrew.org/index.php?title=Homebrew_ABI&oldid=3461
 
@@ -164,3 +173,7 @@ static_assert(sizeof(loader_config_entry_t) == 0x18, "loader config entry size s
  * pointer and are going to re-enter the application at a later time.
  */
 noreturn void trn_dirty_exit(int code);
+
+#ifdef __cplusplus
+}
+#endif

@@ -15,6 +15,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/ipc/fs/ifilesystem.h>
@@ -33,3 +37,7 @@
  * @param fs The IFileSystem to bind. Ownership of the IFileSystem is transferred to the fspfs.
  */
 result_t trn_fspfs_create(trn_inode_t *out, ifilesystem_t fs);
+
+#ifdef __cplusplus
+}
+#endif

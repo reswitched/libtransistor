@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 /**
@@ -128,3 +132,7 @@ void parcel_write_string16(parcel_t *parcel, const char *string);
 * @param token Description
 */
 void parcel_write_interface_token(parcel_t *parcel, const char *token);
+
+#ifdef __cplusplus
+}
+#endif

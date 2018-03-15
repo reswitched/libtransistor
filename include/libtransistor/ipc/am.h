@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 /**
@@ -36,3 +40,7 @@ result_t am_iwc_acquire_foreground_rights();
  * @brief Finalize Applet Mangager
  */
 void am_finalize();
+
+#ifdef __cplusplus
+}
+#endif

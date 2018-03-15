@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 extern result_t nv_result;
@@ -44,3 +48,7 @@ int nv_close(int fd);
 * @brief Finalize NV service
 */
 void nv_finalize();
+
+#ifdef __cplusplus
+}
+#endif

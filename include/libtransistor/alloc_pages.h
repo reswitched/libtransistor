@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 #include<stdint.h>
@@ -106,3 +110,7 @@ void *ap_alloc_largest(size_t *size);
  * allocator (no page allocator is specified in \ref loader_config).
  */
 void ap_dump_info();
+
+#ifdef __cplusplus
+}
+#endif

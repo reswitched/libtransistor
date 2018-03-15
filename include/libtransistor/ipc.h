@@ -9,6 +9,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 struct ipc_server_object_t;
@@ -310,3 +314,7 @@ result_t ipc_close(ipc_object_t object);
 * @param domain Domain to close
 */
 result_t ipc_close_domain(ipc_domain_t domain);
+
+#ifdef __cplusplus
+}
+#endif

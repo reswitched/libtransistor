@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <libtransistor/types.h>
 #include <libtransistor/ipc/fs/ifile.h>
 #include <libtransistor/ipc/fs/idirectory.h>
@@ -28,3 +32,7 @@ result_t ifilesystem_get_free_space_size(ifilesystem_t obj, uint64_t *out_totalF
 result_t ifilesystem_get_total_space_size(ifilesystem_t obj, uint64_t *out_totalSize, const uint8_t in_path[0x301]);
 result_t ifilesystem_clean_directory_recursively(ifilesystem_t obj, const uint8_t in_path[0x301]);
 result_t ifilesystem_get_file_time_stamp_raw(ifilesystem_t obj, uint8_t out_timestamp[0x20], const uint8_t in_path[0x301]);
+
+#ifdef __cplusplus
+}
+#endif

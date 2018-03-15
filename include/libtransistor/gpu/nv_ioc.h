@@ -1,9 +1,13 @@
 /**
  * @file libtransistor/gpu/nv_ioc.h
- * @brief NVMAP_IOC data structures
+ * @brief /dev/nvmap ioctl structures and definitions
  */
 
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define NVMAP_IOC_CREATE 0xC0080101
 #define NVMAP_IOC_FROM_ID 0xC0080103
@@ -84,3 +88,7 @@ typedef struct {
 	uint32_t id; ///< Out ~0 indicates error
 	uint32_t handle; ///< In
 } nvmap_ioc_get_id_args;
+
+#ifdef __cplusplus
+}
+#endif

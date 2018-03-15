@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/err/modules.h>
 
 #define MAKE_RESULT(module, code) (((code) << 9) | (module))
@@ -116,3 +120,7 @@
 #define HOMEBREW_ABI_UNRECOGNIZED_KEY(key) HOMEBREW_ABI_RESULT(100 + key)
 #define HOMEBREW_ABI_KEY_NOT_PRESENT(key)  HOMEBREW_ABI_RESULT(200 + key)
 #define HOMEBREW_ABI_KEY_INVALID(key)      HOMEBREW_ABI_RESULT(300 + key)
+
+#ifdef __cplusplus
+}
+#endif

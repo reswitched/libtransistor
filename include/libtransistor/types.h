@@ -2,10 +2,14 @@
  * @file libtransistor/types.h
  * @brief Various system types.
  *
- *	Based on ctrulib's types.h
+ * Based on ctrulib's types.h
  */
 
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -65,3 +69,7 @@ typedef void (*voidfn)(void);
 
 #define RESULT_OK 0
 #define INVALID_HANDLE 0xFFFFFFFF
+
+#ifdef __cplusplus
+}
+#endif

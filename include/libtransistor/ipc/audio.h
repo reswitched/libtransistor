@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/audio.h>
 /**
@@ -99,3 +103,7 @@ void audio_ipc_output_close(audio_output_t *out);
 * @brief Finalize audio
 */
 void audio_ipc_finalize();
+
+#ifdef __cplusplus
+}
+#endif

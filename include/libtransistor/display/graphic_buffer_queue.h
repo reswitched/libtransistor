@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/display/binder.h>
 #include<libtransistor/display/graphic_buffer.h>
@@ -204,3 +208,7 @@ result_t igbp_disconnect(igbp_t *igbp, int api, disconnect_mode_t mode, int *sta
 * This one seems to be Nintendo custom.
 */
 result_t igbp_set_preallocated_buffer(igbp_t *igbp, int slot, graphic_buffer_t *gb);
+
+#ifdef __cplusplus
+}
+#endif

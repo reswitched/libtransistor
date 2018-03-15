@@ -25,6 +25,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/fs/inode.h>
 
@@ -89,3 +93,7 @@ result_t trn_fs_unlink(const char *path);
 result_t trn_fs_rmdir(const char *path);
 result_t trn_fs_chdir(const char *path);
 result_t trn_fs_stat(const char *path, struct stat *st);
+
+#ifdef __cplusplus
+}
+#endif

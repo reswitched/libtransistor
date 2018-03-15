@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <libtransistor/types.h>
 #include <libtransistor/ipc.h>
 
@@ -17,3 +21,7 @@ result_t ifile_write(ifile_t obj, uint32_t in_unk0, uint64_t in_offset, uint64_t
 result_t ifile_flush(ifile_t obj);
 result_t ifile_set_size(ifile_t obj, uint64_t in_size);
 result_t ifile_get_size(ifile_t obj, uint64_t *out_fileSize);
+
+#ifdef __cplusplus
+}
+#endif

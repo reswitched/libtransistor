@@ -3,6 +3,12 @@
  * @brief Error module definitions
  */
 
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum modules {
 	MODULE_KERNEL = 1,
 	MODULE_FS = 2,
@@ -64,3 +70,7 @@ enum modules {
 	MODULE_APPLET_WHITELISTED = 810,
 	MODULE_SHOPN = 811,
 };
+
+#ifdef __cplusplus
+}
+#endif

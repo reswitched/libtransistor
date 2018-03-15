@@ -1,4 +1,13 @@
+/**
+ * @file libtransistor/fs/inode.h
+ * @brief Inode structures and functions for virtual filesystem
+ */
+
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include<libtransistor/types.h>
 #include<stdlib.h>
@@ -43,3 +52,7 @@ typedef struct trn_inode_ops_t {
 	result_t (*open_as_file)(void *inode, int mode, int *fd);
 	result_t (*open_as_dir)(void *inode, trn_dir_t *out);
 } trn_inode_ops_t;
+
+#ifdef __cplusplus
+}
+#endif

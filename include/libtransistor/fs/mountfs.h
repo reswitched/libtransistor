@@ -9,6 +9,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/fs/inode.h>
 
 /**
@@ -38,3 +42,7 @@ result_t trn_mountfs_create(trn_inode_t *out);
  *
  */
 result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mountpoint);
+
+#ifdef __cplusplus
+}
+#endif

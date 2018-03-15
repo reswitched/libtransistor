@@ -7,6 +7,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<sys/types.h>
 #include<stdatomic.h>
@@ -63,3 +67,7 @@ int fd_close(int fd);
  *        Newfd is closed if necessary.
  */
 int fd_dup2(int oldfd, int newfd);
+
+#ifdef __cplusplus
+}
+#endif

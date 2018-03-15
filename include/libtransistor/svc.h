@@ -1,9 +1,13 @@
 /**
  * @file libtransistor/svc.h
- * @brief Service functions
+ * @brief Supervisor Calls
  */
 
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define CURRENT_PROCESS 0xffff8001
 #define CURRENT_THREAD 0xffff8000
@@ -18,7 +22,6 @@ typedef struct PACKED {
 	uint32_t ipc_ref_count;
 	uint32_t padding;
 } memory_info_t;
-
 
 /**
  * @brief Sets the size of the heap
@@ -540,3 +543,7 @@ result_t svcWriteDebugProcessMemory(debug_h debug, void *buffer, uint64_t addr, 
 // createResourceLimit
 // setResourceLimitLimitValue
 // callSecureMonitor
+
+#ifdef __cplusplus
+}
+#endif

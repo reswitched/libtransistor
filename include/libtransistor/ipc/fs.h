@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <libtransistor/types.h>
 #include <libtransistor/ipc/fs/ifilesystem.h>
 #include <libtransistor/ipc/fs/ifile.h>
@@ -74,3 +78,7 @@ result_t fsp_srv_disable_auto_save_data_creation();
 result_t fsp_srv_set_global_access_log_mode(uint32_t in_mode);
 result_t fsp_srv_get_global_access_log_mode(uint32_t *out_logMode);
 // result_t fsp_srv_output_access_log_to_sd_card(unknown in_logText);
+
+#ifdef __cplusplus
+}
+#endif

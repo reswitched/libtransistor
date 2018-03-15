@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <reent.h>
 
 struct thread_ctx {
@@ -22,3 +26,7 @@ struct tls {
  * @brief Gets the address of the thread-local storage
  */
 struct tls *get_tls();
+
+#ifdef __cplusplus
+}
+#endif

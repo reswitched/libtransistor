@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 /**
@@ -49,3 +53,7 @@ result_t sm_unregister_service(const char *name);
 * @brief Finalize Service Manager
 */
 void sm_finalize();
+
+#ifdef __cplusplus
+}
+#endif
