@@ -11,63 +11,6 @@
 #include<errno.h>
 #include<string.h>
 
-typedef struct {
-	void *base;
-	size_t size;
-} memory_region_t;
-
-static result_t get_region_from_info(memory_region_t *region, int base_id, int size_id) {
-	result_t r;
-	if((r = svcGetInfo(&region->base, base_id, 0xFFFF8001, 0)) != RESULT_OK) { return r; }
-	if((r = svcGetInfo(&region->size, size_id, 0xFFFF8001, 0)) != RESULT_OK) { return r; }
-
-	return RESULT_OK;
-}
-
-void *find_empty_memory_block(size_t len) {
-	// find a suitable address for mapping the shared memory
-	// TODO: Make sure the block is big enough to fit len.
-	uint64_t addr;
-	memory_info_t memory_info;
-	result_t r;
-	uint32_t page_info;
-
-	memory_region_t disallowed_regions[3];
-	if(get_region_from_info(&disallowed_regions[0], 2, 3) != RESULT_OK) { return NULL; } // MapRegion
-	if(get_region_from_info(&disallowed_regions[1], 4, 5) != RESULT_OK) { return NULL; } // HeapRegion
-	if(get_region_from_info(&disallowed_regions[2], 14, 15) != RESULT_OK) { return NULL; } // NewMapRegion
-
-	// TODO: if we want to support 1.0.0, this will need a workaround
-	memory_region_t address_space;
-	if(get_region_from_info(&address_space, 12, 13) != RESULT_OK) { return NULL; } // AddressSpace
-	
-	do {
-		uint64_t random = (uint64_t) rand() << 12;
-		addr = (random % address_space.size) + address_space.base;
-
-		bool is_overlapping = false;
-		for(uint64_t i = 0; i < ARRAY_LENGTH(disallowed_regions); i++) {
-			memory_region_t *r = &disallowed_regions[i];
-			if((addr >= r->base && addr < (r->base + r->size)) ||
-			   ((addr + len) >= r->base && (addr + len) < (r->base + r->size)) ||
-			   (r->base >= addr && r->base < (addr + len)) ||
-			   ((r->base + r->size) >= addr && (r->base + r->size) < (addr + len))) {
-				is_overlapping = true;
-				break;
-			}
-		}
-
-		if(is_overlapping) {
-			continue;
-		}
-		
-		if((r = svcQueryMemory(&memory_info, &page_info, (void*) addr)) != RESULT_OK) {
-			return NULL;
-		}
-	} while(memory_info.memory_type != 0 || memory_info.memory_attribute != 0 || memory_info.permission != 0 || (uint64_t) memory_info.base_addr + memory_info.size < addr + len);
-	return (void*)addr;
-}
-
 uint64_t str2u64(const char *str) {
 	char buf[8];
 	int i = 0;

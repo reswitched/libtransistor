@@ -9,14 +9,9 @@
 extern "C" {
 #endif
 
-#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+#include<libtransistor/types.h>
 
-/**
- * @brief Finds an empty memory block
- *
- * @param len The length of the empty memory block you want to find.
- */
-void *find_empty_memory_block(size_t len);
+#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
 /**
  * @brief Converts a string to a u64

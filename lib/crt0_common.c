@@ -14,6 +14,7 @@
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/alloc_pages.h>
+#include<libtransistor/address_space.h>
 
 #include<sys/socket.h>
 #include<assert.h>
@@ -336,6 +337,11 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	
 	exit_mode_t exit_mode = setjmp(exit_jmpbuf);
 	if(exit_mode == NOT_EXITING) {
+		ret = as_init();
+		if(ret != RESULT_OK) {
+			return ret;
+		}
+		
 		dbg_printf("init alloc_pages");
 		ret = ap_init();
 		if(ret != RESULT_OK) {
@@ -423,6 +429,8 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		dbg_printf("cleaning up mapped heap");
 		_cleanup_mapped_heap();
 		dbg_printf("cleaned heap");
+
+		as_finalize();
 	}
 
 fail_bsd:
