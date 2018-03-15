@@ -9,7 +9,7 @@
 #include<malloc.h>
 
 #define ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) {            \
-		printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
+		dbg_printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
 		goto label; \
 	}
 
@@ -23,8 +23,8 @@ static result_t add_object_add(uint64_t *userdata, uint64_t value, uint64_t *out
 static void add_object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
 	result_t r = 0;
 	
-	printf("dispatched to add_obj(%ld): %d\n", *((uint64_t*) obj->userdata), rqid);
-	printf("  (object session server handle: 0x%x, client handle: 0x%x\n", obj->owning_session->handle, obj->owning_session->client_handle);
+	dbg_printf("dispatched to add_obj(%ld): %d\n", *((uint64_t*) obj->userdata), rqid);
+	dbg_printf("  (object session server handle: 0x%x, client handle: 0x%x\n", obj->owning_session->handle, obj->owning_session->client_handle);
 	
 	switch(rqid) {
 	case 0: { // ADD
@@ -71,7 +71,7 @@ static void add_object_close(ipc_server_object_t *obj) {
 static void object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t rqid) {
 	result_t r = 0;
 
-	printf("dispatched, id: %d\n", rqid);
+	dbg_printf("dispatched, id: %d\n", rqid);
 	
 	switch(rqid) {
 	case 0: { // ADD
@@ -120,7 +120,7 @@ static void object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32
 		
 		ASSERT_OK(hard_failure, ipc_server_object_register(obj, add_obj));
 
-		printf("created adder object (%ld), srv: 0x%x, cli: 0x%x\n", val, add_obj->owning_session->handle, add_obj->owning_session->client_handle);
+		dbg_printf("created adder object (%ld), srv: 0x%x, cli: 0x%x\n", val, add_obj->owning_session->handle, add_obj->owning_session->client_handle);
 		
 		ipc_response_t rs = ipc_default_response;
 		rs.num_objects = 1;
@@ -141,17 +141,17 @@ static void object_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, uint32
 
 		ASSERT_OK(hard_failure, ipc_unflatten_request(msg, &rq, obj));
 		
-		printf("addr: %p\n", buffer.addr);
-		printf("size: %lx\n", buffer.size);
+		dbg_printf("addr: %p\n", buffer.addr);
+		dbg_printf("size: %lx\n", buffer.size);
 
-		hexdump(buffer.addr, buffer.size);
+		hexdump_dbg(buffer.addr, buffer.size);
 		
 		uint8_t *bufu8 = buffer.addr;
 		uint64_t sum = 0;
 		for(size_t i = 0; i < buffer.size; i++) {
 			sum+= bufu8[i];
 		}
-		printf("sum: %lx\n", sum);
+		dbg_printf("sum: %lx\n", sum);
 
 		ipc_response_t rs = ipc_default_response;
 		rs.raw_data_size = sizeof(sum);
@@ -177,7 +177,7 @@ soft_failure: {
 		ASSERT_OK(hard_failure, ipc_server_object_reply(obj, &rs));
 	}
 hard_failure:
-	printf("hard failure\n");
+	dbg_printf("hard failure\n");
 	ipc_server_session_close(obj->owning_session);
 	return;
 }
@@ -204,16 +204,16 @@ ipc_server_t server;
 void server_thread() {
 	result_t r;
 
-	printf("thread started\n");
+	dbg_printf("thread started\n");
 	
 	ASSERT_OK(fail_port, ipc_server_create(&server, port, object_factory));
 
-	printf("server created\n");
+	dbg_printf("server created\n");
 
 	destroy_server_flag = false;
 	
 	while(!destroy_server_flag) {
-		printf("process\n");
+		dbg_printf("process\n");
 		ASSERT_OK(fail_server, ipc_server_process(&server, 3000000000));
 	}
 
@@ -239,10 +239,26 @@ int main(int argc, char *argv[]) {
 	result_t r;
 	ASSERT_OK(fail, sm_init());
 
+	printf("initialized sm\n");
+	
 	ASSERT_OK(fail_sm, sm_register_service(&port, "testsrv", 20));
 
+	printf("registered service\n");
+
+	void *stack = malloc(STACK_SIZE);
+	if(stack == NULL) {
+		printf("failed to allocate stack for thread\n");
+		sm_finalize();
+		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+	}
+
+	printf("stack: %p\n", stack);
+	
 	thread_h thread;
-	ASSERT_OK(fail_port, svcCreateThread(&thread, server_thread, 0, malloc(STACK_SIZE) + STACK_SIZE, 0x3f, -2));
+	ASSERT_OK(fail_port, svcCreateThread(&thread, server_thread, 0, stack + STACK_SIZE, 0x3f, -2));
+	
+	printf("created thread: 0x%x\n", thread);
+	
 	ASSERT_OK(fail_thread, svcStartThread(thread));
 
 	ASSERT_OK(fail_sm, sm_get_service(&testsrv_object, "testsrv"));
