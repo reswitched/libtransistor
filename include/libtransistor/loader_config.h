@@ -89,7 +89,7 @@ typedef struct {
 			char **argv;
 		} argv;
 		struct {
-			uint8_t hints[16];
+			uint64_t hints[2];
 		} syscall_available_hint;
 		struct {
 			loader_config_applet_type_t applet_type;
@@ -140,7 +140,7 @@ typedef struct {
 	int argc;
 
 	// SyscallAvailableHint
-	bool syscalls_available[255]; // not really concerned about space efficiency
+	uint64_t syscall_hints[2];
 
 	// AppletType
 	bool has_applet_type;
@@ -164,6 +164,32 @@ typedef struct {
 extern loader_config_t loader_config;
 
 static_assert(sizeof(loader_config_entry_t) == 0x18, "loader config entry size should be 0x18 bytes");
+
+/**
+ * @brief Initializes default loader config
+ */
+void lconfig_init_default(uint64_t thread_handle);
+
+/**
+ * @brief Parses loader config
+ */
+result_t lconfig_parse(loader_config_entry_t *config);
+
+/**
+ * @brief Checks if a given syscall is hinted
+ *
+ * @returns \ref RESULT_OK if the syscall is hinted, or a \ref LIBTRANSISTOR_ERR_NEEDS_SYSCALL if it is not.
+ */
+result_t lconfig_has_syscall(uint8_t syscall);
+
+/**
+ * @brief Checks if all the given syscalls are hinted
+ *
+ * Array should be terminated by a zero element.
+ *
+ * @returns \ref RESULT_OK if all syscalls are hinted, or a \ref LIBTRANSISTOR_ERR_NEEDS_SYSCALL if one is missing.
+ */
+result_t lconfig_has_syscalls(const uint8_t *syscalls);
 
 /**
  * @brief Exits application without cleanup

@@ -113,6 +113,12 @@ uint64_t nro_start()
 		ent_no++;
 	}
 
+	nro_config[ent_no].key = LCONFIG_KEY_SYSCALL_AVAILABLE_HINT;
+	nro_config[ent_no].flags = 0;
+	nro_config[ent_no].syscall_available_hint.hints[0] = loader_config.syscall_hints[0];
+	nro_config[ent_no].syscall_available_hint.hints[1] = loader_config.syscall_hints[1];
+	ent_no++;
+	
 	if(loader_config.applet_workaround_active) {
 		nro_config[ent_no].key = LCONFIG_KEY_APPLET_WORKAROUND;
 		nro_config[ent_no].flags = LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
