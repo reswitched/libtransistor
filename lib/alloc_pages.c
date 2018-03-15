@@ -383,7 +383,6 @@ rescan:
 			while(heap_size > original_heap_size &&
 			      heap_size > 0x20000 &&
 			      (r = svcSetHeapSize(&heap, heap_size)) != RESULT_OK) {
-				exit(1);
 				heap_size-= 0x20000;
 				AP_DEBUG("    - growing to 0x%lx (previously failed with 0x%x)\n", heap_size, r);
 			}
