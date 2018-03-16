@@ -6,6 +6,7 @@
 #include<libtransistor/ipc.h>
 
 #include<assert.h>
+#include<stdnoreturn.h>
 
 extern bool IS_NRO;
 
@@ -155,4 +156,11 @@ extern loader_config_t loader_config;
 
 static_assert(sizeof(loader_config_entry_t) == 0x18, "loader config entry size should be 0x18 bytes");
 
-extern bool _crt0_kludge_skip_cleanup; // TODO: REMOVE THIS ASAP
+/**
+ * @brief Exits application without cleanup
+ *
+ * This will return to the loader without performing any cleanup.
+ * This is useful if you've done something like overwritten a function
+ * pointer and are going to re-enter the application at a later time.
+ */
+noreturn void trn_dirty_exit(int code);

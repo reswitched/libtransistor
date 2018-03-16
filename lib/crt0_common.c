@@ -24,10 +24,10 @@
 #include<errno.h>
 #include<stdlib.h>
 #include<rthread.h>
+#include<stdnoreturn.h>
 
 #include "default_squashfs_image.h"
 #include "squashfs/squashfuse.h"
-
 
 int main(int argc, char **argv);
 
@@ -255,6 +255,12 @@ fail_sqfs_image_fd:
 	return true;
 }
 
+typedef enum {
+	NOT_EXITING = 0,
+	NORMAL_EXIT = 1,
+	DIRTY_EXIT = 2,
+} exit_mode_t; // used for setjmp/longjmp
+
 static jmp_buf exit_jmpbuf;
 static int exit_value;
 
@@ -264,9 +270,6 @@ static bool nro_syscalls[0xFF] = {};
 static bool nso_syscalls[0xFF] = {};
 
 static uint8_t tls_backup[0x200];
-
-bool _crt0_kludge_skip_cleanup = false; // TODO: REMOVE THIS ASAP
-
 
 static void lconfig_init_default(uint64_t thread_handle);
 static result_t lconfig_parse(loader_config_entry_t *config);
@@ -326,58 +329,63 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	dbg_printf("backup tls");
 	memcpy(tls_backup, get_tls(), 0x200);
 	memset(get_tls(), 0, 0x200);
-	
-	dbg_printf("init alloc_pages");
-	ret = ap_init();
-	if(ret != RESULT_OK) {
-		return ret;
-	}
-	
-	dbg_printf("init threads");
-	phal_tid tid = { .id = loader_config.main_thread, .stack = NULL };
-	_rthread_internal_init(tid);
 
-	/*
-	  Automatically initialize sm, since 99% of applications are going to be using it
-	  and if they don't explicitly initialize it, each ipc module will initialize it,
-	  use it, then immediately finalize it.
-	 */
-	if((ret = sm_init()) != RESULT_OK) {
-		dbg_printf("failed to initialize sm: 0x%x", ret);
-		goto restore_tls;
-	}
+	bool initialized_fs = false;
+	bool ran_initializers = false;
+	
+	exit_mode_t exit_mode = setjmp(exit_jmpbuf);
+	if(exit_mode == NOT_EXITING) {
+		dbg_printf("init alloc_pages");
+		ret = ap_init();
+		if(ret != RESULT_OK) {
+			return ret;
+		}
+		
+		dbg_printf("init threads");
+		phal_tid tid = { .id = loader_config.main_thread, .stack = NULL };
+		_rthread_internal_init(tid);
 
-	if(loader_config.has_stdio_sockets) {
-		if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
-			sm_finalize();
+		/*
+		  Automatically initialize sm, since 99% of applications are going to be using it
+		  and if they don't explicitly initialize it, each ipc module will initialize it,
+		  use it, then immediately finalize it.
+		*/
+		if((ret = sm_init()) != RESULT_OK) {
+			dbg_printf("failed to initialize sm: 0x%x", ret);
 			goto restore_tls;
 		}
 
-		dbg_printf("using socklog stdio");
-		setup_stdio_socket("stdout", loader_config.socket_stdout, STDOUT_FILENO);
-		setup_stdio_socket("stdin",  loader_config.socket_stdin,  STDIN_FILENO);
-		setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
-		dbg_set_bsd_log(loader_config.socket_stdout);
-	} else {
+		if(loader_config.has_stdio_sockets) {
+			if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
+				sm_finalize();
+				goto restore_tls;
+			}
 
-		// TODO: Create a fake FD for bsslog
-		dbg_printf("using bsslog stdout");
-		int fd = make_dbg_log_fd();
-		if(fd < 0) {
-			dbg_printf("error making debug log fd");
+			dbg_printf("using socklog stdio");
+			setup_stdio_socket("stdout", loader_config.socket_stdout, STDOUT_FILENO);
+			setup_stdio_socket("stdin",  loader_config.socket_stdin,  STDIN_FILENO);
+			setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
+			dbg_set_bsd_log(loader_config.socket_stdout);
 		} else {
-			dup2(fd, STDOUT_FILENO);
-			dup2(fd, STDERR_FILENO);
-		}
-	}
-	dbg_printf("set up stdout");
 
-	if(setup_fs()) {
-		ret = -14;
-		goto fail_bsd;
-	}
-	
-	if(setjmp(exit_jmpbuf) == 0) {
+			// TODO: Create a fake FD for bsslog
+			dbg_printf("using bsslog stdout");
+			int fd = make_dbg_log_fd();
+			if(fd < 0) {
+				dbg_printf("error making debug log fd");
+			} else {
+				dup2(fd, STDOUT_FILENO);
+				dup2(fd, STDERR_FILENO);
+			}
+		}
+		dbg_printf("set up stdout");
+
+		if(setup_fs()) {
+			ret = -14;
+			goto fail_bsd;
+		}
+		initialized_fs = true;
+
 		if(dyn_info.init_array != NULL) {
 			if(dyn_info.init_array_size != -1) {
 				for(size_t i = 0; i < dyn_info.init_array_size/sizeof(dyn_info.init_array[0]); i++) {
@@ -385,21 +393,28 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 				}
 			}
 		}
+		ran_initializers = true;
 
 		ret = main(loader_config.argc, loader_config.argv);
-		exit(ret);
-	} else {
+		exit_mode = NORMAL_EXIT;
+	} else if(exit_mode == NORMAL_EXIT || exit_mode == DIRTY_EXIT) {
 		ret = exit_value;
+	} else {
+		ret = LIBTRANSISTOR_ERR_UNSPECIFIED;
 	}
 
-	if(!_crt0_kludge_skip_cleanup) { // TODO: remove cleanup kludge ASAP
-		// Clean up FS
-		root_inode.ops->release(root_inode.data);
+	if(exit_mode == NORMAL_EXIT) {
+		if(initialized_fs) {
+			// Clean up FS
+			root_inode.ops->release(root_inode.data);
+		}
 
-		if(dyn_info.fini_array != NULL) {
-			if(dyn_info.fini_array_size != -1) {
-				for(size_t i = 0; i < dyn_info.fini_array_size/sizeof(dyn_info.fini_array[0]); i++) {
-					dyn_info.fini_array[i]();
+		if(ran_initializers) {
+			if(dyn_info.fini_array != NULL) {
+				if(dyn_info.fini_array_size != -1) {
+					for(size_t i = 0; i < dyn_info.fini_array_size/sizeof(dyn_info.fini_array[0]); i++) {
+						dyn_info.fini_array[i]();
+					}
 				}
 			}
 		}
@@ -407,8 +422,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		dbg_printf("cleaning up mapped heap");
 		_cleanup_mapped_heap();
 		dbg_printf("cleaned heap");
-	} else {
-		printf("crt0: cleanup kludge active, please fix this ASAP\n");
 	}
 
 fail_bsd:
@@ -428,7 +441,12 @@ restore_tls:
 
 void _exit(int ret) {
 	exit_value = ret;
-	longjmp(exit_jmpbuf, 1);
+	longjmp(exit_jmpbuf, NORMAL_EXIT);
+}
+
+noreturn void trn_dirty_exit(int ret) {
+	exit_value = ret;
+	longjmp(exit_jmpbuf, DIRTY_EXIT);
 }
 
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
