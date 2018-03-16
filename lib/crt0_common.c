@@ -82,6 +82,10 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 	
 	while(dynamic->d_tag > 0) {
 		switch(dynamic->d_tag) {
+		case 2: // DT_PLTRELSZ
+			break;
+		case 3: // DT_PLTGOT
+			break;
 		case 4: // DT_HASH
 			break;
 		case 5: // DT_STRTAB
@@ -106,6 +110,10 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 		case 11: // DT_SYMENT
 			break;
 		case 16: // DT_SYMBOLIC
+			break;
+		case 20: // DT_PLTREL
+			break;
+		case 23: // DT_JMPREL
 			break;
 		case 25: // DT_INIT_ARRAY
 			if(dyn_info->init_array != NULL) {
