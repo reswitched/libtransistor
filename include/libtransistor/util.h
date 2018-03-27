@@ -13,6 +13,15 @@ extern "C" {
 
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
+#define SECONDS_TO_NANOSECONDS(seconds) ((seconds)*(1000000000))
+
+#define ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) {            \
+		printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
+		goto label; \
+	}
+
+#define TRACE printf("tracing at %s:%d\n", __FILE__, __LINE__);
+
 /**
  * @brief Converts a string to a u64
  *
