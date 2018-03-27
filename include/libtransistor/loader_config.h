@@ -155,6 +155,10 @@ typedef struct {
 	int socket_stdout, socket_stdin, socket_stderr;
 	loader_config_socket_service_t socket_service;
 
+	// ProcessHandle
+	bool has_process_handle;
+	handle_t process_handle;
+	
 	// AllocPages
 	bool has_alloc_pages;
 	void *(*alloc_pages)(size_t min, size_t max, size_t *actual);

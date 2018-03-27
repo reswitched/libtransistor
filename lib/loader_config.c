@@ -115,6 +115,11 @@ result_t lconfig_parse(loader_config_entry_t *config) {
 			}
 			break;
 
+		case LCONFIG_KEY_PROCESS_HANDLE:
+			loader_config.has_process_handle = true;
+			loader_config.process_handle = entry->process_handle.process_handle;
+			break;
+			
 		case LCONFIG_KEY_ALLOC_PAGES:
 			loader_config.has_alloc_pages = true;
 			loader_config.alloc_pages = entry->alloc_pages.alloc_pages;
