@@ -12,9 +12,6 @@
 #include<string.h>
 #include<malloc.h>
 
-result_t vi_result;
-int vi_errno;
-
 static ipc_domain_t vi_domain;
 static ipc_object_t imrs_object; // nn::visrv::sf::IManagerRootService
 static ipc_object_t iads_object; // nn::visrv::sf::IApplicationDisplayService
