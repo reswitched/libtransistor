@@ -66,7 +66,9 @@ typedef struct {
 	ssize_t fini_array_size;
 } dyn_info_t;
 
-static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
+const bool RELOCATION_DEBUG = false; // run under Mephisto with --relocate
+
+static result_t relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 	module_header_t *mod_header = (module_header_t *)&aslr_base[*(uint32_t*) &aslr_base[4]];
 	Elf64_Dyn *dynamic = (Elf64_Dyn*) (((uint8_t*) mod_header) + mod_header->dynamic_off);
 	uint64_t rela_offset = 0;
@@ -77,7 +79,7 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 
 	const char mod_magic[] = "MOD0";
 	if(mod_header->magic != *((uint32_t*) mod_magic)) {
-		return true;
+		return LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_HEADER;
 	}
 	
 	while(dynamic->d_tag > 0) {
@@ -94,7 +96,7 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 			break;
 		case 7: // DT_RELA
 			if(found_rela) {
-				return true;
+				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
 			}
 			rela_offset = dynamic->d_val;
 			found_rela = true;
@@ -117,46 +119,50 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 			break;
 		case 25: // DT_INIT_ARRAY
 			if(dyn_info->init_array != NULL) {
-				return true;
+				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
 			}
 			dyn_info->init_array = (void (**)(void)) (aslr_base + dynamic->d_val);
 			break;
 		case 26: // DT_FINI_ARRAY
 			if(dyn_info->fini_array != NULL) {
-				return true;
+				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
 			}
 			dyn_info->fini_array = (void (**)(void)) (aslr_base + dynamic->d_val);
 			break;
 		case 27: // DT_INIT_ARRAYSZ
 			if(dyn_info->init_array_size != -1) {
-				return true;
+				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
 			}
 			dyn_info->init_array_size = dynamic->d_val;
 			break;
 		case 28: // DT_FINI_ARRAYSZ
 			if(dyn_info->fini_array_size != -1) {
-				return true;
+				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
 			}
 			dyn_info->fini_array_size = dynamic->d_val;
 			break;
 		case 30: // DT_FLAGS
 			// TODO
 			break;
+		case 0x6ffffef5: // DT_GNU_HASH
+			break;
 		case 0x6ffffff9: // DT_RELACOUNT
 			rela_count = dynamic->d_val;
 			break;
 		default:
-			return true;
+			if(RELOCATION_DEBUG) {
+				dbg_printf("unrecognized dynamic entry: 0x%x\n", dynamic->d_tag);
+			}
 		}
 		dynamic++;
 	}
   
 	if(rela_ent != 0x18) {
-		return true;
+		return LIBTRANSISTOR_ERR_TRNLD_INVALID_RELA_ENT;
 	}
   
 	if(rela_size != rela_count * rela_ent) {
-		return true;
+		return LIBTRANSISTOR_ERR_TRNLD_INVALID_RELA_SIZE;
 	}
   
 	Elf64_Rela *rela_base = (Elf64_Rela*) (aslr_base + rela_offset);
@@ -166,16 +172,16 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 		switch(rela.r_reloc_type) {
 		case 0x403: // R_AARCH64_RELATIVE
 			if(rela.r_symbol != 0) {
-				return true;
+				return LIBTRANSISTOR_ERR_TRNLD_RELA_SYMBOL_UNSUPPORTED;
 			}
 			*(void**)(aslr_base + rela.r_offset) = aslr_base + rela.r_addend;
 			break;
 		default:
-			return true;
+			return LIBTRANSISTOR_ERR_TRNLD_UNRECOGNIZED_RELOC_TYPE;
 		}
 	}
 	
-	return false;
+	return RESULT_OK;
 }
 
 static result_t dbg_log_write(void *v, const void *ptr, size_t len, size_t *bytes_written) {
@@ -287,13 +293,12 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	dyn_info.fini_array = NULL;
 	dyn_info.init_array_size = -1;
 	dyn_info.fini_array_size = -1;
-	
-	if(relocate(aslr_base, &dyn_info)) {
-		return -4;
+
+	int ret;
+	if((ret = relocate(aslr_base, &dyn_info)) != RESULT_OK) {
+		return ret;
 	}
 	
-	int ret;
-
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("config: %p", config);
 
