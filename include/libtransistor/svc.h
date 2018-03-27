@@ -530,12 +530,31 @@ result_t svcWriteDebugProcessMemory(debug_h debug, void *buffer, uint64_t addr, 
 // createPort
 // manageNamedPort
 // connectToPort
-// setProcessMemoryPermission
+
+/**
+ * @brief Reprotect memory in the given process
+ *
+ * @param process Process to reprotect memory in
+ * @param addr Address in given process
+ * @param size Size of region to reprotect
+ * @param prot Protections
+ */
+result_t svcSetProcessMemoryPermission(process_h process, void *addr, uint64_t size, uint32_t prot);
+
 // mapProcessMemory
 // unmapProcessMemory
 // queryProcessmemory
-// mapProcessCodeMemory
-// unmapProcessCodeMemory
+
+/**
+ * @brief Map process code memory
+ */
+result_t svcMapProcessCodeMemory(process_h process, void *dst, void *src, uint64_t size);
+
+/**
+ * @brief Unmap process code memory
+ */
+result_t svcUnmapProcessCodeMemory(process_h process, void *dst, void *src, uint64_t size);
+
 // createProcess
 // startProcess
 // terminateProcess
