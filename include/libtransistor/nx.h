@@ -14,6 +14,7 @@ extern "C" {
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
+#include<libtransistor/ipc_helpers.h>
 #include<libtransistor/tls.h>
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
