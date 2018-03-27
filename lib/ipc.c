@@ -318,7 +318,7 @@ static result_t ipc_pack_message(uint32_t *buffer, ipc_pack_message_t *msg) {
 result_t ipc_pack_request(uint32_t *marshal_buffer, ipc_request_t *rq, ipc_object_t object) {
 	ipc_pack_message_t msg;
 
-	bool to_domain = object.object_id >= 0;
+	bool to_domain = rq->type == 4 && object.object_id >= 0;
 	
 	msg.num_buffers = rq->num_buffers;
 	msg.buffers = rq->buffers;
@@ -1026,20 +1026,43 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
 	return RESULT_OK;
 }
 
+static result_t ipc_close_session(session_h session) {
+	result_t r;
+	
+	ipc_request_t rq = ipc_default_request;
+	rq.type = 2;
+
+	ipc_object_t obj;
+	obj.object_id = -1;
+	obj.session = session;
+	
+	uint32_t *tls = get_tls()->ipc_buffer;
+	r = ipc_pack_request(tls, &rq, obj); if(r) { goto close_handle; }
+	r = svcSendSyncRequest(session);
+	if(r != 0xf601) {
+		r = LIBTRANSISTOR_ERR_EXPECTED_SESSION_CLOSURE;
+		goto close_handle;
+	}
+	
+close_handle:
+	svcCloseHandle(session);
+	return r;
+}
+
 result_t ipc_close(ipc_object_t object) {
 	if(object.is_borrowed) {
 		return RESULT_OK; // we're not allowed to close borrowed objects, and we would also like to handle this transparently
 	}
 	
-	if(object.object_id < 0) {
-		return svcCloseHandle(object.session);
+	if(object.object_id < 0) { // if this is not a domain
+		return ipc_close_session(object.session);
 	}
   
 	ipc_request_t rq = ipc_default_request;
 	rq.close_object = true;
 
 	uint32_t *tls = get_tls()->ipc_buffer;
-  
+
 	result_t r;
 	r = ipc_pack_request(tls, &rq, object); if(r) { return r; }
 	r = svcSendSyncRequest(object.domain->session); if (r) { return r; }
@@ -1050,5 +1073,5 @@ result_t ipc_close(ipc_object_t object) {
 }
 
 result_t ipc_close_domain(ipc_domain_t domain) {
-	return svcCloseHandle(domain.session);
+	return ipc_close_session(domain.session);
 }
