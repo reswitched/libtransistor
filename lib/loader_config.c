@@ -12,8 +12,12 @@ static uint64_t nso_syscalls[2] = {0xffffffffffffffff, 0xffffffffffffffff};
 loader_config_t loader_config;
 
 void lconfig_init_default(uint64_t thread_handle) {
+	memset(&loader_config, 0, sizeof(loader_config));
+	
 	loader_config.main_thread = thread_handle;
+	
 	loader_config.heap_overridden = false;
+	
 	loader_config.num_service_overrides = 0;
 	
 	char *argv_default[] = {"unknown", NULL};
@@ -29,6 +33,10 @@ void lconfig_init_default(uint64_t thread_handle) {
 	loader_config.applet_workaround_active = false;
 
 	loader_config.has_stdio_sockets = false;
+
+	loader_config.has_process_handle = false;
+
+	loader_config.has_alloc_pages = false;
 }
 
 result_t lconfig_parse(loader_config_entry_t *config) {
