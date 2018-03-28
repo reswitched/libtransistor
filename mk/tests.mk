@@ -10,23 +10,23 @@ run_bsd_test: $(BUILD_DIR)/test/test_bsd.nro $(SOURCE_ROOT)/test_helpers/bsd.rb
 	$(RUBY) $(SOURCE_ROOT)/test_helpers/bsd.rb $(MEPHISTO)
 
 run_sfdnsres_test: $(BUILD_DIR)/test/test_sfdnsres.nro
-	$(MEPHISTO) --enable-sockets --load-nro $<
+	$(MEPHISTO) --enable-sockets --initialize-memory --load-nro $<
 
 run_ssp_test: $(BUILD_DIR)/test/test_ssp.nro
-	$(MEPHISTO) --enable-sockets --load-nro $<
+	$(MEPHISTO) --enable-sockets --initialize-memory --load-nro $<
 
 run_fs_stress_test: $(BUILD_DIR)/test/test_fs_stress.nro
 	mkdir -p $(BUILD_DIR)/SwitchFS/SDCard/
 	echo "test text" > $(BUILD_DIR)/SwitchFS/SDCard/test_file
-	cd $(BUILD_DIR); $(realpath $(MEPHISTO)) --load-nro $(realpath $<)
+	cd $(BUILD_DIR); $(realpath $(MEPHISTO)) --initialize-memory --load-nro $(realpath $<)
 
 run_ipc_fs_test: $(BUILD_DIR)/test/test_fs_stress.nro
 	mkdir -p $(BUILD_DIR)/SwitchFS/SDCard/
 	echo "test text" > $(BUILD_DIR)/SwitchFS/SDCard/test_file
-	cd $(BUILD_DIR); $(realpath $(MEPHISTO)) --load-nro $(realpath $<)
+	cd $(BUILD_DIR); $(realpath $(MEPHISTO)) --initialize-memory --load-nro $(realpath $<)
 
 run_%_test: $(BUILD_DIR)/test/test_%.nro
-	$(MEPHISTO) --load-nro $<
+	$(MEPHISTO) --initialize-memory --load-nro $<
 
 # LINK RULES
 
