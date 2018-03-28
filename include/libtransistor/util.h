@@ -21,6 +21,7 @@ extern "C" {
 	}
 
 #define TRACE printf("tracing at %s:%d\n", __FILE__, __LINE__);
+#define DBG_TRACE dbg_printf("tracing at %s:%d", __FILE__, __LINE__);
 
 /**
  * @brief Converts a string to a u64
