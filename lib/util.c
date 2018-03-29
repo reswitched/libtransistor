@@ -110,10 +110,10 @@ int log_string(const char *string, size_t len) {
 	if (log_length < sizeof(log_buffer) - 1)
 		log_buffer[log_length++] = '\n';
 	if(bsd_log >= 0) {
-		int olddebug = ipc_debug_flag;
-		ipc_debug_flag = 0;
+		ipc_debug_level_t olddebug = ipc_debug_level;
+		ipc_debug_level = IPC_DEBUG_LEVEL_NONE;
 		bsd_send(bsd_log, log_buffer + start, log_length - start, 0);
-		ipc_debug_flag = olddebug;
+		ipc_debug_level = olddebug;
 	}
 	if (log_length < sizeof(log_buffer))
 		log_buffer[log_length] = 0;
