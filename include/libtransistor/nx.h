@@ -28,6 +28,7 @@ extern "C" {
 #include<libtransistor/ipc/vi.h>
 #include<libtransistor/ipc/am.h>
 #include<libtransistor/ipc/fs.h>
+#include<libtransistor/ipc/usb.h>
 #include<libtransistor/gpu/gpu.h>
 #include<libtransistor/hid.h>
 #include<libtransistor/gfx/gfx.h>

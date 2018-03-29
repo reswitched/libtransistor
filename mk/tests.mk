@@ -1,6 +1,6 @@
 # LIBTRANSISTOR TESTS
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl sqfs_img audio_output init_fini_arrays ipc_server pthread ipc_fs fs_stress cpp alloc_pages unwind cpp_exceptions cpp_dynamic_memory hid_init_stress # fs_release_inodes
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl sqfs_img audio_output init_fini_arrays ipc_server pthread ipc_fs fs_stress cpp alloc_pages unwind cpp_exceptions cpp_dynamic_memory hid_init_stress usb # fs_release_inodes
 
 # RUN RULES
 
