@@ -8,7 +8,7 @@
 #include<string.h>
 #include<stdio.h>
 
-ipc_debug_level_t ipc_debug_level = IPC_DEBUG_LEVEL_UNFLATTENING_ERRORS;
+ipc_debug_level_t ipc_debug_level = IPC_DEBUG_LEVEL_NONE;
 
 ipc_buffer_t null_buffer = {
 	.addr = 0,
