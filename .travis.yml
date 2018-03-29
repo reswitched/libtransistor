@@ -60,7 +60,7 @@ install:
     - export PATH=$PATH:$DOXY_BINPATH
 
 before_script:
-  - wget -nv https://github.com/reswitched/Mephisto/releases/download/v1.1.0/ctu_$TRAVIS_OS_NAME
+  - wget -nv https://github.com/reswitched/Mephisto/releases/download/v1.1.1/ctu_$TRAVIS_OS_NAME
   - chmod +x ctu_$TRAVIS_OS_NAME
   - sudo pip3 install -r requirements.txt
   
