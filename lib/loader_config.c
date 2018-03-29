@@ -20,7 +20,7 @@ void lconfig_init_default(uint64_t thread_handle) {
 	
 	loader_config.num_service_overrides = 0;
 	
-	char *argv_default[] = {"unknown", NULL};
+	static char *argv_default[] = {"unknown", NULL};
 	loader_config.argv = argv_default;
 	loader_config.argc = 1;
 
