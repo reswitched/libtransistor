@@ -33,7 +33,7 @@ int common_init(int argc, char **argv) {
 	else
 		hostname = argv[0]; // use provided hostname
 
-	ipc_debug_flag = 0;
+	ipc_debug_level = IPC_DEBUG_LEVEL_NONE;
 
 	if(sm_init() != RESULT_OK)
 		return 1;
