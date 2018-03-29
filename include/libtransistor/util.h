@@ -108,6 +108,7 @@ int trn_result_to_errno(result_t r);
 int dbg_printf(char const *fmt, ...);
 int dbg_vprintf(char const *fmt, va_list va);
 void dbg_set_bsd_log(int fd);
+int dbg_get_bsd_log();
 
 #ifdef __cplusplus
 }

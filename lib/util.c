@@ -86,6 +86,10 @@ fail:
 	return r;
 }
 
+int dbg_get_bsd_log() {
+	return bsd_log;
+}
+
 __attribute__((destructor)) void dbg_disconnect() {
 	if(dbg_owns_bsd_log && bsd_log >= 0) {
 		bsd_close(bsd_log);
