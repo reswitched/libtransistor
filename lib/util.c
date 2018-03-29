@@ -247,7 +247,7 @@ int trn_result_to_errno(result_t r) {
 		default:
 			// Make the debugger's life easy: print his error before turning it
 			// into a useless code...
-			printf("UNSUPPORTED ERROR: %x\n", r);
+			dbg_printf("UNSUPPORTED ERROR: %x\n", r);
 			return ENOSYS;
 	}
 }
