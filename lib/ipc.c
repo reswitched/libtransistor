@@ -87,7 +87,7 @@ ipc_response_fmt_t ipc_default_response_fmt = {
 
 typedef struct {
 	uint16_t message_type;
-	uint32_t data_section_size; // in words, including SFCI/SFCO/domain header, but not padding
+	uint32_t data_section_size; // in bytes, including SFCI/SFCO/domain header, but not padding
 
 	// this should be on a higher level of abstraction, but the u16 length list kinda wrecks that
 	uint32_t num_buffers;
@@ -98,8 +98,12 @@ typedef struct {
 	handle_t *copy_handles;
 	handle_t *move_handles;
 	bool send_pid;
-	uint32_t *data_section; // not including padding or u16 list
+	void *data_section; // not including padding or u16 list
 } ipc_pack_message_t;
+
+static inline size_t ipc_pad_size(size_t size) {
+	return (size + 3) & ~3;
+}
 
 static result_t ipc_pack_message(uint32_t *buffer, ipc_pack_message_t *msg) {
 	int h = 0; // h is for HEAD
@@ -271,10 +275,9 @@ static result_t ipc_pack_message(uint32_t *buffer, ipc_pack_message_t *msg) {
 	int raw_data_start = h;
 	h = (h + 3) & ~3;
 	int pre_padding = h - raw_data_start; // the padding before this section and after it needs to add up to be 0x10 bytes long
-
-	for(uint32_t i = 0; i < msg->data_section_size; i++) {
-		buffer[h++] = msg->data_section[i];
-	}
+	
+	memcpy(buffer + h, msg->data_section, msg->data_section_size);
+	h+= ipc_pad_size(msg->data_section_size) / sizeof(uint32_t);
 	
 	h+= 4 - pre_padding;
 
@@ -328,11 +331,6 @@ result_t ipc_pack_request(uint32_t *marshal_buffer, ipc_request_t *rq, ipc_objec
 	}
 	msg.message_type = rq->type;
 
-	if(rq->raw_data_size & 3) {
-		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
-	}
-	int raw_data_words = rq->raw_data_size / sizeof(uint32_t);
-
 	int num_move_handles = rq->num_move_handles;
 	if(!to_domain) {
 		num_move_handles+= rq->num_objects;
@@ -366,6 +364,9 @@ result_t ipc_pack_request(uint32_t *marshal_buffer, ipc_request_t *rq, ipc_objec
 
 	uint32_t buffer[0x220 >> 2];
 	size_t h = 0;
+
+	msg.data_section = buffer;
+	msg.data_section_size = 0;
 	
 	if(to_domain) {
 		if(rq->num_objects > 8) { // server code responds with result code 0x1d60a
@@ -375,22 +376,26 @@ result_t ipc_pack_request(uint32_t *marshal_buffer, ipc_request_t *rq, ipc_objec
 			| (rq->num_objects << 8); // we OR in the data payload size later;
 		buffer[h++] = object.object_id;
 		h+= 2; // alignment
+
+		msg.data_section_size+= 0x10;
 	}
 
-	size_t payload_start = h;
-	
+	size_t payload_size = 0;
+
 	if(!rq->close_object) {
 		buffer[h++] = *((uint32_t*) "SFCI");
 		buffer[h++] = 0;
 		buffer[h++] = rq->request_id;
 		buffer[h++] = 0;
-
+		payload_size+= 0x10;
+		msg.data_section_size+= 0x10;
+		
 		if(rq->raw_data_size > 0x200) {
 			return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
 		}
-		for(int i = 0; i < raw_data_words; i++) {
-			buffer[h++] = rq->raw_data[i];
-		}
+		memcpy(msg.data_section + msg.data_section_size, rq->raw_data, rq->raw_data_size);
+		payload_size+= rq->raw_data_size;
+		msg.data_section_size+= rq->raw_data_size;
 	} else {
 		if(!to_domain) {
 			return LIBTRANSISTOR_ERR_CANT_CLOSE_SESSIONS_LIKE_DOMAIN_OBJECTS;
@@ -406,19 +411,17 @@ result_t ipc_pack_request(uint32_t *marshal_buffer, ipc_request_t *rq, ipc_objec
 			return LIBTRANSISTOR_ERR_MALFORMED_CLOSE_REQUEST;
 		}
 	}
-
+	
 	if(to_domain) {
-		buffer[0]|= ((h - payload_start) * sizeof(*buffer)) << 16;
+		buffer[0]|= payload_size << 16;
 		for(int i = 0; i < rq->num_objects; i++) {
 			if(rq->objects[i].domain != object.domain) {
 				return LIBTRANSISTOR_ERR_CANT_SEND_OBJECT_ACROSS_DOMAINS;
 			}
-			buffer[h++] = rq->objects[i].object_id;
+			memcpy(msg.data_section + msg.data_section_size, &rq->objects[i].object_id, sizeof(uint32_t));
+			msg.data_section_size+= sizeof(uint32_t);
 		}
 	}
-	
-	msg.data_section_size = h;
-	msg.data_section = buffer;
 	
 	return ipc_pack_message(marshal_buffer, &msg);
 }
@@ -435,11 +438,6 @@ result_t ipc_pack_response(uint32_t *marshal_buffer, ipc_response_t *rs, ipc_ser
 		return LIBTRANSISTOR_ERR_INVALID_REQUEST_TYPE;
 	}
 	msg.message_type = rs->type;
-
-	if(rs->raw_data_size & 3) {
-		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
-	}
-	int raw_data_words = rs->raw_data_size / sizeof(uint32_t);
 
 	int num_move_handles = rs->num_move_handles;
 	if(!from_domain) {
@@ -477,6 +475,9 @@ result_t ipc_pack_response(uint32_t *marshal_buffer, ipc_response_t *rs, ipc_ser
 
 	uint32_t buffer[0x220 >> 2];
 	size_t h = 0;
+
+	msg.data_section = buffer;
+	msg.data_section_size = 0;
 	
 	if(from_domain) {
 		if(rs->num_objects > 8) {
@@ -486,6 +487,22 @@ result_t ipc_pack_response(uint32_t *marshal_buffer, ipc_response_t *rs, ipc_ser
 		buffer[h++] = 0;
 		buffer[h++] = 0;
 		buffer[h++] = 0;
+		msg.data_section_size+= 0x10;
+	}
+
+	buffer[h++] = *((uint32_t*) "SFCO");
+	buffer[h++] = 0;
+	buffer[h++] = rs->result_code;
+	buffer[h++] = 0;
+	msg.data_section_size+= 0x10;
+	
+	if(rs->raw_data_size > 0x200) {
+		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
+	}
+	memcpy(msg.data_section + msg.data_section_size, rs->raw_data, rs->raw_data_size);
+	msg.data_section_size+= rs->raw_data_size;
+	
+	if(from_domain) {
 		for(uint32_t i = 0; i < rs->num_objects; i++) {
 			ipc_server_object_t *tobject = rs->objects[i];
 			if(!tobject->is_domain_object) {
@@ -494,24 +511,10 @@ result_t ipc_pack_response(uint32_t *marshal_buffer, ipc_response_t *rs, ipc_ser
 			if(tobject->owning_domain != object->owning_domain) {
 				return LIBTRANSISTOR_ERR_CANT_SEND_OBJECT_ACROSS_DOMAINS;
 			}
-			buffer[h++] = tobject->domain_id;
+			memcpy(msg.data_section + msg.data_section_size, &tobject->domain_id, sizeof(uint32_t));
+			msg.data_section_size+= sizeof(uint32_t);
 		}
 	}
-
-	buffer[h++] = *((uint32_t*) "SFCO");
-	buffer[h++] = 0;
-	buffer[h++] = rs->result_code;
-	buffer[h++] = 0;
-	
-	if(rs->raw_data_size > 0x200) {
-		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
-	}
-	for(int i = 0; i < raw_data_words; i++) {
-		buffer[h++] = rs->raw_data[i];
-	}
-	
-	msg.data_section_size = h;
-	msg.data_section = buffer;
 	
 	return ipc_pack_message(marshal_buffer, &msg);
 }
@@ -581,12 +584,7 @@ result_t ipc_unpack(uint32_t *buffer, ipc_message_t *msg) {
 }
 
 result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct ipc_server_object_t *object) {
-	if(rq->raw_data_size & 3) {
-		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
-	}
-
 	bool to_domain = object->is_domain_object;
-	size_t raw_data_words = rq->raw_data_size / sizeof(uint32_t);
 
 	struct {
 		uint8_t command;
@@ -604,15 +602,6 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 		domain_header.object_id = msg->data_section[h++]; // used for dispatch, assumed to be correct
 		h+= 2;
 	}
-	
-	if(msg->data_section[h++] != *((uint32_t*) "SFCI")) {
-		return LIBTRANSISTOR_ERR_INVALID_IPC_REQUEST_MAGIC;
-	}
-	h++;
-	h++;
-	h++;
-	
-	uint32_t *raw_data = msg->data_section + h;
 	  
 	if(msg->has_pid != rq->send_pid) {
 		return LIBTRANSISTOR_ERR_UNEXPECTED_PID;
@@ -815,12 +804,13 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 		}
 	}
 
-	if((msg->raw_data_section_size
-	    - 4 // SFCI, command id
-	    - 4 // padding
-	    - (to_domain ? 4 + rq->num_objects : 0) // domain header + in objects
-	    - ((c_descriptor_u16_lengths_count + 1) >> 1)
-		   ) != raw_data_words) {
+	if(ipc_pad_size((msg->raw_data_section_size * sizeof(uint32_t))
+	                - 0x10 // SFCI, command id
+	                - 0x10 // padding
+	                - (to_domain ? 0x10 + (rq->num_objects * sizeof(uint32_t)): 0) // domain header + in objects
+	                - (c_descriptor_u16_lengths_count * sizeof(uint16_t))
+		   ) != ipc_pad_size(rq->raw_data_size)) {
+		dbg_printf("invalid size: expected 0x%x, got 0x%x", ipc_pad_size(rq->raw_data_size), (msg->raw_data_section_size));
 		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
 	}
 	
@@ -861,10 +851,6 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 		}
 	}
 	for(uint32_t i = 0; i < rq->num_move_handles; i++) { rq->move_handles[i] = msg->move_handles[mhi++]; }
-	
-	for(uint32_t i = 0; i < raw_data_words; i++) {
-		rq->raw_data[i] = raw_data[h++];
-	}
 
 	if(to_domain) {
 		result_t r;
@@ -874,17 +860,20 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 			}
 		}
 	}
+
+	if(msg->data_section[h++] != *((uint32_t*) "SFCI")) {
+		return LIBTRANSISTOR_ERR_INVALID_IPC_REQUEST_MAGIC;
+	}
+	h++;
+	h++;
+	h++;
+	memcpy(rq->raw_data, msg->data_section + h, rq->raw_data_size);
 	
 	return RESULT_OK;
 }
 
 result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_object_t object) {
-	if(rs->raw_data_size & 3) {
-		return LIBTRANSISTOR_ERR_INVALID_RAW_DATA_SIZE;
-	}
-
 	bool from_domain = object.object_id >= 0;  
-	size_t raw_data_words = rs->raw_data_size / sizeof(uint32_t);
 
 	if(msg->message_type != 0) {
 		return LIBTRANSISTOR_ERR_INVALID_IPC_RESPONSE_TYPE;
@@ -894,27 +883,29 @@ result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_
 	if(from_domain) {
 		h+= 4; // skip domain header for now
 	}
+
+	uint32_t *u32view = (uint32_t*) msg->data_section;
 	
-	if(msg->data_section[h++] != *((uint32_t*) "SFCO")) {
+	if(u32view[h++] != *((uint32_t*) "SFCO")) {
 		return LIBTRANSISTOR_ERR_INVALID_IPC_RESPONSE_MAGIC;
 	}
 	h++;
 
 	// if this isn't ok, none of our other expectations will make
 	// sense, so this is the most meaningful result to return.
-	result_t response_code = msg->data_section[h++];
+	result_t response_code = u32view[h++];
 	if(response_code != RESULT_OK) {
 		return response_code;
 	}
 	h++;
 
-	uint32_t *raw_data = msg->data_section + h;
+	uint32_t *raw_data = u32view + h;
   
-	if((msg->raw_data_section_size
-	    - 4 // SFCI, command id
-	    - 4 // padding
-	    - (from_domain ? 4 + rs->num_objects : 0) // domain header + out objects
-		   ) != raw_data_words) {
+	if(((msg->raw_data_section_size * sizeof(uint32_t))
+	    - 0x10 // SFCI, command id
+	    - 0x10 // padding
+	    - (from_domain ? 0x10 + (rs->num_objects * sizeof(uint32_t)): 0) // domain header + out objects
+		   ) != ipc_pad_size(rs->raw_data_size)) {
 		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
 	}
   
@@ -942,12 +933,19 @@ result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_
 			return LIBTRANSISTOR_ERR_UNEXPECTED_OBJECTS;
 		}
 
-		uint32_t *domain_ids = (uint32_t*) (((uint8_t*) domain_header) + 16 + 16 + rs->raw_data_size);
+		// this is a pointer to a uint32_t array, but it is allowed to be unaligned
+		uint8_t *domain_ids = ((uint8_t*) domain_header) +
+			sizeof(struct response_domain_header_t) +
+			0x10 + // SFCO, result code
+			rs->raw_data_size;
+		
 		for(uint32_t i = 0; i < rs->num_objects; i++) {
 			rs->objects[i].domain = object.domain;
-			rs->objects[i].object_id = domain_ids[i];
+			memcpy(&rs->objects[i].object_id, domain_ids + (i*sizeof(uint32_t)), sizeof(uint32_t));
 			rs->objects[i].is_borrowed = false;
 		}
+
+		raw_data = domain_ids + (rs->num_objects * sizeof(uint32_t));
 	}
   
 	for(uint32_t i = 0; i < rs->num_copy_handles; i++) { rs->copy_handles[i] = msg->copy_handles[i]; }
@@ -960,10 +958,7 @@ result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_
 		}
 	}
 	for(uint32_t i = 0; i < rs->num_move_handles; i++) { rs->move_handles[i] = msg->move_handles[mhi++]; }
-	for(uint32_t i = 0; i < raw_data_words; i++) {
-		rs->raw_data[i] = raw_data[i];
-	}
-  
+	memcpy(rs->raw_data, raw_data, rs->raw_data_size);
 	return RESULT_OK;
 }
 

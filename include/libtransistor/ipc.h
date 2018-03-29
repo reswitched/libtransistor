@@ -59,7 +59,7 @@ typedef struct {
 	uint32_t num_buffers;
 	ipc_buffer_t **buffers; ///< This should point to an array of \ref num_buffers buffers
 	uint32_t request_id;
-	uint32_t *raw_data;
+	void *raw_data;
 	size_t raw_data_size; ///< Size in bytes of \ref raw_data
 	bool send_pid;
 	uint8_t num_copy_handles;
@@ -83,7 +83,7 @@ typedef struct {
 typedef struct {
 	uint32_t num_buffers; ///< Number of buffers to expect
 	ipc_buffer_t **buffers; ///< This should point to an array of \ref num_buffers buffers, with the `type` fields filled out. The `addr` and `size` fields will be unpacked.
-	uint32_t *raw_data; ///< Buffer to copy raw request data into
+	void *raw_data; ///< Buffer to copy raw request data into
 	size_t raw_data_size; ///< Size in bytes of \ref raw_data to expect
 	bool send_pid; ///< Whether to expect an incoming PID
 	uint64_t *pid; ///< Where to put an incoming PID, if one is expected and present
@@ -106,7 +106,7 @@ typedef struct {
 	uint32_t num_buffers;
 	ipc_buffer_t **buffers;
 	result_t result_code;
-	uint32_t *raw_data;
+	void *raw_data;
 	size_t raw_data_size; // in BYTES
 	bool send_pid;
 	uint8_t num_copy_handles;
@@ -133,7 +133,7 @@ typedef struct {
 	ipc_object_t *objects;
   
 	size_t raw_data_size; ///< size in bytes of \ref raw_data
-	uint32_t *raw_data;
+	void *raw_data;
 
 	bool has_pid;
 	uint32_t *pid;
