@@ -197,8 +197,15 @@ extern ipc_response_fmt_t ipc_default_response_fmt;
 */
 extern ipc_object_t       ipc_null_object;
 
-/// Default: 0
-extern int ipc_debug_flag;
+typedef enum {
+	IPC_DEBUG_LEVEL_NONE, ///< Do not log any IPC messages
+	IPC_DEBUG_LEVEL_UNPACKING_ERRORS, ///< Hexdump responses that could not be unpacked
+	IPC_DEBUG_LEVEL_UNFLATTENING_ERRORS, ///< Hexdump responses that could not be unflattened
+	IPC_DEBUG_LEVEL_FLIGHT_ERRORS, ///< Hexdump requests that triggered an error in svcSendSyncRequest
+	IPC_DEBUG_LEVEL_ALL, ///< Hexdump all requests and all responses
+} ipc_debug_level_t;
+
+extern ipc_debug_level_t ipc_debug_level; ///< Default: IPC_DEBUG_LEVEL_NONE
 
 /**
  * @brief Describes an incoming IPC message. Used as an intermediate during unpacking.

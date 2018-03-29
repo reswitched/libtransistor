@@ -8,7 +8,7 @@
 #include<string.h>
 #include<stdio.h>
 
-int ipc_debug_flag = 0;
+ipc_debug_level_t ipc_debug_level = IPC_DEBUG_LEVEL_UNFLATTENING_ERRORS;
 
 ipc_buffer_t null_buffer = {
 	.addr = 0,
@@ -992,36 +992,54 @@ result_t ipc_convert_to_domain(ipc_object_t *object, ipc_domain_t *domain) {
 	return ipc_send(session, &rq, &rs);
 }
 
+static inline void ipc_debug_message(ipc_debug_level_t min, const char *label, result_t code) {
+	if(ipc_debug_level >= min) {
+		uint32_t *tls = get_tls()->ipc_buffer;
+		
+		char buf[0x1f8];
+		ipc_debug_level_t backup = ipc_debug_level;
+		
+		memcpy(buf, tls, sizeof(buf));
+		
+		ipc_debug_level = IPC_DEBUG_LEVEL_NONE;
+		dbg_printf("%s: 0x%x\n", label, code);
+		hexdump_dbg(buf, 0x50);
+		ipc_debug_level = backup;
+		
+		memcpy(tls, buf, sizeof(buf));
+	}
+}
+
 result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs) {
 	result_t r;
 	uint32_t *tls = get_tls()->ipc_buffer;
 	memset(tls, 0, 0x1f8);
-	r = ipc_pack_request(tls, rq, object); if(r) { return r; }
-	if(ipc_debug_flag) {
-		char buf[0x1f8];
-		memcpy(buf, tls, sizeof(buf));
-		ipc_debug_flag = 0;
-		printf("out request:\n");
-		hexdump(buf, 0x50);
-		memcpy(tls, buf, sizeof(buf));
-		ipc_debug_flag = 1;
-	}
-	r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session);
+	
+	r = ipc_pack_request(tls, rq, object);
 	if(r) {
 		return r;
 	}
-	if(ipc_debug_flag) {
-		char buf[0x1f8];
-		memcpy(buf, tls, sizeof(buf));
-		ipc_debug_flag = 0;
-		printf("in response:\n");
-		hexdump(buf, 0x50);
-		memcpy(tls, buf, sizeof(buf));
-		ipc_debug_flag = 1;
+	ipc_debug_message(IPC_DEBUG_LEVEL_ALL, "out request", r);
+	
+	r = svcSendSyncRequest(object.object_id >= 0 ? object.domain->session : object.session);
+	if(r) {
+		ipc_debug_message(IPC_DEBUG_LEVEL_FLIGHT_ERRORS, "bad request", r);
+		return r;
 	}
+	ipc_debug_message(IPC_DEBUG_LEVEL_ALL, "in response", r);
+	
 	ipc_message_t msg;
-	r = ipc_unpack(tls, &msg); if(r) { return r; }
-	r = ipc_unflatten_response(&msg, rs, object); if(r) { return r; }
+	r = ipc_unpack(tls, &msg);
+	if(r) {
+		ipc_debug_message(IPC_DEBUG_LEVEL_UNPACKING_ERRORS, "bad response", r);
+		return r;
+	}
+
+	r = ipc_unflatten_response(&msg, rs, object);
+	if(r) {
+		ipc_debug_message(IPC_DEBUG_LEVEL_UNFLATTENING_ERRORS, "bad response", r);
+		return r;
+	}
 
 	return RESULT_OK;
 }
