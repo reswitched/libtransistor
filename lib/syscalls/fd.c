@@ -8,7 +8,7 @@
 #define IS_VALID(fd) ((fd) >= 0 && (fd) < FD_MAX)
 struct fd {
 	atomic_int lock;
-	_Atomic(struct file *)file;
+	_Atomic(trn_file_t *)file;
 };
 
 static struct fd fds[FD_MAX] = {0};
