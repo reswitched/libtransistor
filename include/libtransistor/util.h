@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 #include<libtransistor/types.h>
+#include<libtransistor/fd.h>
 
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -19,6 +20,8 @@ extern "C" {
 		printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
 		goto label; \
 	}
+
+#define LIB_ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) { goto label; }
 
 #define TRACE printf("tracing at %s:%d\n", __FILE__, __LINE__);
 #define DBG_TRACE dbg_printf("tracing at %s:%d", __FILE__, __LINE__);
@@ -82,8 +85,9 @@ int log_string(const char *string, size_t len);
  *
  * @param host Host to connect to
  * @param port Port to connect to
+ * @param fd Output for FD
  */
-result_t dbg_connect(const char *host, const char *port);
+result_t dbg_connect(const char *host, const char *port, int *fd);
 
 /**
  * @brief Disconnect the debug log from the socket
@@ -107,8 +111,7 @@ int trn_result_to_errno(result_t r);
 
 int dbg_printf(char const *fmt, ...);
 int dbg_vprintf(char const *fmt, va_list va);
-void dbg_set_bsd_log(int fd);
-int dbg_get_bsd_log();
+void dbg_set_file(trn_file_t *file);
 
 #ifdef __cplusplus
 }

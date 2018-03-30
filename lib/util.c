@@ -2,6 +2,7 @@
 #include<libtransistor/err.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/util.h>
+#include<libtransistor/fd.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/ipc/fs/err.h>
@@ -32,15 +33,15 @@ char nybble2hex(uint8_t nybble) {
 	}
 }
 
-static int bsd_log = -1;
-static bool dbg_owns_bsd_log = false;
+static trn_file_t *debug_file = NULL;
 
-void dbg_set_bsd_log(int fd) {
-	dbg_disconnect();
-	bsd_log = fd;
+void dbg_set_file(trn_file_t *file) {
+	dbg_printf("redirecting dbgout to %p\n", file);
+	fd_file_put(debug_file);
+	debug_file = file;
 }
 
-result_t dbg_connect(const char *host, const char *port) {
+result_t dbg_connect(const char *host, const char *port, int *fd_out) {
 	result_t r;
 
 	if((r = bsd_init()) != RESULT_OK) {
@@ -63,38 +64,34 @@ result_t dbg_connect(const char *host, const char *port) {
 		goto fail;
 	}
 
-	bsd_log = bsd_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-	if(bsd_log < 0) {
+	int fd = bsd_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+	if(fd < 0) {
 		goto fail_ai;
 	}
 
-	if(bsd_connect(bsd_log, ai->ai_addr, ai->ai_addrlen) < 0) {
+	if(bsd_connect(fd, ai->ai_addr, ai->ai_addrlen) < 0) {
 		goto fail_socket;
 	}
 
 	bsd_freeaddrinfo(ai);
-	dbg_owns_bsd_log = true;
+
+	int std_fd = socket_from_bsd(fd);
+	dbg_set_file(fd_file_get(std_fd));
+	*fd_out = std_fd;
 	
 	return RESULT_OK;
 	
 fail_socket:
-	bsd_close(bsd_log);
-	bsd_log = -1;
+	bsd_close(fd);
 fail_ai:
 	bsd_freeaddrinfo(ai);
 fail:
 	return r;
 }
 
-int dbg_get_bsd_log() {
-	return bsd_log;
-}
-
 __attribute__((destructor)) void dbg_disconnect() {
-	if(dbg_owns_bsd_log && bsd_log >= 0) {
-		bsd_close(bsd_log);
-		dbg_owns_bsd_log = false;
-	}
+	fd_file_put(debug_file);
+	debug_file = NULL;
 }
 
 size_t log_length = 0;
@@ -107,12 +104,14 @@ int log_string(const char *string, size_t len) {
 		if(string[i] == 0) { break; }
 		log_buffer[log_length++] = string[i];
 	}
-	if (log_length < sizeof(log_buffer) - 1)
+	if(log_length < sizeof(log_buffer) - 1) {
 		log_buffer[log_length++] = '\n';
-	if(bsd_log >= 0) {
+	}
+	if(debug_file != NULL) {
 		ipc_debug_level_t olddebug = ipc_debug_level;
 		ipc_debug_level = IPC_DEBUG_LEVEL_NONE;
-		bsd_send(bsd_log, log_buffer + start, log_length - start, 0);
+		size_t bytes_written;
+		debug_file->ops->write(debug_file->data, log_buffer + start, log_length - start, &bytes_written);
 		ipc_debug_level = olddebug;
 	}
 	if (log_length < sizeof(log_buffer))
