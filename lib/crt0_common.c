@@ -15,6 +15,7 @@
 #include<libtransistor/fd.h>
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/address_space.h>
+#include<libtransistor/usb_serial.h>
 
 #include<sys/socket.h>
 #include<assert.h>
@@ -29,6 +30,15 @@
 
 #include "default_squashfs_image.h"
 #include "squashfs/squashfuse.h"
+
+const enum {
+	STDIO_OVERRIDE_NONE,
+	STDIO_OVERRIDE_USB_SERIAL,
+	STDIO_OVERRIDE_SOCKETS,
+} STDIO_OVERRIDE = STDIO_OVERRIDE_NONE;
+
+const char *STDIO_OVERRIDE_SOCKETS_HOST = "ip.address.or.hostname";
+const char *STDIO_OVERRIDE_SOCKETS_PORT = "2991";
 
 int main(int argc, char **argv);
 
@@ -367,31 +377,55 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			goto restore_tls;
 		}
 
-		if(loader_config.has_stdio_sockets) {
-			if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
+		if(STDIO_OVERRIDE == STDIO_OVERRIDE_NONE) {
+			if(loader_config.has_stdio_sockets) {
+				if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
+					sm_finalize();
+					goto restore_tls;
+				}
+				
+				dbg_printf("using socklog stdio");
+				setup_stdio_socket("stdout", loader_config.socket_stdout, STDOUT_FILENO);
+				setup_stdio_socket("stdin",  loader_config.socket_stdin,  STDIN_FILENO);
+				setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
+				dbg_set_file(fd_file_get(loader_config.socket_stderr));
+			} else {
+				dbg_printf("using bsslog stdout");
+				int dbg_fd = make_dbg_log_fd();
+				if(dbg_fd < 0) {
+					dbg_printf("error making debug log fd");
+				} else {
+					dup2(dbg_fd, STDOUT_FILENO);
+					dup2(dbg_fd, STDERR_FILENO);
+				}
+				fd_close(dbg_fd);
+			}
+		} else if(STDIO_OVERRIDE == STDIO_OVERRIDE_USB_SERIAL) {
+			dbg_printf("using USB stdio");
+			int usb_fd = usb_serial_open_fd();
+			dbg_printf("got usb_fd -> %d", usb_fd);
+			if(usb_fd < 0) {
 				sm_finalize();
 				goto restore_tls;
 			}
-
-			dbg_printf("using socklog stdio");
-			setup_stdio_socket("stdout", loader_config.socket_stdout, STDOUT_FILENO);
-			setup_stdio_socket("stdin",  loader_config.socket_stdin,  STDIN_FILENO);
-			setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
-			dbg_set_bsd_log(loader_config.socket_stdout);
-		} else {
-
-			// TODO: Create a fake FD for bsslog
-			dbg_printf("using bsslog stdout");
-			int fd = make_dbg_log_fd();
-			if(fd < 0) {
-				dbg_printf("error making debug log fd");
-			} else {
-				dup2(fd, STDOUT_FILENO);
-				dup2(fd, STDERR_FILENO);
-			}
+			dup2(usb_fd, STDOUT_FILENO);
+			dup2(usb_fd, STDERR_FILENO);
+			dup2(usb_fd, STDIN_FILENO);
+			dbg_set_file(fd_file_get(usb_fd));
+			fd_close(usb_fd);
+		} else if(STDIO_OVERRIDE == STDIO_OVERRIDE_SOCKETS) {
+			int sock_fd;
+			int e;
+			dbg_connect(STDIO_OVERRIDE_SOCKETS_HOST, STDIO_OVERRIDE_SOCKETS_PORT, &sock_fd);
+			dbg_printf("connected to overridden host -> %d", sock_fd);
+			e = dup2(sock_fd, STDOUT_FILENO);
+			e = dup2(sock_fd, STDERR_FILENO);
+			e = dup2(sock_fd, STDIN_FILENO);
+			fd_close(sock_fd);
 		}
-		dbg_printf("set up stdout");
 
+		dbg_printf("set up stdout");
+		
 		if(setup_fs()) {
 			ret = -14;
 			goto fail_bsd;
@@ -421,6 +455,8 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			root_inode.ops->release(root_inode.data);
 		}
 
+		dbg_disconnect();
+		
 		if(ran_initializers) {
 			if(dyn_info.fini_array != NULL) {
 				if(dyn_info.fini_array_size != -1) {

@@ -944,8 +944,6 @@ result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_
 			memcpy(&rs->objects[i].object_id, domain_ids + (i*sizeof(uint32_t)), sizeof(uint32_t));
 			rs->objects[i].is_borrowed = false;
 		}
-
-		raw_data = domain_ids + (rs->num_objects * sizeof(uint32_t));
 	}
   
 	for(uint32_t i = 0; i < rs->num_copy_handles; i++) { rs->copy_handles[i] = msg->copy_handles[i]; }
