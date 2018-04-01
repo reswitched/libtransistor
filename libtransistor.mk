@@ -4,10 +4,10 @@
 # they have to muck around with changing the path, which sucks.
 # Let's make their lives easier by asking brew where LLVM_CONFIG is.
 ifeq ($(shell uname -s),Darwin)
-ifdef $(shell brew --prefix llvm)
-	LLVM_CONFIG := $(shell brew --prefix llvm)/bin/llvm-config
+ifeq ($(shell brew --prefix llvm),)
+$(error need llvm installed via brew)
 else
-	$(error need llvm installed via brew)
+	LLVM_CONFIG := $(shell brew --prefix llvm)/bin/llvm-config
 endif
 else
 	LLVM_CONFIG := llvm-config$(LLVM_POSTFIX)
