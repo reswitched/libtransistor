@@ -15,8 +15,8 @@ const size_t USB_SERIAL_TRANSFER_BUFFER_SIZE = 0x4000;
 #define usb_serial_debug(...) if(USB_SERIAL_DEBUG_ENABLED) printf(__VA_ARGS__)
 
 static usb_descriptor_data_t descriptor_data = {
-	.id_vendor = 0x0908, // stealing someone else's VID/PID for now
-	.id_product = 0x0004, // https://github.com/torvalds/linux/blob/master/drivers/usb/serial/usb-serial-simple.c#L103
+	.id_vendor = 0x1209, // https://github.com/pidcodes/pidcodes.github.com/pull/313
+	.id_product = 0x8b00,
 	.bcd_device = 0x0100,
 	.manufacturer = "ReSwitched",
 	.product = "TransistorUSBSerial",
