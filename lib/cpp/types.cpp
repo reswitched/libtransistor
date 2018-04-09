@@ -41,8 +41,21 @@ const char *ResultError::what() noexcept {
 KObject::KObject(handle_t handle) : handle(handle) {
 }
 
+KObject::KObject(KObject &&other) {
+	this->handle = other.handle;
+	other.handle = 0;
+}
+
+KObject &KObject::operator=(KObject &&other) {
+	this->handle = other.handle;
+	other.handle = 0;
+	return *this;
+}
+
 KObject::~KObject() {
-	ResultCode::AssertOk(SVC::CloseHandle(handle));
+	if(handle > 0) {
+		ResultCode::AssertOk(SVC::CloseHandle(handle));
+	}
 }
 
 KSharedMemory::KSharedMemory(shared_memory_h handle) : KObject(handle) {

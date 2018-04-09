@@ -28,10 +28,10 @@ HID::~HID() {
 	hid_ipc_finalize();
 }
 
-Result<std::shared_ptr<KSharedMemory>> HID::GetSharedMemory() {
+Result<KSharedMemory> HID::GetSharedMemory() {
 	shared_memory_h handle;
-	return ResultCode::ExpectOk(hid_ipc_get_shared_memory_handle(&handle)).map([&handle](auto const &v) -> std::shared_ptr<KSharedMemory> {
-			return std::make_shared<KSharedMemory>(handle);
+	return ResultCode::ExpectOk(hid_ipc_get_shared_memory_handle(&handle)).map([&handle](auto const &v) -> KSharedMemory {
+			return KSharedMemory(handle);
 		});
 }
 
