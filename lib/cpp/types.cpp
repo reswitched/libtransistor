@@ -7,11 +7,11 @@
 
 namespace Transistor {
 
-neither::Either<ResultCode, Unit> ResultCode::Maybe(result_t code) {
+tl::expected<std::nullopt_t, ResultCode> ResultCode::ExpectOk(result_t code) {
 	if(code == RESULT_OK) {
-		return neither::right(Unit {});
+		return std::nullopt;
 	} else {
-		return neither::left(ResultCode(code));
+		return tl::make_unexpected(ResultCode(code));
 	}
 }
 

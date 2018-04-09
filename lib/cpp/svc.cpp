@@ -4,8 +4,8 @@
 namespace Transistor {
 namespace SVC {
 
-neither::Either<ResultCode, Unit> CloseHandle(handle_t handle) {
-	return ResultCode::Maybe(svcCloseHandle(handle));
+Result<std::nullopt_t> CloseHandle(handle_t handle) {
+	return ResultCode::ExpectOk(svcCloseHandle(handle));
 }
 
 }

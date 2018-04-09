@@ -3,14 +3,12 @@
 #include<libtransistor/types.h>
 #include<libtransistor/ipc/hid.h>
 
-#include<neither/neither.hpp>
-
 namespace Transistor {
 namespace IPC {
 
-neither::Either<ResultCode, HID> HID::Initialize() {
+Result<HID> HID::Initialize() {
 	HID obj;
-	return ResultCode::Maybe(hid_ipc_init()).rightMap([obj](auto const &v) -> HID { return obj; } );
+	return ResultCode::ExpectOk(hid_ipc_init()).map([obj](auto const &v) -> HID { return obj; } );
 }
 
 HID::HID(const HID& other) {
@@ -30,9 +28,9 @@ HID::~HID() {
 	hid_ipc_finalize();
 }
 
-neither::Either<ResultCode, std::shared_ptr<KSharedMemory>> HID::GetSharedMemory() {
+Result<std::shared_ptr<KSharedMemory>> HID::GetSharedMemory() {
 	shared_memory_h handle;
-	return ResultCode::Maybe(hid_ipc_get_shared_memory_handle(&handle)).rightMap([&handle](auto const &v) -> std::shared_ptr<KSharedMemory> {
+	return ResultCode::ExpectOk(hid_ipc_get_shared_memory_handle(&handle)).map([&handle](auto const &v) -> std::shared_ptr<KSharedMemory> {
 			return std::make_shared<KSharedMemory>(handle);
 		});
 }

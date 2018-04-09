@@ -16,6 +16,3 @@
 [submodule "libunwind"]
 	path = libunwind
 	url = https://github.com/llvm-mirror/libunwind
-[submodule "neither"]
-	path = neither
-	url = https://github.com/LoopPerfect/neither.git

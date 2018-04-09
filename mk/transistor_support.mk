@@ -3,7 +3,7 @@
 #  are needed to build our libraries, and tools/link scripts
 #  needed to pass build environment tests.
 
-libtransistor_SUPPORT_HEADERS := machine/_align.h sys/_iovec.h sys/socket.h sys/_sockaddr_storage.h sys/sockio.h netinet/in.h netinet/tcp.h netdb.h arpa/inet.h net/if.h sys/features.h nl_types.h lz4.h netinet6/in6.h features.h
+libtransistor_SUPPORT_HEADERS := machine/_align.h sys/_iovec.h sys/socket.h sys/_sockaddr_storage.h sys/sockio.h netinet/in.h netinet/tcp.h netdb.h arpa/inet.h net/if.h sys/features.h nl_types.h lz4.h netinet6/in6.h features.h expected.hpp
 
 DIST_TRANSISTOR_SUPPORT := $(addprefix $(LIBTRANSISTOR_HOME)/include/,$(libtransistor_SUPPORT_HEADERS)) \
 	$(LIBTRANSISTOR_HOME)/libtransistor.mk \

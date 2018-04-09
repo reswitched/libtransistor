@@ -6,22 +6,20 @@
 #pragma once
 
 #include<libtransistor/cpp/types.hpp>
-#include<neither/neither.hpp>
-
-#include<memory>
+#include<expected.hpp>
 
 namespace Transistor {
 namespace IPC {
 
 class HID {
  public:
-	static neither::Either<ResultCode, HID> Initialize();
+	static Result<HID> Initialize();
 	HID(const HID& other);
 	HID(HID&& other);
 	
 	~HID();
 
-	neither::Either<ResultCode, std::shared_ptr<KSharedMemory>> GetSharedMemory();
+	Result<KSharedMemory> GetSharedMemory();
 	
  private:
 	HID(); // use HID::Initialize

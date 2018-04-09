@@ -1,25 +1,27 @@
 #pragma once
 
 #include<libtransistor/types.h>
-
-#include<neither/neither.hpp>
+#include<expected.hpp>
 
 #include<stdexcept>
 #include<string>
+#include<optional>
 
 namespace Transistor {
 
-struct Unit {};
-
 struct ResultCode {
-	static neither::Either<ResultCode, Unit> Maybe(result_t code);
+	static tl::expected<std::nullopt_t, ResultCode> ExpectOk(result_t code);
 	static void AssertOk(result_t code);
 	template<typename T> static T AssertOk(neither::Either<ResultCode, T> monad);
+	template<typename T> static T AssertOk(tl::expected<T, ResultCode> monad);
 	
 	ResultCode(result_t code);
 	
 	const result_t code;
 };
+
+template<typename T>
+using Result = tl::expected<T, ResultCode>;
 
 class ResultError : std::runtime_error {
  public:
@@ -32,11 +34,11 @@ class ResultError : std::runtime_error {
 	std::string description;
 };
 
-template<typename T> T ResultCode::AssertOk(neither::Either<ResultCode, T> monad) {
+template<typename T> T ResultCode::AssertOk(tl::expected<T, ResultCode> monad) {
 	if(monad) {
-		return monad.right().unsafeGet();
+		return *monad;
 	} else {
-		throw ResultError(monad.left().unsafeGet());
+		throw ResultError(monad.error());
 	}
 }
 
