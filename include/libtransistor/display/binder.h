@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/display/parcel.h>
 
@@ -51,3 +55,7 @@ result_t binder_adjust_refcount(binder_t *binder, int32_t addval, int32_t type);
 * @param out Parcel to write response values to
 */
 result_t binder_transact_parcel(binder_t *binder, uint32_t transaction, uint32_t flags, parcel_t *in, parcel_t *out);
+
+#ifdef __cplusplus
+}
+#endif

@@ -5,15 +5,26 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include<libtransistor/types.h>
+#include<libtransistor/fd.h>
+
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
+#define SECONDS_TO_NANOSECONDS(seconds) ((seconds)*(1000000000))
 
-/**
- * @brief Finds an empty memory block
- *
- * @param len The length of the empty memory block you want to find.
- */
-void *find_empty_memory_block(size_t len);
+#define ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) {            \
+		printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
+		goto label; \
+	}
+
+#define LIB_ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) { goto label; }
+
+#define TRACE printf("tracing at %s:%d\n", __FILE__, __LINE__);
+#define DBG_TRACE dbg_printf("tracing at %s:%d", __FILE__, __LINE__);
 
 /**
  * @brief Converts a string to a u64
@@ -69,6 +80,30 @@ void hexnum(int num);
  */
 int log_string(const char *string, size_t len);
 
+/**
+ * @brief Connect the debug log over a socket
+ *
+ * @param host Host to connect to
+ * @param port Port to connect to
+ * @param fd Output for FD
+ */
+result_t dbg_connect(const char *host, const char *port, int *fd);
+
+/**
+ * @brief Disconnect the debug log from the socket
+ */
+void dbg_disconnect();
+
+/**
+ * @brief Turns a libtransistor result_t into a POSIX errno. The POSIX errno
+ * will be positive. You might want to negate it before returning!
+ *
+ * @param r The libtransistor result to transform
+ */
+int trn_result_to_errno(result_t r);
+
+// TODO: A perror for result_t.
+
 #define STB_SPRINTF_DECORATE(name) dbg_##name
 #include "stb_sprintf.h"
 
@@ -76,4 +111,8 @@ int log_string(const char *string, size_t len);
 
 int dbg_printf(char const *fmt, ...);
 int dbg_vprintf(char const *fmt, va_list va);
-void dbg_set_bsd_log(int fd);
+void dbg_set_file(trn_file_t *file);
+
+#ifdef __cplusplus
+}
+#endif

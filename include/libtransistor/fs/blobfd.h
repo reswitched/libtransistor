@@ -1,4 +1,13 @@
+/**
+ * @file libtransistor/fs/blobfd.h
+ * @brief Memory-backed file functions
+ */
+
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include<stdio.h>
 
@@ -9,3 +18,7 @@ typedef struct {
 } blob_file;
 
 int blobfd_create(blob_file *data, void *blob, size_t size);
+
+#ifdef __cplusplus
+}
+#endif

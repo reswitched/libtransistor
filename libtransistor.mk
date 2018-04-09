@@ -4,13 +4,13 @@
 # they have to muck around with changing the path, which sucks.
 # Let's make their lives easier by asking brew where LLVM_CONFIG is.
 ifeq ($(shell uname -s),Darwin)
-ifdef $(shell brew --prefix llvm)
-	LLVM_CONFIG := $(shell brew --prefix llvm)/bin/llvm-config
+    ifeq ($(shell brew --prefix llvm),)
+        $(error need llvm installed via brew)
+    else
+        LLVM_CONFIG := $(shell brew --prefix llvm)/bin/llvm-config
+    endif
 else
-	$(error need llvm installed via brew)
-endif
-else
-	LLVM_CONFIG := llvm-config$(LLVM_POSTFIX)
+    LLVM_CONFIG := llvm-config$(LLVM_POSTFIX)
 endif
 
 LLVM_BINDIR := $(shell $(LLVM_CONFIG) --bindir)
@@ -32,7 +32,7 @@ CPP_INCLUDES := -isystem $(LIBTRANSISTOR_HOME)/include/c++/v1/
 LD_FLAGS := -Bsymbolic --shared --no-gc-sections --eh-frame-hdr --no-undefined -T $(LIBTRANSISTOR_HOME)/link.T \
 	-L $(LIBTRANSISTOR_HOME)/lib/
 
-CC_FLAGS := -g -fPIC -fexceptions -fuse-ld=lld -fstack-protector-strong -O3 -mtune=cortex-a53 -target aarch64-none-linux-gnu -nostdlib -nostdlibinc $(SYS_INCLUDES) -D__SWITCH__=1 -Wno-unused-command-line-argument
+CC_FLAGS := -MD -MP -g -fPIC -fexceptions -fuse-ld=lld -fstack-protector-strong -O3 -mtune=cortex-a53 -target aarch64-none-linux-gnu -nostdlib -nostdlibinc $(SYS_INCLUDES) -D__SWITCH__=1 -Wno-unused-command-line-argument
 CXX_FLAGS := $(CC_FLAGS) -std=c++14 -stdlib=libc++ -nodefaultlibs -nostdinc++ $(CPP_INCLUDES)
 AR_FLAGS := rcs
 AS_FLAGS := -arch=aarch64 -triple aarch64-none-switch
@@ -57,8 +57,8 @@ LIBTRANSISTOR_NRO_DEP := $(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.a
 LIBTRANSISTOR_NSO_DEP := $(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a
 LIBTRANSISTOR_NRO_LIB := $(LIBTRANSISTOR_NRO_DEP)
 LIBTRANSISTOR_NSO_LIB := $(LIBTRANSISTOR_NSO_DEP)
-LIBTRANSISTOR_NRO_DEPS := $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nro.a $(LIBTRANSISTOR_COMMON_LIB_DEPS)
-LIBTRANSISTOR_NSO_DEPS := $(LIBTRANSISTOR_HOME)/build/lib/libtransistor.nso.a $(LIBTRANSISTOR_COMMON_LIB_DEPS)
+LIBTRANSISTOR_NRO_DEPS := $(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.a $(LIBTRANSISTOR_COMMON_LIB_DEPS)
+LIBTRANSISTOR_NSO_DEPS := $(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a $(LIBTRANSISTOR_COMMON_LIB_DEPS)
 
 LIBTRANSISTOR_COMMON_LDFLAGS := -lc -lm -lclang_rt.builtins-aarch64 -lSDL2 -lpthread -llzma -lc++ -lc++abi -lunwind
 

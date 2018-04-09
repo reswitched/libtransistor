@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 /**
@@ -26,3 +30,7 @@ result_t bpc_reboot_system();
 * @brief Finalize BPC
 */
 void bpc_finalize();
+
+#ifdef __cplusplus
+}
+#endif

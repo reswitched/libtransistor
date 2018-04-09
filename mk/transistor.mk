@@ -1,6 +1,6 @@
 # LIBTRANSISTOR
 
-libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o lz4.o squashfs/cache.o squashfs/decompress.o squashfs/dir.o squashfs/file.o squashfs/fs.o squashfs/hash.o squashfs/nonstd-pread.o squashfs/nonstd-stat.o squashfs/stack.o squashfs/swap.o squashfs/table.o squashfs/traverse.o squashfs/util.o squashfs/xattr.o fs/blobfd.o fs/squashfs.o fs/fs.o ipc/audio.o ipc/bpc.o ipcserver.o strtold.o ipc/pm.o alloc_pages.o cpp/types.o cpp/ipc/hid.o cpp/svc.o
+libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/fs.o ipc/fs/ifilesystem.o ipc/fs/ifile.o ipc/fs/idirectory.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o lz4.o squashfs/cache.o squashfs/decompress.o squashfs/dir.o squashfs/file.o squashfs/fs.o squashfs/hash.o squashfs/nonstd-pread.o squashfs/nonstd-stat.o squashfs/stack.o squashfs/swap.o squashfs/table.o squashfs/traverse.o squashfs/util.o squashfs/xattr.o fs/blobfd.o fs/squashfs.o fs/mountfs.o fs/fspfs.o fs/fs.o ipc/audio.o ipc/bpc.o ipcserver.o strtold.o ipc/pm.o alloc_pages.o address_space.o loader_config.o ipc/usb.o ipc/usb/ds/interface.o ipc/usb/ds/endpoint.o usb_serial.o cpp/types.o cpp/ipc/hid.o cpp/svc.o
 libtransistor_OBJECT_FILES := $(addprefix $(BUILD_DIR)/transistor/,$(libtransistor_OBJECT_NAMES))
 
 libtransistor_WARNINGS := -Wall -Wextra -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-command-line-argument
@@ -9,8 +9,8 @@ libtransistor_BUILD_DEPS := $(DIST_NEWLIB) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREA
 
 # ARCHIVE RULES
 
-libtransistor_TARGET_NRO := $(BUILD_DIR)/libtransistor.nro.a
-libtransistor_TARGET_NSO := $(BUILD_DIR)/libtransistor.nso.a
+libtransistor_TARGET_NRO := $(BUILD_DIR)/transistor/libtransistor.nro.a
+libtransistor_TARGET_NSO := $(BUILD_DIR)/transistor/libtransistor.nso.a
 
 $(libtransistor_TARGET_NRO): $(BUILD_DIR)/transistor/crt0.nro.o $(libtransistor_OBJECT_FILES)
 	mkdir -p $(@D)

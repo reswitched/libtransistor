@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/ipc.h>
 
@@ -47,3 +51,7 @@ typedef struct {
 	uint64_t data_size;
 	uint64_t unknown;
 } audio_output_buffer_t;
+
+#ifdef __cplusplus
+}
+#endif

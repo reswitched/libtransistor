@@ -48,8 +48,10 @@ install:
     - |
       if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
         export LLVM_POSTFIX="";
-        brew install llvm qemu lz4 python@3 squashfs jq
-        export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/python@3/bin:$PATH";
+        brew install llvm qemu lz4 squashfs jq ;
+        brew upgrade python ;
+        export PATH="$(brew --prefix llvm)/bin:$(brew --prefix python3)/bin:$PATH";
+        pip3 install --upgrade pip setuptools wheel
       fi
 
     # Travis has an OLD doxygen build, so we fetch a recent one
@@ -60,7 +62,7 @@ install:
     - export PATH=$PATH:$DOXY_BINPATH
 
 before_script:
-  - "wget -nv $(curl -H \"Authorization: token $GITHUB_TOKEN\" -s https://api.github.com/repos/reswitched/Mephisto/releases/latest | jq -r \".assets[] | select(.name==\\\"ctu_$TRAVIS_OS_NAME\\\") | .browser_download_url\")"
+  - wget -nv https://github.com/reswitched/Mephisto/releases/download/v1.1.1/ctu_$TRAVIS_OS_NAME
   - chmod +x ctu_$TRAVIS_OS_NAME
   - sudo pip3 install -r requirements.txt
   

@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 /**
@@ -17,3 +21,7 @@ typedef struct {
 	uint32_t right;
 	uint32_t bottom;
 } rect_t;
+
+#ifdef __cplusplus
+}
+#endif

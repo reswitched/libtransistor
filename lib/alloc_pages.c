@@ -129,8 +129,6 @@ static result_t ap_insert_new_block(void *base, size_t size, block_state_t state
 	}
 }
 
-static size_t heap_size = 0;
-
 result_t ap_init() {
 	if(loader_config.heap_overridden) {
 		ap_insert_and_split_block(0, loader_config.heap_base, STATE_LOCKED_BY_MEMORY_STATE);
@@ -251,6 +249,8 @@ static void ap_assert_coherency() {
 	}
 }
 
+static void *heap_end = NULL;
+
 result_t ap_probe_full_address_space() {
 	result_t r;
 	void *addr = NULL;
@@ -280,6 +280,13 @@ result_t ap_probe_full_address_space() {
 		}
 
 		int r;
+
+		if(minfo.memory_type == 5) { // if this is a heap block
+			AP_DEBUG("- detected heap block at %p\n");
+			if(minfo.base_addr + minfo.size > heap_end) {
+				heap_end = minfo.base_addr + minfo.size; // we need to know how big the heap is before we try to expand it
+			}
+		}
 		
 		if(minfo.permission == 3 && minfo.memory_type == 5 && minfo.memory_attribute == 0) {
 			AP_DEBUG("- detected usable heap block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
@@ -317,6 +324,7 @@ static void *ap_alloc_pages(size_t min, size_t max, size_t *actual) {
 
 	mem_block_t *alloc_head;
 	mem_block_t *smallest = NULL;
+	result_t r;
 	
 rescan:
 
@@ -334,10 +342,28 @@ rescan:
 		if(!loader_config.heap_overridden) {
 			AP_DEBUG("  - out of memory, growing heap...\n");
 
-			if(heap_size == 0) {
-				svcGetInfo(&heap_size, 5, 0xFFFF8001, 0);
-				AP_DEBUG("    - determined current heap size to be 0x%lx\n", heap_size);
+			void *heap_base;
+			if((r = svcGetInfo(&heap_base, 4, 0xFFFF8001, 0)) != RESULT_OK) {
+				AP_DEBUG("    - failed to determined heap base: 0x%lx\n", r);
+				return NULL;
 			}
+
+			AP_DEBUG("    - heap_end %p\n", heap_end);
+			
+			if(heap_end == NULL) {
+				if((r = ap_probe_full_address_space()) != RESULT_OK) {
+					AP_DEBUG("    - failed to probe address space: 0x%lx\n");
+					return NULL;
+				}
+
+				AP_DEBUG("    - finished probing, heap_end is %p\n", heap_end);
+				
+				if(heap_end == NULL) { // there are no pre-existing heap blocks
+					heap_end = heap_base;
+				}
+			}
+			size_t heap_size = heap_end - heap_base;
+			AP_DEBUG("    - determined current heap size to be 0x%lx\n", heap_size);
 			
 			size_t original_heap_size = heap_size;
 			heap_size*= 2;
@@ -354,7 +380,9 @@ rescan:
 			
 			void *heap;
 			result_t r;
-			while(heap_size > original_heap_size && (r = svcSetHeapSize(&heap, heap_size)) != RESULT_OK) {
+			while(heap_size > original_heap_size &&
+			      heap_size > 0x20000 &&
+			      (r = svcSetHeapSize(&heap, heap_size)) != RESULT_OK) {
 				heap_size-= 0x20000;
 				AP_DEBUG("    - growing to 0x%lx (previously failed with 0x%x)\n", heap_size, r);
 			}
@@ -366,6 +394,12 @@ rescan:
 			AP_DEBUG("  - grew heap to 0x%lx bytes\n", heap_size);
 			AP_DEBUG("  - rescanning address space...\n");
 			ap_probe_full_address_space();
+			
+			if(heap_end != heap_base + heap_size) {
+				AP_DEBUG("  - heap end is not where we expect it to be (expected %p, got %p)\n", heap_base + heap_size, heap_end);
+				// TODO: is this a fatal error?
+			}
+			
 			if(AP_DEBUG_ENABLED) {
 				ap_do_dump_info(true);
 			}

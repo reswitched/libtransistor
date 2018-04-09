@@ -280,8 +280,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	_crt0_kludge_skip_cleanup = true; // TODO: remove this ASAP
 	memcpy(preserve_tls, get_tls(), 0x200);
 	printf("- ready to exit\n");
-	return 0;
+	trn_dirty_exit(0);
 }

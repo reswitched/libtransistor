@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <libtransistor/types.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -55,3 +59,7 @@ result_t ro_load_nrr(void *nrr_heap, uint64_t nrr_size);
 * @param nrr_heap Pointer to NRR
 */
 result_t ro_unload_nrr(void *nrr_heap);
+
+#ifdef __cplusplus
+}
+#endif

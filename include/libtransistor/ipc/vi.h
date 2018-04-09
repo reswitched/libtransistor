@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/ipc/am.h>
 #include<libtransistor/display/display.h>
@@ -238,3 +242,7 @@ result_t vi_iads_set_layer_scaling_mode(uint32_t scaling_mode, uint64_t layer_id
 * @brief Finalize visual services
 */
 void vi_finalize();
+
+#ifdef __cplusplus
+}
+#endif

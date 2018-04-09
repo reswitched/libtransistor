@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/err.h>
 
 /**
@@ -16,3 +20,7 @@
  * @brief Asserts that the given module has been initialized, returning if it has not.
  */
 #define INITIALIZATION_GUARD_RETURN_VOID(module) if(module ## _initializations <= 0) { return; }
+
+#ifdef __cplusplus
+}
+#endif

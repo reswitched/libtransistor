@@ -10,7 +10,7 @@
 #include "../squashfs/squashfuse.h"
 
 static trn_dir_ops_t trn_sqfs_dir_ops;
-static struct file_operations trn_sqfs_file_ops;
+static trn_file_ops_t trn_sqfs_file_ops;
 static trn_inode_ops_t trn_sqfs_inode_ops;
 
 typedef struct {
@@ -42,23 +42,8 @@ static result_t trn_sqfs_dir_next(void *data, trn_dirent_t *dirent) {
 		}
 	}
 	
-	trn_sqfs_inode_t *out_data = malloc(sizeof(*out_data));
-	if(out_data == NULL) {
-		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-	}
-	
-	dirent->inode.data = out_data;
-	err = sqfs_inode_get(dir->fs, &out_data->inode, dir->dentry.inode);
-	if(err) {
-		free(out_data);
-		return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
-	}
-	dirent->inode.ops = &trn_sqfs_inode_ops;
-
-	if(dir->dentry.name_size >= sizeof(dirent->name)-1) {
-		free(out_data);
+	if(dir->dentry.name_size >= sizeof(dirent->name)-1)
 		return LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG;
-	}
 	
 	memcpy(dirent->name, dir->dentry.name, dir->dentry.name_size);
 	dirent->name_size = dir->dentry.name_size;
@@ -72,7 +57,7 @@ static trn_dir_ops_t trn_sqfs_dir_ops = {
 	.close = NULL,
 };
 
-static off_t trn_sqfs_file_llseek(void *data, off_t offset, int whence) {
+static result_t trn_sqfs_file_seek(void *data, off_t offset, int whence, off_t *position) {
 	trn_sqfs_file_t *file = data;
 	switch(whence) {
 	case SEEK_SET:
@@ -85,40 +70,37 @@ static off_t trn_sqfs_file_llseek(void *data, off_t offset, int whence) {
 		file->head = file->inode.xtra.reg.file_size + offset;
 		break;
 	default:
-		return -EINVAL;
+		return LIBTRANSISTOR_ERR_INVALID_ARGUMENT;
 	}
-	return file->head;
+	*position = file->head;
+	return RESULT_OK;
 }
 
-static ssize_t trn_sqfs_file_read(void *data, char *buf, size_t size) {
+static result_t trn_sqfs_file_read(void *data, char *buf, size_t size, size_t *bytes_read) {
 	trn_sqfs_file_t *file = data;
 	off_t osize = size;
 	if(sqfs_read_range(file->fs, &file->inode, file->head, &osize, buf)) {
-		return -EIO;
+		return LIBTRANSISTOR_ERR_FS_IO_ERROR;
 	}
 	file->head+= osize;
-	return osize;
+	*bytes_read = osize;
+	return RESULT_OK;
 }
 
-static ssize_t trn_sqfs_file_write(void *data, const char *buf, size_t size) {
-	return -EROFS;
+static result_t trn_sqfs_file_write(void *data, const char *buf, size_t size, size_t *bytes_written) {
+	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
 }
 
-static int trn_sqfs_file_flush(void *data) {
-	return -EROFS;
-}
-
-static int trn_sqfs_file_release(struct file *f) {
+static result_t trn_sqfs_file_release(trn_file_t *f) {
 	trn_sqfs_file_t *file = f->data;
 	free(file);
-	return 0;
+	return RESULT_OK;
 }
 
-static struct file_operations trn_sqfs_file_ops = {
-	.llseek = trn_sqfs_file_llseek,
+static trn_file_ops_t trn_sqfs_file_ops = {
+	.seek = trn_sqfs_file_seek,
 	.read = trn_sqfs_file_read,
 	.write = trn_sqfs_file_write,
-	.flush = trn_sqfs_file_flush,
 	.release = trn_sqfs_file_release,
 };
 
@@ -219,10 +201,35 @@ static result_t trn_sqfs_open_as_dir(void *data, trn_dir_t *out) {
 	return RESULT_OK;
 }
 
+static result_t trn_sqfs_create_file(void *data, const char *name) {
+    return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
+static result_t trn_sqfs_create_directory(void *data, const char *name) {
+    return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
+static result_t trn_sqfs_rename(void *data, const char *newpath) {
+    return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
+static result_t trn_sqfs_remove_file(void *inode) {
+	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
+static result_t trn_sqfs_remove_empty_directory(void *inode) {
+	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
+}
+
 static trn_inode_ops_t trn_sqfs_inode_ops = {
 	.is_dir = trn_sqfs_is_dir,
 	.lookup = trn_sqfs_lookup,
 	.release = trn_sqfs_release,
+	.create_file = trn_sqfs_create_file,
+	.create_directory = trn_sqfs_create_directory,
+	.rename = trn_sqfs_rename,
+	.remove_file = trn_sqfs_remove_file,
+	.remove_empty_directory = trn_sqfs_remove_empty_directory,
 	.open_as_file = trn_sqfs_open_as_file,
 	.open_as_dir = trn_sqfs_open_as_dir,
 };

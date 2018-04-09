@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/loader_config.h>
 #include<sys/types.h>
@@ -48,3 +52,7 @@ void bsd_finalize();
 
 result_t bsd_ai_pack(const struct addrinfo *ai, uint8_t *buf, size_t size);
 result_t bsd_ai_unpack(struct addrinfo *ai, const uint8_t *buf, size_t size, int limit);
+
+#ifdef __cplusplus
+}
+#endif

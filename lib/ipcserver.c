@@ -4,11 +4,24 @@
 #include<libtransistor/err.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipcserver.h>
+#include<libtransistor/loader_config.h>
 
 #include<string.h>
 #include<stdlib.h>
 
 result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_factory_t object_factory) {
+	static const uint8_t syscalls_needed[] = {
+		SVC_ID_CREATE_SESSION,
+		SVC_ID_ACCEPT_SESSION,
+		SVC_ID_REPLY_AND_RECEIVE,
+		0
+	};
+	
+	result_t r;
+	if((r = lconfig_has_syscalls(syscalls_needed)) != RESULT_OK) {
+		return r;
+	}
+	
 	srv->port = port;
 	srv->object_factory = object_factory;
 	for(int i = 0; i < MAX_SERVICE_SESSIONS; i++) {

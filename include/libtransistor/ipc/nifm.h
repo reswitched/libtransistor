@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 /**
@@ -21,3 +25,7 @@ result_t nifm_get_ip_address(uint32_t *ip);
 * @brief Finalize Network Interface Manager
 */
 void nifm_finalize();
+
+#ifdef __cplusplus
+}
+#endif

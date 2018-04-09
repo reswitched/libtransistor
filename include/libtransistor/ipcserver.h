@@ -6,6 +6,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/ipc.h>
 
@@ -108,3 +112,7 @@ result_t ipc_server_domain_destroy(ipc_server_domain_t *domain);
 
 result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout);
 result_t ipc_server_session_close(ipc_server_session_t *sess);
+
+#ifdef __cplusplus
+}
+#endif

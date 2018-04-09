@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/gpu/gpu.h>
 
@@ -23,3 +27,7 @@ typedef struct {
 	int index;
 	int unknown; ///< This is probably related to the offset within the gpu_buffer that this buffer lives in
 } graphic_buffer_t;
+
+#ifdef __cplusplus
+}
+#endif

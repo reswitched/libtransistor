@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 /**
@@ -14,3 +18,7 @@
 typedef struct {
 	uint32_t unknown[11];
 } fence_t;
+
+#ifdef __cplusplus
+}
+#endif

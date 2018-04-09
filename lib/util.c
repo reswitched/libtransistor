@@ -1,29 +1,16 @@
 #include<libtransistor/types.h>
+#include<libtransistor/err.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/util.h>
+#include<libtransistor/fd.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/bsd.h>
+#include<libtransistor/ipc/fs/err.h>
 
 #include<stdlib.h>
 #include<stdio.h>
-
-void *find_empty_memory_block(size_t len) {
-	// find a suitable address for mapping the shared memory
-	// TODO: Make sure the block is big enough to fit len.
-	uint64_t addr;
-	memory_info_t memory_info;
-	result_t r;
-	uint32_t page_info;
-	do {
-		addr = (uint64_t) rand() << 32 | rand();
-		addr += 0x80000000;
-		addr &= 0x0000007FFFFFF000;
-		if((r = svcQueryMemory(&memory_info, &page_info, (void*) addr)) != RESULT_OK) {
-			return NULL;
-		}
-	} while(memory_info.memory_type != 0 || memory_info.memory_attribute != 0 || memory_info.permission != 0 || (uint64_t) memory_info.base_addr + memory_info.size < addr + len);
-	return (void*)addr;
-}
+#include<errno.h>
+#include<string.h>
 
 uint64_t str2u64(const char *str) {
 	char buf[8];
@@ -46,10 +33,65 @@ char nybble2hex(uint8_t nybble) {
 	}
 }
 
-static int bsd_log = -1;
+static trn_file_t *debug_file = NULL;
 
-void dbg_set_bsd_log(int fd) {
-	bsd_log = fd;
+void dbg_set_file(trn_file_t *file) {
+	dbg_printf("redirecting dbgout to %p\n", file);
+	fd_file_put(debug_file);
+	debug_file = file;
+}
+
+result_t dbg_connect(const char *host, const char *port, int *fd_out) {
+	result_t r;
+
+	if((r = bsd_init()) != RESULT_OK) {
+		goto fail;
+	}
+
+	struct addrinfo *ai = NULL;
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+
+	int e = bsd_getaddrinfo(host, port, &hints, &ai);
+	if(e) {
+		r = bsd_result;
+		goto fail;
+	}
+
+	if(ai == NULL) {
+		goto fail;
+	}
+
+	int fd = bsd_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+	if(fd < 0) {
+		goto fail_ai;
+	}
+
+	if(bsd_connect(fd, ai->ai_addr, ai->ai_addrlen) < 0) {
+		goto fail_socket;
+	}
+
+	bsd_freeaddrinfo(ai);
+
+	int std_fd = socket_from_bsd(fd);
+	dbg_set_file(fd_file_get(std_fd));
+	*fd_out = std_fd;
+	
+	return RESULT_OK;
+	
+fail_socket:
+	bsd_close(fd);
+fail_ai:
+	bsd_freeaddrinfo(ai);
+fail:
+	return r;
+}
+
+__attribute__((destructor)) void dbg_disconnect() {
+	fd_file_put(debug_file);
+	debug_file = NULL;
 }
 
 size_t log_length = 0;
@@ -58,18 +100,22 @@ char log_buffer[0x20000];
 int log_string(const char *string, size_t len) {
 	svcOutputDebugString((char*) string, len);
 	size_t start = log_length;
-	for(size_t i = 0; i < len; i++) {
+	for(size_t i = 0; i < len && log_length < sizeof(log_buffer) - 2; i++) {
 		if(string[i] == 0) { break; }
 		log_buffer[log_length++] = string[i];
 	}
-	log_buffer[log_length++] = '\n';
-	if(bsd_log >= 0) {
-		int olddebug = ipc_debug_flag;
-		ipc_debug_flag = 0;
-		bsd_send(bsd_log, log_buffer + start, log_length - start, 0);
-		ipc_debug_flag = olddebug;
+	if(log_length < sizeof(log_buffer) - 1) {
+		log_buffer[log_length++] = '\n';
 	}
-	log_buffer[log_length] = 0;
+	if(debug_file != NULL) {
+		ipc_debug_level_t olddebug = ipc_debug_level;
+		ipc_debug_level = IPC_DEBUG_LEVEL_NONE;
+		size_t bytes_written;
+		debug_file->ops->write(debug_file->data, log_buffer + start, log_length - start, &bytes_written);
+		ipc_debug_level = olddebug;
+	}
+	if (log_length < sizeof(log_buffer))
+		log_buffer[log_length] = 0;
 	return 4;
 }
 
@@ -168,4 +214,39 @@ int dbg_printf(char const *fmt, ...) {
 	log_string(buf, ret+1);
 	va_end(vl);
 	return ret;
+}
+
+int trn_result_to_errno(result_t r) {
+	switch (r) {
+		case RESULT_OK:
+			return 0;
+		case LIBTRANSISTOR_ERR_OUT_OF_MEMORY:
+			return ENOMEM;
+		case LIBTRANSISTOR_ERR_INVALID_ARGUMENT:
+			return EINVAL;
+		case FSPSRV_ERR_NOT_FOUND:
+		case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
+		case LIBTRANSISTOR_ERR_FS_INVALID_PATH:
+			return ENOENT;
+		case FSPSRV_ERR_EXISTS:
+		case LIBTRANSISTOR_ERR_FS_PATH_EXISTS:
+			return EEXIST;
+		case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
+			return ENOTDIR;
+		case LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG:
+			return ENAMETOOLONG;
+		case FSPSRV_ERR_DIRECTORY_NOT_EMPTY:
+			return ENOTEMPTY;
+		case LIBTRANSISTOR_ERR_FS_READ_ONLY:
+			return EROFS;
+		case LIBTRANSISTOR_ERR_FS_ACCESS_DENIED:
+			return EACCES;
+		case LIBTRANSISTOR_ERR_FS_IO_ERROR:
+			return EIO;
+		default:
+			// Make the debugger's life easy: print his error before turning it
+			// into a useless code...
+			dbg_printf("UNSUPPORTED ERROR: %x\n", r);
+			return ENOSYS;
+	}
 }

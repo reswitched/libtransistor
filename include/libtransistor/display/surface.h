@@ -5,6 +5,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 #include<libtransistor/display/graphic_buffer_queue.h>
 
@@ -34,7 +38,7 @@ typedef struct {
 	uint32_t *gpu_buffer_memory;
 	uint32_t *gpu_buffer_memory_alloc;
 
-	graphic_buffer_t graphic_buffers[2];
+	graphic_buffer_t graphic_buffers[3];
 } surface_t;
 
 /**
@@ -66,3 +70,7 @@ result_t surface_dequeue_buffer(surface_t *surface, uint32_t **image);
 result_t surface_queue_buffer(surface_t *surface);
 
 void surface_destroy(surface_t *surface);
+
+#ifdef __cplusplus
+}
+#endif

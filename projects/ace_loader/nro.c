@@ -27,6 +27,41 @@ static char *nro_argoffs;
 
 thread_h aceloader_main_thread_handle;
 
+// TODO: I'd like this to be static...
+uint64_t reg_backups[13];
+
+uint64_t nro_thunk(uint64_t (*entry)(loader_config_entry_t*, thread_h), loader_config_entry_t *config, thread_h thrd);
+
+asm(".text\n"
+	".globl nro_thunk\n"
+"nro_thunk:"
+	"adrp x16, reg_backups\n"
+	"add x16, x16, #:lo12:reg_backups\n"
+	"mov x17, sp\n"
+	"stp x19, x20, [x16, 0]\n"
+	"stp x21, x22, [x16, 0x10]\n"
+	"stp x23, x24, [x16, 0x20]\n"
+	"stp x25, x26, [x16, 0x30]\n"
+	"stp x27, x28, [x16, 0x40]\n"
+	"stp x29, x30, [x16, 0x50]\n"
+	"str x17, [x16, 0x60]\n"
+	"mov x8, x0\n"
+	"mov x0, x1\n"
+	"mov x1, x2\n"
+	"blr x8\n"
+	"adrp x16, reg_backups\n"
+	"add x16, x16, #:lo12:reg_backups\n"
+	"ldp x19, x20, [x16, 0]\n"
+	"ldp x21, x22, [x16, 0x10]\n"
+	"ldp x23, x24, [x16, 0x20]\n"
+	"ldp x25, x26, [x16, 0x30]\n"
+	"ldp x27, x28, [x16, 0x40]\n"
+	"ldp x29, x30, [x16, 0x50]\n"
+	"ldr x17, [x16, 0x60]\n"
+	"mov sp, x17\n"
+	"ret");
+
+
 uint64_t nro_start()
 {
 	uint64_t (*entry)(loader_config_entry_t*, thread_h) = nro_base;
@@ -78,6 +113,12 @@ uint64_t nro_start()
 		ent_no++;
 	}
 
+	nro_config[ent_no].key = LCONFIG_KEY_SYSCALL_AVAILABLE_HINT;
+	nro_config[ent_no].flags = 0;
+	nro_config[ent_no].syscall_available_hint.hints[0] = loader_config.syscall_hints[0];
+	nro_config[ent_no].syscall_available_hint.hints[1] = loader_config.syscall_hints[1];
+	ent_no++;
+	
 	if(loader_config.applet_workaround_active) {
 		nro_config[ent_no].key = LCONFIG_KEY_APPLET_WORKAROUND;
 		nro_config[ent_no].flags = LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
@@ -106,7 +147,7 @@ uint64_t nro_start()
 	*(void**)(tls + 0x1f8) = NULL;
 	
 	// run NRO
-	ret = entry(nro_config, -1);
+	ret = nro_thunk(entry, nro_config, -1);
 
 	// Restore TLS
 	*tls_userspace_pointer = tls_backup;

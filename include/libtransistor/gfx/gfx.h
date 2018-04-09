@@ -5,4 +5,12 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/gfx/blit.h>
+
+#ifdef __cplusplus
+}
+#endif
