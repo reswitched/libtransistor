@@ -9,6 +9,8 @@
 extern "C" {
 #endif
 
+#include<libtransistor/types.h>
+
 #define CURRENT_PROCESS 0xffff8001
 #define CURRENT_THREAD 0xffff8000
 
