@@ -29,11 +29,7 @@
 void _exit(); // implemented in libtransistor crt0
 
 struct _reent *__getreent() {
-	struct tls *tls = get_tls();
-	if (tls == NULL || tls->ctx == NULL)
-		return NULL;
-	else
-		return &tls->ctx->reent;
+	return &trn_get_thread()->reent;
 }
 
 int _close_r(struct _reent *reent, int file) {

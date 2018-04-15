@@ -102,15 +102,6 @@ int phal_semaphore_unlock(phal_semaphore *sem) {
 }
 
 void **phal_get_tls() {
-	struct tls *tls = get_tls();
-	if (tls == NULL)
-		return NULL;
-	if (tls->ctx != NULL)
-		return &tls->ctx->pthread;
-	tls->ctx = malloc(sizeof(struct thread_ctx));
-	if (tls->ctx == NULL)
-		return NULL;
-	tls->ctx->pthread = NULL;
-	_REENT_INIT_PTR(&tls->ctx->reent);
-	return &tls->ctx->pthread;
+	trn_thread_t *thread = trn_get_thread();
+	return &thread->pthread;
 }

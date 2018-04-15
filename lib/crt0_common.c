@@ -292,6 +292,8 @@ static int exit_value;
 
 static uint8_t tls_backup[0x200];
 
+static trn_thread_t main_thread;
+
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 static int make_dbg_log_fd();
 
@@ -346,7 +348,14 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	dbg_printf("backup tls");
 	memcpy(tls_backup, get_tls(), 0x200);
 	memset(get_tls(), 0, 0x200);
-
+	
+	main_thread.handle = loader_config.main_thread;
+	main_thread.owns_stack = false;
+	main_thread.arg = NULL;
+	main_thread.pthread = NULL;
+	_REENT_INIT_PTR(&main_thread.reent);
+	get_tls()->thread = &main_thread;
+	
 	bool initialized_fs = false;
 	bool ran_initializers = false;
 	
