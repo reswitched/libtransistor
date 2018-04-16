@@ -32,7 +32,7 @@ struct tls *get_tls();
 trn_thread_t *trn_get_thread();
 
 /**
- * @brief Gets the current thread's handle
+ * @brief Gets the current thread's handle, or 0xFFFFFFFF if called before threads have been fully initialized.
  */
 thread_h get_thread_handle();
 

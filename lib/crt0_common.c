@@ -310,6 +310,9 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	if((ret = relocate(aslr_base, &dyn_info)) != RESULT_OK) {
 		return ret;
 	}
+
+	memcpy(tls_backup, get_tls(), 0x200);
+	get_tls()->thread = NULL; // explicitly indicate that this thread has not yet been initialized
 	
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("config: %p", config);
@@ -345,10 +348,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		loader_config.main_thread = 0xde00;
 	}
 
-	dbg_printf("backup tls");
-	memcpy(tls_backup, get_tls(), 0x200);
 	memset(get_tls(), 0, 0x200);
-	
 	main_thread.handle = loader_config.main_thread;
 	main_thread.owns_stack = false;
 	main_thread.arg = NULL;
