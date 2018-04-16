@@ -16,11 +16,15 @@ typedef struct {
 	volatile atomic_uint_fast64_t lock;
 } trn_mutex_t;
 
+#define TRN_MUTEX_STATIC_INITIALIZER {.lock = 0}
+
 typedef struct {
 	trn_mutex_t mutex;
 	thread_h owner;
 	int count;
 } trn_recursive_mutex_t;
+
+#define TRN_RECURSIVE_MUTEX_STATIC_INITIALIZER {.mutex = TRN_MUTEX_STATIC_INITIALIZER, .owner = 0, .count = 0}
 
 void trn_mutex_create(trn_mutex_t *mutex);
 void trn_mutex_lock(trn_mutex_t *mutex);
