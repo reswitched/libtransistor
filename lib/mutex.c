@@ -12,8 +12,7 @@ void trn_mutex_create(trn_mutex_t *mutex) {
 	mutex->lock = 0;
 }
 
-void trn_mutex_lock(trn_mutex_t *mutex) {
-	result_t r;
+void trn_mutex_lock(trn_mutex_t *mutex) ACQUIRE(mutex) NO_THREAD_SAFETY_ANALYSIS {
 	thread_h self_handle = get_thread_handle();
 	while(1) {
 		uint64_t cur = 0;
@@ -36,7 +35,7 @@ void trn_mutex_lock(trn_mutex_t *mutex) {
 	}
 }
 
-bool trn_mutex_try_lock(trn_mutex_t *mutex) {
+bool trn_mutex_try_lock(trn_mutex_t *mutex) TRY_ACQUIRE(true, mutex) NO_THREAD_SAFETY_ANALYSIS {
 	uint64_t cur = 0;
 	thread_h self_handle = get_thread_handle();
 	if(atomic_compare_exchange_strong(&mutex->lock, &cur, self_handle)) {
@@ -50,7 +49,7 @@ bool trn_mutex_try_lock(trn_mutex_t *mutex) {
 	return false;
 }
 
-void trn_mutex_unlock(trn_mutex_t *mutex) {
+void trn_mutex_unlock(trn_mutex_t *mutex) RELEASE(mutex) NO_THREAD_SAFETY_ANALYSIS {
 	uint64_t old = atomic_exchange(&mutex->lock, 0);
 	if(old & HAS_LISTENERS) {
 		svcArbitrateUnlock(&mutex->lock);
@@ -63,7 +62,7 @@ void trn_recursive_mutex_create(trn_recursive_mutex_t *recursive) {
 	recursive->count = 0;
 }
 
-void trn_recursive_mutex_lock(trn_recursive_mutex_t *recursive) {
+void trn_recursive_mutex_lock(trn_recursive_mutex_t *recursive) ACQUIRE(recursive) NO_THREAD_SAFETY_ANALYSIS {
 	thread_h self_handle = get_thread_handle();
 	if(recursive->owner != self_handle) {
 		trn_mutex_lock(&recursive->mutex);
@@ -72,7 +71,7 @@ void trn_recursive_mutex_lock(trn_recursive_mutex_t *recursive) {
 	recursive->count++;
 }
 
-bool trn_recursive_mutex_try_lock(trn_recursive_mutex_t *recursive) {
+bool trn_recursive_mutex_try_lock(trn_recursive_mutex_t *recursive) TRY_ACQUIRE(true, recursive) NO_THREAD_SAFETY_ANALYSIS {
 	thread_h self_handle = get_thread_handle();
 	if(recursive->owner != self_handle) {
 		if(!trn_mutex_try_lock(&recursive->mutex)) {
@@ -83,7 +82,7 @@ bool trn_recursive_mutex_try_lock(trn_recursive_mutex_t *recursive) {
 	recursive->count++;
 }
 
-void trn_recursive_mutex_unlock(trn_recursive_mutex_t *recursive) {
+void trn_recursive_mutex_unlock(trn_recursive_mutex_t *recursive) RELEASE(recursive) NO_THREAD_SAFETY_ANALYSIS {
 	if(--(recursive->count) == 0) {
 		recursive->owner = 0;
 		trn_mutex_unlock(&recursive->mutex);

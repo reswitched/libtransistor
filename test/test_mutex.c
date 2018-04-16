@@ -17,6 +17,7 @@ void other_thread(void *arg) {
 	printf("O: locking mutex...\n");
 	trn_mutex_lock(&mutex);
 	printf("O: locked mutex!\n");
+	trn_mutex_unlock(&mutex);
 }
 
 int main(int argc, char *argv[]) {
@@ -26,7 +27,7 @@ int main(int argc, char *argv[]) {
 	trn_thread_t thread;
 	ASSERT_OK(fail, trn_thread_create(&thread, other_thread, NULL, 0x3f, -2, 1024 * 64, NULL));
 	trn_mutex_lock(&mutex);
-	ASSERT_OK(fail_thread, trn_thread_start(&thread));
+	ASSERT_OK(fail_mutex, trn_thread_start(&thread));
 	printf("M: started other thread\n");
 	svcSleepThread(5000000000);
 	printf("M: unlocking mutex\n");
@@ -37,6 +38,11 @@ int main(int argc, char *argv[]) {
 	ASSERT_OK(fail_thread, trn_thread_join(&thread, -1));
 	printf("thread exited\n");
 	
+	trn_thread_destroy(&thread);
+	return RESULT_OK;
+	
+fail_mutex:
+	trn_mutex_unlock(&mutex);
 fail_thread:
 	trn_thread_destroy(&thread);
 fail:

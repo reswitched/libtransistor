@@ -460,10 +460,10 @@ int rename(const char *oldpath, const char *newpath) {
 
 static trn_recursive_mutex_t malloc_mutex = TRN_RECURSIVE_MUTEX_STATIC_INITIALIZER;
 
-void __malloc_lock(struct _reent *reent) {
+void __malloc_lock(struct _reent *reent) ACQUIRE(malloc_mutex) {
 	trn_recursive_mutex_lock(&malloc_mutex);
 }
 
-void __malloc_unlock(struct _reent *reent) {
+void __malloc_unlock(struct _reent *reent) RELEASE(malloc_mutex) {
 	trn_recursive_mutex_unlock(&malloc_mutex);
 }
