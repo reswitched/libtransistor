@@ -25,6 +25,7 @@
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/util.h>
+#include<libtransistor/mutex.h>
 
 void _exit(); // implemented in libtransistor crt0
 
@@ -459,4 +460,14 @@ int rename(const char *oldpath, const char *newpath) {
 		return -1;
 	}
 	return 0;
+}
+
+static trn_recursive_mutex_t malloc_mutex = TRN_RECURSIVE_MUTEX_STATIC_INITIALIZER;
+
+void __malloc_lock(struct _reent *reent) {
+	trn_recursive_mutex_lock(&malloc_mutex);
+}
+
+void __malloc_unlock(struct _reent *reent) {
+	trn_recursive_mutex_unlock(&malloc_mutex);
 }
