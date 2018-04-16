@@ -2,7 +2,7 @@ env:
   global:
     - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
 language: c
-sudo: required
+sudo: false
 cache:
   directories:
     - ${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
@@ -51,9 +51,9 @@ install:
         brew install llvm qemu lz4 squashfs jq ;
         brew upgrade python ;
         export PATH="$(brew --prefix llvm)/bin:$(brew --prefix python3)/bin:$PATH";
-        pip3 install --upgrade pip setuptools wheel
       fi
 
+    - pip3 install --user --upgrade pip setuptools wheel
     # Travis has an OLD doxygen build, so we fetch a recent one
     - export DOXY_BINPATH=${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
     - if [ ! -e "$DOXY_BINPATH/doxygen" ]; then mkdir -p ${DEPS_DIR}/doxygen; fi
@@ -64,7 +64,7 @@ install:
 before_script:
   - wget -nv https://github.com/reswitched/Mephisto/releases/download/v1.1.1/ctu_$TRAVIS_OS_NAME
   - chmod +x ctu_$TRAVIS_OS_NAME
-  - sudo pip3 install -r requirements.txt
+  - pip3 install --user -r requirements.txt
   
 script:  make LD=ld.lld$LLVM_POSTFIX && LD=ld.lld$LLVM_POSTFIX make -C projects/ace_loader && make run_tests MEPHISTO=./ctu_$TRAVIS_OS_NAME
 
