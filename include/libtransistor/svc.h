@@ -321,7 +321,7 @@ void svcReturnFromException(uint64_t result);
  * @param handle Description
  * @param info_sub_id Description
  */
-result_t svcGetInfo(uint64_t *info, uint64_t info_id, handle_t handle, uint64_t info_sub_id);
+result_t svcGetInfo(void *info, uint64_t info_id, handle_t handle, uint64_t info_sub_id);
 // flushEntireDataCache
 // flushDataCache
 // mapPhysicalMemory
