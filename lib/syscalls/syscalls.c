@@ -94,14 +94,13 @@ off_t _lseek_r(struct _reent *reent, int file, off_t pos, int whence) {
 	}
 
 	result_t r = f->ops->seek(f->data, pos, whence, &res);
+	if(r != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
+		res = -1;
+	}
 	
 finalize:
 	fd_file_put(f);
-	
-	if(r != RESULT_OK) {
-		reent->_errno = trn_result_to_errno(r);
-		return -1;
-	}
 	
 	return res;
 }
@@ -132,14 +131,13 @@ ssize_t _read_r(struct _reent *reent, int file, void *ptr, size_t len) {
 	}
 	
 	result_t r = f->ops->read(f->data, (char*)ptr, len, &res);
+	if(r != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
+		res = -1;
+	}
 	
 finalize:
 	fd_file_put(f);
-	
-	if(r != RESULT_OK) {
-		reent->_errno = trn_result_to_errno(r);
-		return -1;
-	}
 	
 	return res;
 }
@@ -291,14 +289,13 @@ ssize_t _write_r(struct _reent *reent, int file, const void *ptr, size_t len) {
 	}
 	
 	result_t r = f->ops->write(f->data, (char*)ptr, len, &res);
-	
-finalize:
-	fd_file_put(f);
-	
 	if(r != RESULT_OK) {
 		reent->_errno = trn_result_to_errno(r);
-		return -1;
+		res = -1;
 	}
+
+finalize:
+	fd_file_put(f);
 	
 	return res;
 }
