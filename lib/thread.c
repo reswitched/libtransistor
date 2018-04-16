@@ -16,7 +16,7 @@ static void trn_thread_entry(trn_thread_t *thread) {
 }
 
 result_t trn_thread_create(trn_thread_t *thread,
-                           void (*entry)(trn_thread_t *thread, void *arg),
+                           void (*entry)(void *arg),
                            void *arg,
                            uint32_t priority,
                            int32_t processor_id,

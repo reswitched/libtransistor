@@ -36,7 +36,7 @@ typedef struct {
  * If stack_bottom is specified, the thread will not take ownership of the stack so as not to make any assumptions about how to free it. If it is NULL, a stack will be allocated via \ref alloc_pages and will be owned by the thread.
  */
 result_t trn_thread_create(trn_thread_t *thread,
-                           void (*entry)(trn_thread_t *thread, void *arg),
+                           void (*entry)(void *arg),
                            void *arg,
                            uint32_t priority,
                            int32_t processor_id,
