@@ -1,10 +1,11 @@
 # LIBTRANSISTOR TESTS
 
 libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin multiple_set_heap_size vi gpu display am sdl sqfs_img audio_output init_fini_arrays ipc_server pthread ipc_fs fs_stress cpp alloc_pages unwind cpp_exceptions cpp_dynamic_memory hid_init_stress usb usb_serial thread mutex # fs_release_inodes
+libtransistor_DYNAMIC_TESTS := simple
 
 # RUN RULES
 
-run_tests: run_helloworld_test run_hexdump_test run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test run_multiple_set_heap_size_test run_init_fini_arrays_test run_ipc_fs_test run_fs_stress_test run_cpp_test run_alloc_pages_test run_unwind_test run_cpp_exceptions_test run_cpp_dynamic_memory_test run_thread_test run_mutex_test # run_fs_releases_inodes_test
+run_tests: run_helloworld_test run_hexdump_test run_malloc_test run_bsd_ai_packing_test run_bsd_test run_sfdnsres_test run_multiple_set_heap_size_test run_init_fini_arrays_test run_ipc_fs_test run_fs_stress_test run_cpp_test run_alloc_pages_test run_unwind_test run_cpp_exceptions_test run_cpp_dynamic_memory_test run_thread_test run_mutex_test run_dynamic_simple_test # run_fs_releases_inodes_test
 
 run_bsd_test: $(BUILD_DIR)/test/test_bsd.nro $(SOURCE_ROOT)/test_helpers/bsd.rb
 	$(RUBY) $(SOURCE_ROOT)/test_helpers/bsd.rb $(MEPHISTO)
@@ -28,15 +29,35 @@ run_ipc_fs_test: $(BUILD_DIR)/test/test_fs_stress.nro
 run_%_test: $(BUILD_DIR)/test/test_%.nro
 	$(MEPHISTO) --initialize-memory --load-nro $<
 
+run_dynamic_%_test: $(BUILD_DIR)/test/dynamic/test_%.nro
+	$(MEPHISTO) --initialize-memory --load-nro $<
+
 # LINK RULES
 
-$(BUILD_DIR)/test/%.nro.so: $(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.squashfs.o $(DIST)
+$(BUILD_DIR)/test/dynamic/test_%.nro.so: \
+	$(BUILD_DIR)/test/dynamic/test_%.o \
+	$(BUILD_DIR)/test/dynamic/test_%.squashfs.o \
+	$(BUILD_DIR)/test/dynamic/libdynamic_%.nro.so \
+	$(BUILD_DIR)/test/dynamic/libdynamic_%.nro \
+	$(DIST)
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/$*.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS)
+	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/dynamic/test_$*.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS) -L $(realpath $(BUILD_DIR)/test/dynamic)/ -ldynamic_$*.nro
 
-$(BUILD_DIR)/test/%.nso.so: $(BUILD_DIR)/test/%.o $(BUILD_DIR)/test/%.squashfs.o $(DIST)
+$(BUILD_DIR)/test/test_%.nro.so: $(BUILD_DIR)/test/test_%.o $(BUILD_DIR)/test/test_%.squashfs.o $(DIST)
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/$*.squashfs.o $(LIBTRANSISTOR_NSO_LDFLAGS)
+	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/test_$*.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS)
+
+$(BUILD_DIR)/test/test_%.nso.so: $(BUILD_DIR)/test/test_%.o $(BUILD_DIR)/test/test_%.squashfs.o $(DIST)
+	mkdir -p $(@D)
+	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/test_$*.squashfs.o $(LIBTRANSISTOR_NSO_LDFLAGS)
+
+$(BUILD_DIR)/test/dynamic/libdynamic_%.nro.so: $(BUILD_DIR)/test/dynamic/libdynamic_%.o $(DIST)
+	mkdir -p $(@D)
+	$(LD) $(LD_SHARED_LIBRARY_FLAGS) -o $@ $<
+
+$(BUILD_DIR)/test/dynamic/libdynamic_%.nro: $(BUILD_DIR)/test/dynamic/libdynamic_%.nro.so
+	$(PYTHON3) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py $< $@ nro
+
 
 # BUILD RULES
 
@@ -59,11 +80,15 @@ $(BUILD_DIR)/test/%.squashfs.o: $(BUILD_DIR)/test/%.squashfs $(LIBTRANSISTOR_HOM
 $(BUILD_DIR)/empty_file:
 	touch $@
 
-$(BUILD_DIR)/test/%.squashfs: $(LIBTRANSISTOR_HOME)/test/fs_%/*
+$(BUILD_DIR)/test/dynamic/test_%.squashfs:  $(BUILD_DIR)/test/dynamic/libdynamic_%.nro
 	mkdir -p $(@D)
 	mksquashfs $^ $@ -comp xz -nopad -noappend
 
-$(BUILD_DIR)/test/%.squashfs: $(BUILD_DIR)/empty_file
+$(BUILD_DIR)/test/test_%.squashfs: $(LIBTRANSISTOR_HOME)/test/fs_test_%/*
+	mkdir -p $(@D)
+	mksquashfs $^ $@ -comp xz -nopad -noappend
+
+$(BUILD_DIR)/test/test_%.squashfs: $(BUILD_DIR)/empty_file
 	mkdir -p $(@D)
 	mksquashfs $^ $@ -comp xz -nopad -noappend
 
@@ -76,4 +101,5 @@ clean_test:
 
 default: \
 	$(addprefix $(BUILD_DIR)/test/test_,$(addsuffix .nro,$(libtransistor_TESTS))) \
-	$(addprefix $(BUILD_DIR)/test/test_,$(addsuffix .nso,$(libtransistor_TESTS)))
+	$(addprefix $(BUILD_DIR)/test/test_,$(addsuffix .nso,$(libtransistor_TESTS))) \
+	$(addprefix $(BUILD_DIR)/test/dynamic/test_,$(addsuffix .nro,$(libtransistor_DYNAMIC_TESTS))) \
