@@ -32,6 +32,7 @@ struct module_t {
 	// needed for MODULE_STATE_QUEUED
 	const char *name;
 	void *base;
+	bool owned_by_loader; // TODO: replace this with tagged union to keep track of info we need for unmapping NRO
 
 	trn_list_head_t dependencies;
 	

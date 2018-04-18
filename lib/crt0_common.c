@@ -297,7 +297,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		}
 		initialized_fs = true;
 
-		if((ret = ld_queue_module("main", aslr_base, &root_module)) != RESULT_OK) {
+		if((ret = ld_queue_module("main", aslr_base, true, &root_module)) != RESULT_OK) {
 			root_inode.ops->release(root_inode.data);
 			dbg_disconnect();
 			goto fail_bsd;

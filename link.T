@@ -32,6 +32,7 @@ SECTIONS
   .mod0 : {
     KEEP(crt0.nso.o(.data.mod0))
     KEEP(crt0.nro.o(.data.mod0))
+    KEEP(crt0.lib.nro.o(.data.mod0))
   }
   .hash : { *(.hash) }
   .dynsym : { *(.dynsym .dynsym.*) }

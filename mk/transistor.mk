@@ -10,9 +10,15 @@ libtransistor_BUILD_DEPS := $(DIST_NEWLIB) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREA
 # ARCHIVE RULES
 
 libtransistor_TARGET_NRO := $(BUILD_DIR)/transistor/libtransistor.nro.a
+libtransistor_TARGET_LIB_NRO := $(BUILD_DIR)/transistor/libtransistor.lib.nro.a
 libtransistor_TARGET_NSO := $(BUILD_DIR)/transistor/libtransistor.nso.a
 
 $(libtransistor_TARGET_NRO): $(BUILD_DIR)/transistor/crt0.nro.o $(libtransistor_OBJECT_FILES)
+	mkdir -p $(@D)
+	rm -f $@
+	$(AR) $(AR_FLAGS) $@ $+
+
+$(libtransistor_TARGET_LIB_NRO): $(BUILD_DIR)/transistor/crt0.lib.nro.o
 	mkdir -p $(@D)
 	rm -f $@
 	$(AR) $(AR_FLAGS) $@ $+
@@ -44,9 +50,14 @@ $(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.S 
 
 DIST_TRANSISTOR := $(DIST_TRANSISTOR_HEADERS) $(DIST_TRANSISTOR_SUPPORT) \
 	$(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.a \
+	$(LIBTRANSISTOR_HOME)/lib/libtransistor.lib.nro.a \
 	$(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a \
 
 $(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.a: $(libtransistor_TARGET_NRO)
+	install -d $(@D)
+	install $< $@
+
+$(LIBTRANSISTOR_HOME)/lib/libtransistor.lib.nro.a: $(libtransistor_TARGET_LIB_NRO)
 	install -d $(@D)
 	install $< $@
 
@@ -64,8 +75,10 @@ dist_transistor: $(DIST_TRANSISTOR)
 clean_transistor:
 	rm -rf $(BUILD_DIR)/transistor/
 	rm -rf $(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.a
+	rm -rf $(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.lib.a
 	rm -rf $(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a
 
 # add to default target
 default: $(LIBTRANSISTOR_HOME)/lib/libtransistor.nro.a \
-	$(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a
+	$(LIBTRANSISTOR_HOME)/lib/libtransistor.lib.nro.a \
+	$(LIBTRANSISTOR_HOME)/lib/libtransistor.nso.a \

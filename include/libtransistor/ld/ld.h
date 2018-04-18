@@ -25,7 +25,7 @@ result_t ld_init();
 /**
  * @brief Queues a module to processes full relocations, dynamic library dependencies, and initializers
  */
-result_t ld_queue_module(const char *name, uint8_t *base, module_t **out);
+result_t ld_queue_module(const char *name, uint8_t *base, bool owned_by_loader, module_t **out);
 
 /**
  * @brief Discovers a module in the filesystem and queues it
