@@ -6,6 +6,7 @@
 #pragma once
 
 #include<libtransistor/collections/list.h>
+#include<libtransistor/ld/elf.h>
 
 #include<stdint.h>
 
@@ -17,7 +18,8 @@ typedef enum {
 	MODULE_STATE_INVALID = 0,
 	MODULE_STATE_QUEUED = 1,
 	MODULE_STATE_PROCESSED = 2,
-	MODULE_STATE_UNLOADED = 3,
+	MODULE_STATE_RELOCATED = 3,
+	MODULE_STATE_UNLOADED = 4,
 } module_state_t;
 
 typedef struct {
@@ -36,12 +38,10 @@ struct module_t {
 
 	trn_list_head_t dependencies;
 	
-	bool has_rela;
-	uint64_t rela_offset;
-	uint64_t rela_size;
-	uint64_t rela_ent;
-	uint64_t rela_count;
+	Elf64_Dyn *dynamic;
+	Elf64_Sym *symtab;
 	const char *strtab;
+	uint32_t *hash;
 };
 
 #ifdef __cplusplus

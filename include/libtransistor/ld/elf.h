@@ -26,6 +26,24 @@ typedef struct {
 	uint64_t r_addend;
 } Elf64_Rela;
 
+typedef struct {
+	uint64_t r_offset;
+	uint32_t r_reloc_type;
+	uint32_t r_symbol;
+} Elf64_Rel;
+
+typedef struct {
+	uint32_t st_name;
+	uint8_t st_info;
+	uint8_t st_other;
+	uint16_t st_shndx;
+	uint64_t st_value;
+	uint64_t st_size;
+} Elf64_Sym;
+
+#define STN_UNDEF 0
+#define SHN_UNDEF 0
+
 static_assert(sizeof(Elf64_Rela) == 0x18, "Elf64_Rela size should be 0x18");
 
 enum {
@@ -43,7 +61,9 @@ enum {
 	DT_SYMENT = 11,
 	// 12-15
 	DT_SYMBOLIC = 16,
-	// 17-19
+	DT_REL = 17,
+	DT_RELSZ = 18,
+	DT_RELENT = 19,
 	DT_PLTREL = 20,
 	// 21-22
 	DT_JMPREL = 23,
