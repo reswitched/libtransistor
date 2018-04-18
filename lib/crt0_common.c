@@ -16,6 +16,7 @@
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/address_space.h>
 #include<libtransistor/usb_serial.h>
+#include<libtransistor/ld/ld.h>
 
 #include<sys/socket.h>
 #include<assert.h>
@@ -47,152 +48,12 @@ extern size_t log_length;
 extern char log_buffer[0x20000];
 
 typedef struct {
-	uint32_t magic, dynamic_off, bss_start_off, bss_end_off;
-	uint32_t unwind_start_off, unwind_end_off, module_object_off;
-} module_header_t;
-
-typedef struct {
-	int64_t d_tag;
-	union {
-		uint64_t d_val;
-		void *d_ptr;
-	};
-} Elf64_Dyn;
-
-typedef struct {
-	uint64_t r_offset;
-	uint32_t r_reloc_type;
-	uint32_t r_symbol;
-	uint64_t r_addend;
-} Elf64_Rela;
-
-static_assert(sizeof(Elf64_Rela) == 0x18, "Elf64_Rela size should be 0x18");
-
-typedef struct {
 	void (**init_array)(void);
 	void (**fini_array)(void);
 
 	ssize_t init_array_size;
 	ssize_t fini_array_size;
 } dyn_info_t;
-
-const bool RELOCATION_DEBUG = false; // run under Mephisto with --relocate
-
-static result_t relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
-	module_header_t *mod_header = (module_header_t *)&aslr_base[*(uint32_t*) &aslr_base[4]];
-	Elf64_Dyn *dynamic = (Elf64_Dyn*) (((uint8_t*) mod_header) + mod_header->dynamic_off);
-	uint64_t rela_offset = 0;
-	uint64_t rela_size = 0;
-	uint64_t rela_ent = 0;
-	uint64_t rela_count = 0;
-	bool found_rela = false;
-
-	const char mod_magic[] = "MOD0";
-	if(mod_header->magic != *((uint32_t*) mod_magic)) {
-		return LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_HEADER;
-	}
-	
-	while(dynamic->d_tag > 0) {
-		switch(dynamic->d_tag) {
-		case 2: // DT_PLTRELSZ
-			break;
-		case 3: // DT_PLTGOT
-			break;
-		case 4: // DT_HASH
-			break;
-		case 5: // DT_STRTAB
-			break;
-		case 6: // DT_SYMTAB
-			break;
-		case 7: // DT_RELA
-			if(found_rela) {
-				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
-			}
-			rela_offset = dynamic->d_val;
-			found_rela = true;
-			break;
-		case 8: // DT_RELASZ
-			rela_size = dynamic->d_val;
-			break;
-		case 9: // DT_RELAENT
-			rela_ent = dynamic->d_val;
-			break;
-		case 10: // DT_STRSZ
-			break;
-		case 11: // DT_SYMENT
-			break;
-		case 16: // DT_SYMBOLIC
-			break;
-		case 20: // DT_PLTREL
-			break;
-		case 23: // DT_JMPREL
-			break;
-		case 25: // DT_INIT_ARRAY
-			if(dyn_info->init_array != NULL) {
-				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
-			}
-			dyn_info->init_array = (void (**)(void)) (aslr_base + dynamic->d_val);
-			break;
-		case 26: // DT_FINI_ARRAY
-			if(dyn_info->fini_array != NULL) {
-				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
-			}
-			dyn_info->fini_array = (void (**)(void)) (aslr_base + dynamic->d_val);
-			break;
-		case 27: // DT_INIT_ARRAYSZ
-			if(dyn_info->init_array_size != -1) {
-				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
-			}
-			dyn_info->init_array_size = dynamic->d_val;
-			break;
-		case 28: // DT_FINI_ARRAYSZ
-			if(dyn_info->fini_array_size != -1) {
-				return LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY;
-			}
-			dyn_info->fini_array_size = dynamic->d_val;
-			break;
-		case 30: // DT_FLAGS
-			// TODO
-			break;
-		case 0x6ffffef5: // DT_GNU_HASH
-			break;
-		case 0x6ffffff9: // DT_RELACOUNT
-			rela_count = dynamic->d_val;
-			break;
-		default:
-			if(RELOCATION_DEBUG) {
-				dbg_printf("unrecognized dynamic entry: 0x%x\n", dynamic->d_tag);
-			}
-		}
-		dynamic++;
-	}
-  
-	if(rela_ent != 0x18) {
-		return LIBTRANSISTOR_ERR_TRNLD_INVALID_RELA_ENT;
-	}
-  
-	if(rela_size != rela_count * rela_ent) {
-		return LIBTRANSISTOR_ERR_TRNLD_INVALID_RELA_SIZE;
-	}
-  
-	Elf64_Rela *rela_base = (Elf64_Rela*) (aslr_base + rela_offset);
-	for(uint64_t i = 0; i < rela_count; i++) {
-		Elf64_Rela rela = rela_base[i];
-    
-		switch(rela.r_reloc_type) {
-		case 0x403: // R_AARCH64_RELATIVE
-			if(rela.r_symbol != 0) {
-				return LIBTRANSISTOR_ERR_TRNLD_RELA_SYMBOL_UNSUPPORTED;
-			}
-			*(void**)(aslr_base + rela.r_offset) = aslr_base + rela.r_addend;
-			break;
-		default:
-			return LIBTRANSISTOR_ERR_TRNLD_UNRECOGNIZED_RELOC_TYPE;
-		}
-	}
-	
-	return RESULT_OK;
-}
 
 static result_t dbg_log_write(void *v, const void *ptr, size_t len, size_t *bytes_written) {
 	log_string(ptr, len);
@@ -300,14 +161,8 @@ static int make_dbg_log_fd();
 extern void _cleanup_mapped_heap();
 
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
-	dyn_info_t dyn_info;
-	dyn_info.init_array = NULL;
-	dyn_info.fini_array = NULL;
-	dyn_info.init_array_size = -1;
-	dyn_info.fini_array_size = -1;
-
 	int ret;
-	if((ret = relocate(aslr_base, &dyn_info)) != RESULT_OK) {
+	if((ret = ld_basic_relocate_module(aslr_base)) != RESULT_OK) {
 		return ret;
 	}
 
@@ -357,7 +212,8 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	get_tls()->thread = &main_thread;
 	
 	bool initialized_fs = false;
-	bool ran_initializers = false;
+
+	module_t *root_module = NULL;
 	
 	exit_mode_t exit_mode = setjmp(exit_jmpbuf);
 	if(exit_mode == NOT_EXITING) {
@@ -385,7 +241,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			dbg_printf("failed to initialize sm: 0x%x", ret);
 			goto restore_tls;
 		}
-
+		
 		if(STDIO_OVERRIDE == STDIO_OVERRIDE_NONE) {
 			if(loader_config.has_stdio_sockets) {
 				if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
@@ -441,15 +297,18 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		}
 		initialized_fs = true;
 
-		if(dyn_info.init_array != NULL) {
-			if(dyn_info.init_array_size != -1) {
-				for(size_t i = 0; i < dyn_info.init_array_size/sizeof(dyn_info.init_array[0]); i++) {
-					dyn_info.init_array[i]();
-				}
-			}
+		if((ret = ld_queue_module("main", aslr_base, &root_module)) != RESULT_OK) {
+			root_inode.ops->release(root_inode.data);
+			dbg_disconnect();
+			goto fail_bsd;
 		}
-		ran_initializers = true;
-
+		if((ret = ld_process_modules()) != RESULT_OK) {
+			ld_finalize_module(root_module);
+			root_inode.ops->release(root_inode.data);
+			dbg_disconnect();
+			goto fail_bsd;
+		}
+		
 		ret = main(loader_config.argc, loader_config.argv);
 		exit_mode = NORMAL_EXIT;
 	} else if(exit_mode == NORMAL_EXIT || exit_mode == DIRTY_EXIT) {
@@ -466,14 +325,9 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 
 		dbg_disconnect();
 		
-		if(ran_initializers) {
-			if(dyn_info.fini_array != NULL) {
-				if(dyn_info.fini_array_size != -1) {
-					for(size_t i = 0; i < dyn_info.fini_array_size/sizeof(dyn_info.fini_array[0]); i++) {
-						dyn_info.fini_array[i]();
-					}
-				}
-			}
+		if(root_module != NULL) {
+			ld_finalize_module(root_module);
+			root_module = NULL;
 		}
 
 		dbg_printf("cleaning up mapped heap");
