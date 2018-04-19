@@ -32,9 +32,7 @@ struct module_t {
 	int refcount;
 	
 	// needed for MODULE_STATE_QUEUED
-	const char *name;
-	void *base;
-	bool owned_by_loader; // TODO: replace this with tagged union to keep track of info we need for unmapping NRO
+	module_input_t input;
 
 	trn_list_head_t dependencies;
 	

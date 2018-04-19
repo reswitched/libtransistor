@@ -297,13 +297,18 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		}
 		initialized_fs = true;
 
-		if((ret = ld_queue_module("main", aslr_base, true, &root_module)) != RESULT_OK) {
+		module_input_t root_input;
+		root_input.name = "main";
+		root_input.base = aslr_base;
+		root_input.type = MODULE_TYPE_MAIN;
+		if((ret = ld_add_module(root_input, &root_module)) != RESULT_OK) {
 			root_inode.ops->release(root_inode.data);
 			dbg_disconnect();
 			goto fail_bsd;
 		}
 		if((ret = ld_process_modules()) != RESULT_OK) {
-			ld_finalize_module(root_module);
+			ld_decref_module(root_module); // error handling?
+			root_module = NULL;
 			root_inode.ops->release(root_inode.data);
 			dbg_disconnect();
 			goto fail_bsd;
@@ -326,7 +331,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		dbg_disconnect();
 		
 		if(root_module != NULL) {
-			ld_finalize_module(root_module);
+			ld_decref_module(root_module); // error handling?
 			root_module = NULL;
 		}
 

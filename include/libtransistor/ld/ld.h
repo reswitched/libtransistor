@@ -22,25 +22,43 @@ result_t ld_basic_relocate_module(uint8_t *module_base);
  */
 result_t ld_init();
 
-/**
- * @brief Queues a module to processes full relocations, dynamic library dependencies, and initializers
- */
-result_t ld_queue_module(const char *name, uint8_t *base, bool owned_by_loader, module_t **out);
+typedef enum {
+	MODULE_TYPE_INVALID = 0,
+	MODULE_TYPE_MAIN, // loaded by an external loader
+	MODULE_TYPE_NRO_VIA_LDR_RO, // loaded NRO by ldr:ro
+} module_type_t;
+
+typedef struct {
+	const char *name;
+	void *base;
+	module_type_t type;
+	union {
+		struct {
+			void *nro_image;
+			void *bss;
+		} nro_via_ldr_ro;
+	};
+} module_input_t;
 
 /**
- * @brief Discovers a module in the filesystem and queues it
+ * @brief Adds a loaded module to the end of the processing queue.
+ */
+result_t ld_add_module(module_input_t input, module_t **out);
+
+/**
+ * @brief Discovers a module in the filesystem, loads it, and adds it to the processing queue
  */
 result_t ld_discover_module(const char *name, module_t **out);
 
 /**
- * @brief Processes all modules
+ * @brief Processes all modules in the queue
  */
 result_t ld_process_modules();
 
 /**
- * @brief Unloads a module and its dependencies
+ * @brief Decrements the module's reference count and unloads it if it has reached zero
  */
-result_t ld_finalize_module(module_t *module);
+result_t ld_decref_module(module_t *module);
 
 void ld_finalize();
 

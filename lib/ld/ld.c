@@ -28,6 +28,20 @@ typedef struct {
 	uint32_t unwind_start_off, unwind_end_off, module_object_off;
 } module_header_t;
 
+static result_t dynamic_find_value(Elf64_Dyn *dynamic, int64_t tag, uint64_t *value);
+static result_t dynamic_find_offset(Elf64_Dyn *dynamic, int64_t tag, void **value, void *aslr_base);
+result_t ld_basic_relocate_module(uint8_t *module_base);
+result_t ld_add_module(module_input_t input, module_t **out);
+result_t ld_discover_module(const char *name_src, module_t **out);
+result_t ld_decref_module(module_t *mod);
+result_t ld_process_module(module_t *mod);
+static uint64_t elf_hash(const uint8_t *name);
+result_t ld_find_definition(Elf64_Sym *find, module_t *find_module, Elf64_Sym **def, module_t **defining_module);
+result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint32_t size_tag);
+result_t ld_relocate_module(module_t *mod);
+result_t ld_process_modules();
+result_t ld_finalize_module(module_t *mod);
+
 static result_t dynamic_find_value(Elf64_Dyn *dynamic, int64_t tag, uint64_t *value) {
 	uint64_t *found = NULL;
 	*value = 0;
@@ -102,17 +116,15 @@ fail:
 	return r;
 }
 
-result_t ld_queue_module(const char *name, uint8_t *base, bool owned_by_loader, module_t **out) {
-	dbg_printf("queue %s", name);
+result_t ld_add_module(module_input_t input, module_t **out) {
+	dbg_printf("queue %s", input.name);
 	module_t *mod = malloc(sizeof(*mod));
 	if(mod == NULL) {
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 	}
 	memset(mod, 0, sizeof(*mod));
 	mod->refcount = 1;
-	mod->name = name;
-	mod->base = base;
-	mod->owned_by_loader = owned_by_loader;
+	mod->input = input;
 	
 	module_list_node_t *node = malloc(sizeof(*node));
 	if(node == NULL) {
@@ -219,12 +231,20 @@ result_t ld_discover_module(const char *name_src, module_t **out) {
 		}
 
 		dbg_printf("loaded NRO @ %p", nro_base);
-		return ld_queue_module(name_src, nro_base, false, out);
+		
+		module_input_t input;
+		input.name = name_src;
+		input.base = nro_base;
+		input.type = MODULE_TYPE_NRO_VIA_LDR_RO;
+		input.nro_via_ldr_ro.nro_image = nro_buffer;
+		input.nro_via_ldr_ro.bss = nro_bss;
+		return ld_add_module(input, out);
 	}
 	return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_FIND_MODULE;
 }
 
 result_t ld_decref_module(module_t *mod) {
+	dbg_printf("decref '%s'", mod->input.name);
 	if(--(mod->refcount) == 0) {
 		return ld_finalize_module(mod);
 	}
@@ -233,7 +253,7 @@ result_t ld_decref_module(module_t *mod) {
 
 result_t ld_process_module(module_t *mod) {
 	result_t r;
-	uint8_t *module_base = mod->base;
+	uint8_t *module_base = mod->input.base;
 	module_header_t *mod_header = (module_header_t *)&module_base[*(uint32_t*) &module_base[4]];
 	Elf64_Dyn *dynamic = (Elf64_Dyn*) (((uint8_t*) mod_header) + mod_header->dynamic_off);
 	mod->dynamic = dynamic;
@@ -244,19 +264,19 @@ result_t ld_process_module(module_t *mod) {
 		goto fail_mod;
 	}
 
-	r = dynamic_find_offset(dynamic, DT_HASH, &mod->hash, module_base);
+	r = dynamic_find_offset(dynamic, DT_HASH, (void**) &mod->hash, module_base);
 	if(r == RESULT_OK) {
 	} else if(r != LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY) {
 		goto fail_mod;
 	}
 
-	r = dynamic_find_offset(dynamic, DT_STRTAB, &mod->strtab, module_base);
+	r = dynamic_find_offset(dynamic, DT_STRTAB, (void**) &mod->strtab, module_base);
 	if(r == RESULT_OK) {
 	} else if(r != LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY) {
 		goto fail_mod;
 	}
 
-	r = dynamic_find_offset(mod->dynamic, DT_SYMTAB, &mod->symtab, mod->base);
+	r = dynamic_find_offset(mod->dynamic, DT_SYMTAB, (void**) &mod->symtab, mod->input.base);
 	if(r == RESULT_OK) {
 	} else if(r != LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY) {
 		return r;
@@ -283,7 +303,7 @@ result_t ld_process_module(module_t *mod) {
 				r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 				goto fail_mod;
 			}
-			node->module = mod;
+			node->module = dep;
 			trn_list_add_tail(&mod->dependencies, &node->list);
 		}
 	}
@@ -291,18 +311,13 @@ result_t ld_process_module(module_t *mod) {
 	mod->state = MODULE_STATE_PROCESSED;
 	
 	return RESULT_OK;
+
 fail_mod:
-	trn_list_foreach(&mod->dependencies, i) {
-		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
-		ld_decref_module(node->module);
-		free(node);
-	}
-	
-	free(mod);
+	ld_finalize_module(mod);
 	return r;
 }
 
-uint64_t elf_hash(const uint8_t *name) {
+static uint64_t elf_hash(const uint8_t *name) {
 	uint64_t h = 0;
 	uint64_t g;
 	while(*name) {
@@ -341,7 +356,7 @@ result_t ld_find_definition(Elf64_Sym *find, module_t *find_module, Elf64_Sym **
 			}
 			*def = sym;
 			*defining_module = try_mod;
-			dbg_printf("found %s in module'%s'@%p + 0x%lx", find_name, try_mod->name, try_mod->base, sym->st_value);
+			dbg_printf("found %s in module'%s'@%p + 0x%lx", find_name, try_mod->input.name, try_mod->input.base, sym->st_value);
 			return RESULT_OK;
 		}
 	}
@@ -351,7 +366,7 @@ result_t ld_find_definition(Elf64_Sym *find, module_t *find_module, Elf64_Sym **
 result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint32_t size_tag) {
 	void *raw_table;
 	Elf64_Dyn *dynamic = mod->dynamic;
-	result_t r = dynamic_find_offset(dynamic, offset_tag, &raw_table, mod->base);
+	result_t r = dynamic_find_offset(dynamic, offset_tag, &raw_table, mod->input.base);
 	if(r == LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY) {
 		return RESULT_OK;
 	}
@@ -426,13 +441,13 @@ result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint32_t si
 				dbg_printf("while resolving %s", mod->strtab + sym->st_name);
 				return r;
 			}
-			symbol = defining_module->base + def->st_value;
+			symbol = defining_module->input.base + def->st_value;
 		}
-		void *delta_symbol = defining_module->base;
+		void *delta_symbol = defining_module->input.base;
 		
 		switch(rela.r_reloc_type) {
 		case 1026: { // R_AARCH64_JUMP_SLOT
-			void **target = (void**)(mod->base + rela.r_offset);
+			void **target = (void**)(mod->input.base + rela.r_offset);
 			if(table_type == DT_REL) {
 				dbg_printf("table is DT_REL");
 				rela.r_addend = *target;
@@ -441,7 +456,7 @@ result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint32_t si
 			*target = symbol + rela.r_addend;
 			break; }
 		case 1027: { // R_AARCH64_RELATIVE
-			void **target = (void**)(mod->base + rela.r_offset);
+			void **target = (void**)(mod->input.base + rela.r_offset);
 			if(table_type == DT_REL) { // TODO: be careful here if the module was already relocated
 				rela.r_addend = *target;
 			}
@@ -459,7 +474,7 @@ fail:
 }
 
 result_t ld_relocate_module(module_t *mod) {
-	dbg_printf("relocating module %s", mod->name);
+	dbg_printf("relocating module %s", mod->input.name);
 	result_t r;
 	r = ld_run_relocation_table(mod, DT_RELA,   DT_RELASZ); dbg_printf("DT_RELA -> 0x%x", r);
 	r = ld_run_relocation_table(mod, DT_REL,    DT_RELSZ); dbg_printf("DT_REL -> 0x%x", r);
@@ -484,6 +499,29 @@ result_t ld_process_modules() {
 }
 
 result_t ld_finalize_module(module_t *mod) {
+	result_t r;
+	dbg_printf("finalize '%s'", mod->input.name);
+	
+	trn_list_foreach(&mod->dependencies, i) {
+		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
+		ld_decref_module(node->module); // TODO: errors?
+		free(node);
+	}
+	
+	switch(mod->input.type) {
+	case MODULE_TYPE_MAIN:
+		free(mod);
+		return RESULT_OK;
+	case MODULE_TYPE_NRO_VIA_LDR_RO:
+		r = ro_unload_nro(mod->input.base, mod->input.nro_via_ldr_ro.nro_image);
+		free_pages(mod->input.nro_via_ldr_ro.nro_image);
+		free_pages(mod->input.nro_via_ldr_ro.bss);
+		free(mod);
+		return r;
+	default:
+		free(mod);
+		return LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_TYPE;
+	}
 	// TODO
 	free(mod);
 }
