@@ -39,8 +39,10 @@ static uint64_t elf_hash(const uint8_t *name);
 result_t ld_find_definition(Elf64_Sym *find, module_t *find_module, Elf64_Sym **def, module_t **defining_module);
 result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint32_t size_tag);
 result_t ld_relocate_module(module_t *mod);
-result_t ld_process_modules();
+result_t ld_initialize_module(module_t *mod);
 result_t ld_finalize_module(module_t *mod);
+result_t ld_process_modules();
+result_t ld_destroy_module(module_t *mod);
 
 static result_t dynamic_find_value(Elf64_Dyn *dynamic, int64_t tag, uint64_t *value) {
 	uint64_t *found = NULL;
@@ -246,7 +248,7 @@ result_t ld_discover_module(const char *name_src, module_t **out) {
 result_t ld_decref_module(module_t *mod) {
 	dbg_printf("decref '%s'", mod->input.name);
 	if(--(mod->refcount) == 0) {
-		return ld_finalize_module(mod);
+		return ld_destroy_module(mod);
 	}
 	return RESULT_OK;
 }
@@ -313,7 +315,7 @@ result_t ld_scan_module(module_t *mod) {
 	return RESULT_OK;
 
 fail_mod:
-	ld_finalize_module(mod);
+	ld_destroy_module(mod);
 	return r;
 }
 
@@ -479,7 +481,60 @@ result_t ld_relocate_module(module_t *mod) {
 	r = ld_run_relocation_table(mod, DT_RELA,   DT_RELASZ); dbg_printf("DT_RELA -> 0x%x", r);
 	r = ld_run_relocation_table(mod, DT_REL,    DT_RELSZ); dbg_printf("DT_REL -> 0x%x", r);
 	r = ld_run_relocation_table(mod, DT_JMPREL, DT_PLTRELSZ); dbg_printf("DT_JMPREL -> 0x%x", r);
+	mod->state = MODULE_STATE_RELOCATED;
 	return RESULT_OK;
+}
+
+result_t ld_initialize_module(module_t *mod) {
+	if(mod->state != MODULE_STATE_RELOCATED) {
+		return LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_STATE;
+	}
+	
+	void (**init_array)(void);
+	ssize_t init_array_size;
+
+	result_t r;
+	r = dynamic_find_offset(mod->dynamic, DT_INIT_ARRAY, (void**) &init_array, mod->input.base);
+	if(r == RESULT_OK) {
+		LIB_ASSERT_OK(fail, dynamic_find_value(mod->dynamic, DT_INIT_ARRAYSZ, &init_array_size));
+		// run all of the initializers
+		for(size_t i = 0; i < init_array_size/sizeof(init_array[0]); i++) {
+			init_array[i]();
+		}
+	} else if(r != LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY) {
+		goto fail;
+	}
+
+	mod->state = MODULE_STATE_INITIALIZED;
+	return RESULT_OK;
+fail:
+	return r;
+}
+
+result_t ld_finalize_module(module_t *mod) {
+	if(mod->state != MODULE_STATE_INITIALIZED) {
+		return LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_STATE;
+	}
+	
+	void (**fini_array)(void);
+	ssize_t fini_array_size;
+
+	result_t r;
+	r = dynamic_find_offset(mod->dynamic, DT_FINI_ARRAY, (void**) &fini_array, mod->input.base);
+	if(r == RESULT_OK) {
+		LIB_ASSERT_OK(fail, dynamic_find_value(mod->dynamic, DT_FINI_ARRAYSZ, &fini_array_size));
+		// run all of the finalizers
+		for(size_t i = 0; i < fini_array_size/sizeof(fini_array[0]); i++) {
+			fini_array[i]();
+		}
+	} else if(r != LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY) {
+		goto fail;
+	}
+
+	mod->state = MODULE_STATE_FINALIZED;
+	return RESULT_OK;
+fail:
+	return r;
 }
 
 result_t ld_process_modules() {
@@ -495,12 +550,22 @@ result_t ld_process_modules() {
 			ld_relocate_module(node->module); // TODO: how to handle error
 		}
 	}
+	trn_list_foreach(&module_list_head, i) {
+		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
+		if(node->module->state == MODULE_STATE_RELOCATED) {
+			ld_initialize_module(node->module); // TODO: how to handle error
+		}
+	}
 	return RESULT_OK;
 }
 
-result_t ld_finalize_module(module_t *mod) {
+result_t ld_destroy_module(module_t *mod) {
 	result_t r;
-	dbg_printf("finalize '%s'", mod->input.name);
+	dbg_printf("destroy '%s'", mod->input.name);
+
+	if(mod->state == MODULE_STATE_INITIALIZED) {
+		ld_finalize_module(mod); // TODO: errors?
+	}
 	
 	trn_list_foreach(&mod->dependencies, i) {
 		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
