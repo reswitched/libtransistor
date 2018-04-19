@@ -31,6 +31,15 @@ inline void trn_list_add_tail(trn_list_head_t *list, trn_list_head_t *item) {
 	item->next = NULL;
 }
 
+inline void trn_list_delink(trn_list_head_t *item) {
+	if(item->prev != NULL) {
+		item->prev->next = item->next;
+	}
+	if(item->next != NULL) {
+		item->next->prev = item->prev;
+	}
+}
+
 #define trn_list_foreach(list, i) for(trn_list_head_t *i = (list)->next; i != NULL; i = i->next)
 
 #ifdef __cplusplus

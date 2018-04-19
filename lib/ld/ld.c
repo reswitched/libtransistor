@@ -214,7 +214,14 @@ result_t ld_destroy_module(module_t *mod) {
 		r = LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_TYPE;
 		break;
 	}
-	// TODO: delink
+
+	trn_list_foreach(&ld_module_list_head, i) {
+		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
+		if(node->module == mod) {
+			trn_list_delink(node);
+		}
+	}
+	
 	free(mod);
 	return r;
 }
