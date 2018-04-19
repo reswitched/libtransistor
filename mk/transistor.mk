@@ -1,6 +1,6 @@
 # LIBTRANSISTOR
 
-libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/fs.o ipc/fs/ifilesystem.o ipc/fs/ifile.o ipc/fs/idirectory.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o lz4.o squashfs/cache.o squashfs/decompress.o squashfs/dir.o squashfs/file.o squashfs/fs.o squashfs/hash.o squashfs/nonstd-pread.o squashfs/nonstd-stat.o squashfs/stack.o squashfs/swap.o squashfs/table.o squashfs/traverse.o squashfs/util.o squashfs/xattr.o fs/blobfd.o fs/squashfs.o fs/mountfs.o fs/fspfs.o fs/fs.o ipc/audio.o ipc/bpc.o ipcserver.o strtold.o ipc/pm.o alloc_pages.o address_space.o loader_config.o ipc/usb.o ipc/usb/ds/interface.o ipc/usb/ds/endpoint.o usb_serial.o mutex.o tls_support.o thread.o ld/ld.o
+libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/fs.o ipc/fs/ifilesystem.o ipc/fs/ifile.o ipc/fs/idirectory.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o lz4.o squashfs/cache.o squashfs/decompress.o squashfs/dir.o squashfs/file.o squashfs/fs.o squashfs/hash.o squashfs/nonstd-pread.o squashfs/nonstd-stat.o squashfs/stack.o squashfs/swap.o squashfs/table.o squashfs/traverse.o squashfs/util.o squashfs/xattr.o fs/blobfd.o fs/squashfs.o fs/mountfs.o fs/fspfs.o fs/fs.o ipc/audio.o ipc/bpc.o ipcserver.o strtold.o ipc/pm.o alloc_pages.o address_space.o loader_config.o ipc/usb.o ipc/usb/ds/interface.o ipc/usb/ds/endpoint.o usb_serial.o mutex.o tls_support.o thread.o ld/ld.o ld/elf.o ld/relocate.o ld/resolve.o ld/discover.o
 libtransistor_OBJECT_FILES := $(addprefix $(BUILD_DIR)/transistor/,$(libtransistor_OBJECT_NAMES))
 
 libtransistor_WARNINGS := -Wall -Wextra -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-command-line-argument -Werror-thread-safety
@@ -34,6 +34,11 @@ $(libtransistor_TARGET_NSO): $(BUILD_DIR)/transistor/crt0.nso.o $(libtransistor_
 $(BUILD_DIR)/transistor/crt0_common.o $(BUILD_DIR)/transistor/crt0_common.d: $(SOURCE_ROOT)/lib/crt0_common.c $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) -I$(SOURCE_ROOT)/pthread/ -I$(SOURCE_ROOT)/pthread/sys/switch/ $(libtransistor_WARNINGS) -MMD -MP -fno-stack-protector -c -o $(BUILD_DIR)/transistor/crt0_common.o $<
+
+# Disable stack protector for ld
+$(BUILD_DIR)/transistor/ld/%.o $(BUILD_DIR)/transistor/ld/%.d: $(SOURCE_ROOT)/lib/ld/%.c $(libtransistor_BUILD_DEPS)
+	mkdir -p $(@D)
+	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -fno-stack-protector -c -o $(BUILD_DIR)/transistor/ld/$*.o $<
 
 $(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.c $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)

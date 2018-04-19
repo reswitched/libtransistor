@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include<libtransistor/types.h>
 #include<assert.h>
+#include<stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +79,23 @@ enum {
 	DT_GNU_HASH = 0x6ffffef5,
 	DT_RELACOUNT = 0x6ffffff9,
 };
+
+/**
+ * @brief Finds the value of the given tag in a dynamic section
+ * @returns RESULT_OK, LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY, or LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY
+ */
+result_t elf_dynamic_find_value(Elf64_Dyn *dynamic, int64_t tag, uint64_t *value);
+
+/**
+ * @brief Finds the value of the given tag in the dynamic section, treated as an offset from a given base
+ * @returns RESULT_OK, LIBTRANSISTOR_ERR_TRNLD_DUPLICATE_DT_ENTRY, or LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY
+ */
+result_t elf_dynamic_find_offset(Elf64_Dyn *dynamic, int64_t tag, void **value, void *base);
+
+/**
+ * @brief Hashes a string for lookup in the .hash table
+ */
+uint64_t elf_hash_string(const char *string);
 
 #ifdef __cplusplus
 }

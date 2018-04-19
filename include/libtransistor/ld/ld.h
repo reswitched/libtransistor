@@ -13,14 +13,8 @@ typedef struct module_t module_t;
 
 /**
  * @brief Perform basic relocations on a module.
- * Does not require \ref ld_init
  */
-result_t ld_basic_relocate_module(uint8_t *module_base);
-
-/**
- * @brief Initialize dynamic linker
- */
-result_t ld_init();
+result_t ld_relocate_module_basic(uint8_t *module_base);
 
 typedef enum {
 	MODULE_TYPE_INVALID = 0,
@@ -51,14 +45,14 @@ result_t ld_add_module(module_input_t input, module_t **out);
 result_t ld_discover_module(const char *name, module_t **out);
 
 /**
+ * @brief Decrements the module's reference count and finalizes, unloads, and destroys it if it has reached zero
+ */
+result_t ld_decref_module(module_t *module);
+
+/**
  * @brief Processes all modules in the queue
  */
 result_t ld_process_modules();
-
-/**
- * @brief Decrements the module's reference count and unloads it if it has reached zero
- */
-result_t ld_decref_module(module_t *module);
 
 void ld_finalize();
 

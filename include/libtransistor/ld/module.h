@@ -1,6 +1,6 @@
 /**
  * @file libtransistor/ld/module.h
- * @brief Module structure
+ * @brief Module structure and operations for internal use in the dynamic linker
  */
 
 #pragma once
@@ -43,6 +43,14 @@ struct module_t {
 	const char *strtab;
 	uint32_t *hash;
 };
+
+// module operations
+result_t ld_scan_module(module_t *mod);
+result_t ld_relocate_module(module_t *mod);
+result_t ld_initialize_module(module_t *mod);
+result_t ld_finalize_module(module_t *mod);
+result_t ld_destroy_module(module_t *mod);
+// \ref ld_decref_module is a public API and goes in ld.h
 
 #ifdef __cplusplus
 }

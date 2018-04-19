@@ -162,7 +162,7 @@ extern void _cleanup_mapped_heap();
 
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
 	int ret;
-	if((ret = ld_basic_relocate_module(aslr_base)) != RESULT_OK) {
+	if((ret = ld_relocate_module_basic(aslr_base)) != RESULT_OK) {
 		return ret;
 	}
 
