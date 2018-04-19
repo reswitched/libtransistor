@@ -8,6 +8,7 @@
 #include<libtransistor/ld/elf.h>
 #include<libtransistor/ld/module.h>
 #include<libtransistor/ld/internal.h>
+#include<libtransistor/ld/loader/nro_via_ldr_ro.h>
 
 #include<stdint.h>
 #include<stdlib.h>
@@ -188,7 +189,7 @@ result_t ld_decref_module(module_t *mod) {
 }
 
 result_t ld_destroy_module(module_t *mod) {
-	result_t r;
+	result_t r = RESULT_OK;
 	dbg_printf("destroy '%s'", mod->input.name);
 
 	if(mod->state == MODULE_STATE_INITIALIZED) {
@@ -203,18 +204,15 @@ result_t ld_destroy_module(module_t *mod) {
 	
 	switch(mod->input.type) {
 	case MODULE_TYPE_MAIN:
-		free(mod);
-		return RESULT_OK;
+		break;
 	case MODULE_TYPE_NRO_VIA_LDR_RO:
-		r = ro_unload_nro(mod->input.base, mod->input.nro_via_ldr_ro.nro_image);
-		free_pages(mod->input.nro_via_ldr_ro.nro_image);
-		free_pages(mod->input.nro_via_ldr_ro.bss);
-		free(mod);
-		return r;
+		r = ld_nro_via_ldr_ro_unload(&mod->input);
+		break;
 	default:
-		free(mod);
-		return LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_TYPE;
+		r = LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_TYPE;
+		break;
 	}
 	// TODO: delink
 	free(mod);
+	return r;
 }
