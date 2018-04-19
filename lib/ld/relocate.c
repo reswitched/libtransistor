@@ -162,7 +162,7 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 			break; }
 		default:
 			dbg_printf("unknown relocation: 0x%x", rela.r_reloc_type);
-			break;
+			return LIBTRANSISTOR_ERR_TRNLD_UNRECOGNIZED_RELOC_TYPE;
 		}
 	}
 	
@@ -174,9 +174,10 @@ fail:
 result_t ld_relocate_module(module_t *mod) {
 	dbg_printf("relocating module %s", mod->input.name);
 	result_t r;
-	r = ld_run_relocation_table(mod, DT_RELA,   DT_RELASZ); dbg_printf("DT_RELA -> 0x%x", r);
-	r = ld_run_relocation_table(mod, DT_REL,    DT_RELSZ); dbg_printf("DT_REL -> 0x%x", r);
-	r = ld_run_relocation_table(mod, DT_JMPREL, DT_PLTRELSZ); dbg_printf("DT_JMPREL -> 0x%x", r);
+	LIB_ASSERT_OK(fail, ld_run_relocation_table(mod, DT_RELA,   DT_RELASZ));
+	LIB_ASSERT_OK(fail, ld_run_relocation_table(mod, DT_REL,    DT_RELSZ));
+	LIB_ASSERT_OK(fail, ld_run_relocation_table(mod, DT_JMPREL, DT_PLTRELSZ));
 	mod->state = MODULE_STATE_RELOCATED;
-	return RESULT_OK;
+fail:
+	return r;
 }

@@ -159,25 +159,27 @@ fail:
 }
 
 result_t ld_process_modules() {
+	result_t r;
 	trn_list_foreach(&ld_module_list_head, i) {
 		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
 		if(node->module->state == MODULE_STATE_QUEUED) {
-			ld_scan_module(node->module); // TODO: how to handle error
+			LIB_ASSERT_OK(fail, ld_scan_module(node->module));
 		}
 	}
 	trn_list_foreach(&ld_module_list_head, i) {
 		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
 		if(node->module->state == MODULE_STATE_SCANNED) {
-			ld_relocate_module(node->module); // TODO: how to handle error
+			LIB_ASSERT_OK(fail, ld_relocate_module(node->module));
 		}
 	}
 	trn_list_foreach(&ld_module_list_head, i) {
 		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
 		if(node->module->state == MODULE_STATE_RELOCATED) {
-			ld_initialize_module(node->module); // TODO: how to handle error
+			LIB_ASSERT_OK(fail, ld_initialize_module(node->module));
 		}
 	}
-	return RESULT_OK;
+fail:
+	return r;
 }
 
 result_t ld_decref_module(module_t *mod) {
@@ -193,12 +195,12 @@ result_t ld_destroy_module(module_t *mod) {
 	dbg_printf("destroy '%s'", mod->input.name);
 
 	if(mod->state == MODULE_STATE_INITIALIZED) {
-		ld_finalize_module(mod); // TODO: errors?
+		ld_finalize_module(mod);
 	}
 	
 	trn_list_foreach(&mod->dependencies, i) {
 		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
-		ld_decref_module(node->module); // TODO: errors?
+		ld_decref_module(node->module);
 		free(node);
 	}
 	
