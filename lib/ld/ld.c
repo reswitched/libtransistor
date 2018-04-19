@@ -34,7 +34,7 @@ result_t ld_basic_relocate_module(uint8_t *module_base);
 result_t ld_add_module(module_input_t input, module_t **out);
 result_t ld_discover_module(const char *name_src, module_t **out);
 result_t ld_decref_module(module_t *mod);
-result_t ld_process_module(module_t *mod);
+result_t ld_scan_module(module_t *mod);
 static uint64_t elf_hash(const uint8_t *name);
 result_t ld_find_definition(Elf64_Sym *find, module_t *find_module, Elf64_Sym **def, module_t **defining_module);
 result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint32_t size_tag);
@@ -251,7 +251,7 @@ result_t ld_decref_module(module_t *mod) {
 	return RESULT_OK;
 }
 
-result_t ld_process_module(module_t *mod) {
+result_t ld_scan_module(module_t *mod) {
 	result_t r;
 	uint8_t *module_base = mod->input.base;
 	module_header_t *mod_header = (module_header_t *)&module_base[*(uint32_t*) &module_base[4]];
@@ -308,7 +308,7 @@ result_t ld_process_module(module_t *mod) {
 		}
 	}
 
-	mod->state = MODULE_STATE_PROCESSED;
+	mod->state = MODULE_STATE_SCANNED;
 	
 	return RESULT_OK;
 
@@ -486,12 +486,12 @@ result_t ld_process_modules() {
 	trn_list_foreach(&module_list_head, i) {
 		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
 		if(node->module->state == MODULE_STATE_QUEUED) {
-			ld_process_module(node->module); // TODO: how to handle error
+			ld_scan_module(node->module); // TODO: how to handle error
 		}
 	}
 	trn_list_foreach(&module_list_head, i) {
 		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
-		if(node->module->state == MODULE_STATE_PROCESSED) {
+		if(node->module->state == MODULE_STATE_SCANNED) {
 			ld_relocate_module(node->module); // TODO: how to handle error
 		}
 	}
