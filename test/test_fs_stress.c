@@ -8,10 +8,10 @@
 #include<dirent.h>
 #include<fcntl.h>
 #include<unistd.h>
+#include<string.h>
+#include<sha256.h>
 
 #include"../lib/squashfs/squashfuse.h"
-
-#include"sha256.c"
 
 void hash_file(char hash[32], int fd) {
 	char buf[4096];

@@ -29,6 +29,7 @@ typedef struct {
 	union {
 		struct {
 			void *nro_image;
+			void *nrr;
 			void *bss;
 		} nro_via_ldr_ro;
 	};
