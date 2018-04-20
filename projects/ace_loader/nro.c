@@ -97,6 +97,12 @@ uint64_t nro_start()
 	nro_config[ent_no].override_service.override.service_handle = bsd_get_socket_service_handle();
 	ent_no++;
 
+	nro_config[ent_no].key = LCONFIG_KEY_OVERRIDE_SERVICE;
+	nro_config[ent_no].flags = 0;
+	nro_config[ent_no].override_service.override.service_name = str2u64("ldr:ro");
+	nro_config[ent_no].override_service.override.service_handle = ro_get_service_handle();
+	ent_no++;
+
 	nro_config[ent_no].key = LCONFIG_KEY_STDIO_SOCKETS;
 	nro_config[ent_no].flags = 0;
 	nro_config[ent_no].stdio_sockets.s_stdout = std_sck;

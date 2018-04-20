@@ -36,16 +36,18 @@ result_t ro_init() {
 		goto fail_sm;
 	}
 
-	rq.request_id = 4;
-	rq.raw_data = (uint32_t*) raw;
-	rq.raw_data_size = sizeof(raw);
-	rq.send_pid = true;
-	rq.num_copy_handles = 1;
-	rq.copy_handles = &handle;
-
-	r = ipc_send(ro_object, &rq, &rs);
-	if(r) {
-		goto fail_ro_object;
+	if(!ro_object.is_borrowed) {
+		rq.request_id = 4;
+		rq.raw_data = (uint32_t*) raw;
+		rq.raw_data_size = sizeof(raw);
+		rq.send_pid = true;
+		rq.num_copy_handles = 1;
+		rq.copy_handles = &handle;
+		
+		r = ipc_send(ro_object, &rq, &rs);
+		if(r) {
+			goto fail_ro_object;
+		}
 	}
 
 	sm_finalize();
@@ -165,4 +167,8 @@ result_t ro_unload_nrr(void *nrr_heap) {
 	}
 
 	return 0;
+}
+
+session_h ro_get_service_handle() {
+	return ro_object.session;
 }

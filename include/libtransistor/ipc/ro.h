@@ -60,6 +60,8 @@ result_t ro_load_nrr(void *nrr_heap, uint64_t nrr_size);
 */
 result_t ro_unload_nrr(void *nrr_heap);
 
+session_h ro_get_service_handle();
+
 #ifdef __cplusplus
 }
 #endif
