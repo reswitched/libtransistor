@@ -36,15 +36,6 @@ fail:
 }
 
 result_t fatal_transition_to_fatal_error(result_t code, uint64_t unknown) {
-	uint8_t error_buf_bytes[0x110];
-
-	ipc_buffer_t error_buffer;
-	error_buffer.addr = error_buf_bytes;
-	error_buffer.size = sizeof(error_buf_bytes);
-	error_buffer.type = 0x15;
-
-	ipc_buffer_t *buffers[] = {&error_buffer};
-
 	struct {
 		uint64_t result_code;
 		uint64_t unknown;
@@ -54,12 +45,10 @@ result_t fatal_transition_to_fatal_error(result_t code, uint64_t unknown) {
 	};
 	
 	ipc_request_t rq = ipc_default_request;
-	rq.request_id = 2;
+	rq.request_id = 1;
 	rq.raw_data_size = sizeof(raw_data);
 	rq.raw_data = (uint32_t*) &raw_data;
 	rq.send_pid = true;
-	rq.num_buffers = 1;
-	rq.buffers = buffers;
 
 	// we actually shouldn't ever return from this
 	return ipc_send(fatal_object, &rq, &ipc_default_response_fmt);
