@@ -13,6 +13,7 @@ extern "C" {
 #include<libtransistor/types.h>
 #include<libtransistor/ipc.h>
 
+#define MAX_SERVICE_PORTS 63
 #define MAX_SERVICE_SESSIONS 63 ///< Maximum number of sessions that can be connected to an IPC server
 #define MAX_DOMAIN_OBJECTS 512 ///< Maximum number of objects per domain
 
@@ -88,21 +89,30 @@ typedef struct ipc_server_session_t {
   you are expected to initialize `userdata`, `dispatch`, and `close`.
   libtransistor will initialize all other fields.
  */
-typedef result_t (*ipc_server_object_factory_t)(ipc_server_object_t **obj);
+typedef result_t (*ipc_server_object_factory_t)(ipc_server_object_t **obj, void *userdata);
+
+typedef struct ipc_server_port_t {
+	port_h port;
+	ipc_server_object_factory_t factory;
+	void *userdata;
+	uint64_t last_touch_timestamp; ///< The last time this port was serviced
+} ipc_server_port_t;
 
 typedef struct ipc_server_t {
-	port_h port;
+	ipc_server_port_t ports[MAX_SERVICE_PORTS];
+	uint32_t num_ports;
+	
 	ipc_server_session_t sessions[MAX_SERVICE_SESSIONS];
-	ipc_server_object_factory_t object_factory;
 } ipc_server_t;
 
-result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_factory_t object_factory);
+result_t ipc_server_create(ipc_server_t *srv);
+result_t ipc_server_add_port(ipc_server_t *srv, port_h port, ipc_server_object_factory_t object_factory, void *userdata);
 result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, session_h client_side, ipc_server_object_t *object);
-result_t ipc_server_accept_session(ipc_server_t *srv);
+result_t ipc_server_accept_session(ipc_server_t *srv, ipc_server_port_t *port);
 result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout);
 result_t ipc_server_destroy(ipc_server_t *srv);
 
-result_t ipc_server_object_register(ipc_server_object_t *owner, ipc_server_object_t *new);
+result_t ipc_server_object_register(ipc_server_object_t *owner, ipc_server_object_t *new_object);
 result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs);
 result_t ipc_server_object_close(ipc_server_object_t *obj);
 

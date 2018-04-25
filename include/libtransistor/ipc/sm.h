@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 #include<libtransistor/types.h>
+#include<libtransistor/ipc.h>
 
 /**
 * @brief Initialize Service Manager

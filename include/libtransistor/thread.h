@@ -60,3 +60,7 @@ result_t trn_thread_join(trn_thread_t *thread, int64_t timeout);
  * It is the caller's responsibility to ensure that a living thread is not destroyed.
  */
 void trn_thread_destroy(trn_thread_t *thread);
+
+#ifdef __cplusplus
+}
+#endif

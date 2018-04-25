@@ -58,7 +58,16 @@ KObject::~KObject() {
 	}
 }
 
+handle_t KObject::Claim() {
+	handle_t handle = this->handle;
+	this->handle = 0;
+	return handle;
+}
+
 KSharedMemory::KSharedMemory(shared_memory_h handle) : KObject(handle) {
+}
+
+KPort::KPort(port_h handle) : KObject(handle) {
 }
 
 }

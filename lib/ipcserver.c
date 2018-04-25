@@ -9,7 +9,7 @@
 #include<string.h>
 #include<stdlib.h>
 
-result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_factory_t object_factory) {
+result_t ipc_server_create(ipc_server_t *srv) {
 	static const uint8_t syscalls_needed[] = {
 		SVC_ID_CREATE_SESSION,
 		SVC_ID_ACCEPT_SESSION,
@@ -22,11 +22,21 @@ result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_fac
 		return r;
 	}
 	
-	srv->port = port;
-	srv->object_factory = object_factory;
+	srv->num_ports = 0;
 	for(int i = 0; i < MAX_SERVICE_SESSIONS; i++) {
 		srv->sessions[i].state = IPC_SESSION_STATE_INVALID;
 	}
+	return RESULT_OK;
+}
+
+result_t ipc_server_add_port(ipc_server_t *srv, port_h port, ipc_server_object_factory_t factory, void *userdata) {
+	if(srv->num_ports >= MAX_SERVICE_PORTS) {
+		return LIBTRANSISTOR_ERR_IPCSERVER_TOO_MANY_PORTS;
+	}
+	ipc_server_port_t *target = &srv[srv->num_ports++];
+	target->port = port;
+	target->userdata = userdata;
+	target->factory = factory;
 	return RESULT_OK;
 }
 
@@ -79,15 +89,15 @@ result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, ses
 	return RESULT_OK;
 }
 
-result_t ipc_server_accept_session(ipc_server_t *srv) {
+result_t ipc_server_accept_session(ipc_server_t *srv, ipc_server_port_t *port) {
 	result_t r;
 	session_h handle;
-	if((r = svcAcceptSession(&handle, srv->port)) != RESULT_OK) {
+	if((r = svcAcceptSession(&handle, port->port)) != RESULT_OK) {
 		return r;
 	}
 
 	ipc_server_object_t *object;
-	if((r = srv->object_factory(&object)) != RESULT_OK) {
+	if((r = port->factory(&object, port->userdata)) != RESULT_OK) {
 		svcCloseHandle(handle);
 		return r;
 	}
@@ -105,12 +115,32 @@ int session_touch_timestamp_compare(const void *va, const void *vb) {
 	return (a->last_touch_timestamp > b->last_touch_timestamp) - (a->last_touch_timestamp < b->last_touch_timestamp);
 }
 
+int port_touch_timestamp_compare(const void *va, const void *vb) {
+	const ipc_server_port_t *const *pa = va;
+	const ipc_server_port_t *const *pb = vb;
+
+	const ipc_server_port_t *a = *pa;
+	const ipc_server_port_t *b = *pb;
+
+	return (a->last_touch_timestamp > b->last_touch_timestamp) - (a->last_touch_timestamp < b->last_touch_timestamp);
+}
+
 result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 	while(1) {
-		handle_t handles[MAX_SERVICE_SESSIONS+1];
+		handle_t handles[MAX_SERVICE_PORTS+MAX_SERVICE_SESSIONS];
+		ipc_server_port_t *ports[MAX_SERVICE_PORTS];
 		ipc_server_session_t *sessions[MAX_SERVICE_SESSIONS];
 		int num_listening_sessions = 0;
-		handles[0] = srv->port;
+
+		for(int i = 0; i < srv->num_ports; i++) {
+			ports[i] = &(srv->ports[i]);
+		}
+		
+		qsort(ports, srv->num_ports, sizeof(ports[0]), port_touch_timestamp_compare);
+		
+		for(int i = 0; i < srv->num_ports; i++) {
+			handles[i] = ports[i]->port;
+		}
 		
 		for(int i = 0; i < MAX_SERVICE_SESSIONS; i++) {
 			if(srv->sessions[i].state == IPC_SESSION_STATE_LISTENING) {
@@ -122,14 +152,17 @@ result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 		qsort(sessions, num_listening_sessions, sizeof(sessions[0]), session_touch_timestamp_compare);
 		
 		for(int i = 0; i < num_listening_sessions; i++) {
-			handles[1 + i] = sessions[i]->handle;
+			handles[srv->num_ports + i] = sessions[i]->handle;
 		}
 		
 		result_t r;
 		uint32_t handle_index;
-		r = svcWaitSynchronization(&handle_index, handles, num_listening_sessions + 1, timeout);
+		r = svcWaitSynchronization(&handle_index, handles, srv->num_ports + num_listening_sessions, timeout);
 		if(r == 0xEA01) { // timeout
-			// nothing was signalled, so touch all sessions
+			// nothing was signalled, so touch everything
+			for(int i = 0; i < srv->num_ports; i++) {
+				ports[i]->last_touch_timestamp = make_timestamp();
+			}
 			for(int i = 0; i < num_listening_sessions; i++) {
 				sessions[i]->last_touch_timestamp = make_timestamp();
 			}
@@ -140,8 +173,11 @@ result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 		}
 		timeout = 0; // if we loop again, don't wait any longer than we wanted to
 
-		if(handle_index == 0) { // port
-			if((r = ipc_server_accept_session(srv)) != RESULT_OK) {
+		if(handle_index < srv->num_ports) { // port
+			for(uint32_t i = 0; i <= handle_index; i++) {
+				ports[i]->last_touch_timestamp = make_timestamp();
+			}
+			if((r = ipc_server_accept_session(srv, ports[handle_index])) != RESULT_OK) {
 				return r;
 			}
 		} else { // session
@@ -150,16 +186,18 @@ result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout) {
 			// meaning they will be sorted earlier on the next iteration of the loop
 			// and get first priority in case we missed them with this iteration.
 			// that way, no session can DoS the IPC server.
-			for(uint32_t i = 0; i <= handle_index-1; i++) {
+			for(uint32_t i = 0; i <= handle_index - srv->num_ports; i++) {
 				sessions[i]->last_touch_timestamp = make_timestamp();
 			}
-			ipc_server_session_receive(sessions[handle_index-1], timeout); // timeout is 0, but I think it still makes sense to pass it
+			ipc_server_session_receive(sessions[handle_index-srv->num_ports], timeout); // timeout is 0, but I think it still makes sense to pass it
 		}
 	}
 }
 
 result_t ipc_server_destroy(ipc_server_t *srv) {
-	svcCloseHandle(srv->port);
+	for(int i = 0; i < srv->num_ports; i++) {
+		svcCloseHandle(srv->ports[i].port);
+	}
 	for(int i = 0; i < MAX_SERVICE_SESSIONS; i++) {
 		if(srv->sessions[i].state != IPC_SESSION_STATE_INVALID) {
 			ipc_server_session_close(&srv->sessions[i]);

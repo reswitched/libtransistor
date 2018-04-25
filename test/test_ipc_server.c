@@ -186,7 +186,7 @@ static void object_close(ipc_server_object_t *obj) {
 	free(obj);
 }
 
-static result_t object_factory(ipc_server_object_t **objptr) {
+static result_t object_factory(ipc_server_object_t **objptr, void *userdata) {
 	ipc_server_object_t *obj = malloc(sizeof(*obj));
 	if(obj == NULL) {
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
@@ -206,7 +206,8 @@ void server_thread() {
 
 	dbg_printf("thread started\n");
 	
-	ASSERT_OK(fail_port, ipc_server_create(&server, port, object_factory));
+	ASSERT_OK(fail_port, ipc_server_create(&server));
+	ASSERT_OK(fail_server, ipc_server_add_port(&server, port, object_factory, NULL));
 
 	dbg_printf("server created\n");
 

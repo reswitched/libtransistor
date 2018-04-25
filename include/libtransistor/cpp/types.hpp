@@ -15,8 +15,11 @@ struct ResultCode {
 	template<typename T> static T&& AssertOk(tl::expected<T, ResultCode> &&monad);
 	
 	ResultCode(result_t code);
+	inline bool IsOk() {
+		return code == RESULT_OK;
+	}
 	
-	const result_t code;
+	result_t code;
 };
 
 template<typename T>
@@ -50,6 +53,8 @@ class KObject {
 	KObject(KObject &&other);
 	KObject &operator=(KObject &&other);
 	~KObject();
+
+	handle_t Claim();
 	
 	handle_t handle;
 };
@@ -57,6 +62,11 @@ class KObject {
 class KSharedMemory : public KObject {
  public:
 	KSharedMemory(shared_memory_h handle);
+};
+
+class KPort : public KObject {
+ public:
+	KPort(port_h handle);
 };
 
 }
