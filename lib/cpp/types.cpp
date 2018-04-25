@@ -70,4 +70,7 @@ KSharedMemory::KSharedMemory(shared_memory_h handle) : KObject(handle) {
 KPort::KPort(port_h handle) : KObject(handle) {
 }
 
+KProcess::KProcess(process_h handle) : KObject(handle) {
+}
+
 }

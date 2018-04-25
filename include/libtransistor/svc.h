@@ -541,10 +541,19 @@ result_t svcWriteDebugProcessMemory(debug_h debug, void *buffer, uint64_t addr, 
  * @param size Size of region to reprotect
  * @param prot Protections
  */
-result_t svcSetProcessMemoryPermission(process_h process, void *addr, uint64_t size, uint32_t prot);
+result_t svcSetProcessMemoryPermission(process_h process, uint64_t addr, uint64_t size, uint32_t prot);
 
-// mapProcessMemory
-// unmapProcessMemory
+/**
+ * @brief Map memory in the given process
+ */
+
+result_t svcMapProcessMemory(void *src, process_h process, uint64_t dst, uint64_t size);
+
+/**
+ * @brief Unmap memory mapped via \ref svcMapProcessMemory
+ */
+result_t svcUnmapProcessMemory(void *src, process_h process, uint64_t dst, uint64_t size);
+
 // queryProcessmemory
 
 /**
@@ -557,8 +566,16 @@ result_t svcMapProcessCodeMemory(process_h process, void *dst, void *src, uint64
  */
 result_t svcUnmapProcessCodeMemory(process_h process, void *dst, void *src, uint64_t size);
 
-// createProcess
-// startProcess
+/**
+ * @brief Creates a new process
+ */
+result_t svcCreateProcess(process_h *process, void *procinfo, void *caps, uint32_t cap_num);
+
+/**
+ * @brief Starts the given process
+ */
+result_t svcStartProcess(process_h process, uint32_t main_thread_prio, uint32_t default_cpuid, uint32_t main_thread_stack_size);
+
 // terminateProcess
 // getProcessInfo
 // createResourceLimit

@@ -69,4 +69,9 @@ class KPort : public KObject {
 	KPort(port_h handle);
 };
 
+class KProcess : public KObject {
+ public:
+	KProcess(process_h handle);
+};
+
 }

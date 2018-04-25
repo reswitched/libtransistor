@@ -9,6 +9,7 @@
 
 #ifdef __cplusplus
 extern "C" {
+typedef bool _Bool;
 #endif
 
 #include <stdint.h>
