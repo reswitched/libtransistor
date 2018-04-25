@@ -165,7 +165,7 @@ fail_usb:
 	usb_finalize();
 fail:
 	usb_serial_initializations--;
-	return r != RESULT_OK;
+	return r;
 }
 
 static void usb_serial_force_finalize() {
