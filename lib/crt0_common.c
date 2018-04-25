@@ -531,7 +531,10 @@ static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 
 static int make_dbg_log_fd() {
 	static trn_file_ops_t fops = {
-		.write = dbg_log_write
+		.seek = NULL,
+		.read = NULL,
+		.write = dbg_log_write,
+		.release = NULL,
 	};
 	return fd_create_file(&fops, NULL);
 }

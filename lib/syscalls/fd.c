@@ -74,7 +74,9 @@ void fd_file_put(trn_file_t *file) {
 	// If we're the last to abandon our pointer, we're responsible for
 	// destroying it.
 	if (atomic_fetch_sub(&file->refcount, 1) == 1) {
-		file->ops->release(file);
+		if(file->ops->release != NULL) {
+			file->ops->release(file);
+		}
 		free(file);
 	}
 }
