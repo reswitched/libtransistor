@@ -1,4 +1,5 @@
 #include<libtransistor/types.h>
+#include<libtransistor/mutex.h>
 #include<libtransistor/err.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/util.h>
@@ -33,12 +34,15 @@ char nybble2hex(uint8_t nybble) {
 	}
 }
 
-static trn_file_t *debug_file = NULL;
+static trn_recursive_mutex_t debug_file_mutex = TRN_RECURSIVE_MUTEX_STATIC_INITIALIZER;
+static trn_file_t *debug_file GUARDED_BY(debug_file_mutex) = NULL;
 
 void dbg_set_file(trn_file_t *file) {
+	trn_recursive_mutex_lock(&debug_file_mutex);
 	dbg_printf("redirecting dbgout to %p\n", file);
 	fd_file_put(debug_file);
 	debug_file = file;
+	trn_recursive_mutex_unlock(&debug_file_mutex);
 }
 
 result_t dbg_connect(const char *host, const char *port, int *fd_out) {
@@ -90,15 +94,20 @@ fail:
 }
 
 __attribute__((destructor)) void dbg_disconnect() {
+	trn_mutex_lock(&debug_file_mutex);
 	fd_file_put(debug_file);
 	debug_file = NULL;
+	trn_mutex_unlock(&debug_file_mutex);
 }
 
-size_t log_length = 0;
-char log_buffer[0x20000];
+static trn_mutex_t log_mutex = TRN_MUTEX_STATIC_INITIALIZER;
+size_t log_length GUARDED_BY(log_mutex) = 0;
+char log_buffer[0x20000] GUARDED_BY(log_mutex);
 
 int log_string(const char *string, size_t len) {
 	svcOutputDebugString((char*) string, len);
+
+	trn_mutex_lock(&log_mutex);
 	size_t start = log_length;
 	for(size_t i = 0; i < len && log_length < sizeof(log_buffer) - 2; i++) {
 		if(string[i] == 0) { break; }
@@ -107,6 +116,7 @@ int log_string(const char *string, size_t len) {
 	if(log_length < sizeof(log_buffer) - 1) {
 		log_buffer[log_length++] = '\n';
 	}
+	trn_recursive_mutex_lock(&debug_file_mutex);
 	if(debug_file != NULL) {
 		ipc_debug_level_t olddebug = ipc_debug_level;
 		ipc_debug_level = IPC_DEBUG_LEVEL_NONE;
@@ -114,8 +124,10 @@ int log_string(const char *string, size_t len) {
 		debug_file->ops->write(debug_file->data, log_buffer + start, log_length - start, &bytes_written);
 		ipc_debug_level = olddebug;
 	}
+	trn_recursive_mutex_unlock(&debug_file_mutex);
 	if (log_length < sizeof(log_buffer))
 		log_buffer[log_length] = 0;
+	trn_mutex_unlock(&log_mutex);
 	return 4;
 }
 

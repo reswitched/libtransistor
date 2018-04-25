@@ -6,6 +6,7 @@
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/ipc/fs.h>
+#include<libtransistor/ipc/fatal.h>
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
@@ -292,6 +293,8 @@ static int exit_value;
 
 static uint8_t tls_backup[0x200];
 
+static trn_thread_t main_thread;
+
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 static int make_dbg_log_fd();
 
@@ -308,6 +311,9 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	if((ret = relocate(aslr_base, &dyn_info)) != RESULT_OK) {
 		return ret;
 	}
+
+	memcpy(tls_backup, get_tls(), 0x200);
+	get_tls()->thread = NULL; // explicitly indicate that this thread has not yet been initialized
 	
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("config: %p", config);
@@ -323,19 +329,21 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			// write log_buffer and log_size
 			*((uint64_t*) (((uint8_t*) config) + 0x18)) = log_buffer;
 			*((uint64_t*) (((uint8_t*) config) + 0x20)) = &log_length;
-			
-			return LIBTRANSISTOR_ERR_LEGACY_CONTEXT;
+
+			ret = LIBTRANSISTOR_ERR_LEGACY_CONTEXT;
+			goto restore_tls;
 		}
 		
 		dbg_printf("found loader config");
 		
 		ret = lconfig_parse(config);
 		if(ret != RESULT_OK) {
-			return ret;
+			goto restore_tls;
 		}
 		
 		if(loader_config.main_thread == INVALID_HANDLE) {
-			return HOMEBREW_ABI_KEY_NOT_PRESENT(LCONFIG_KEY_MAIN_THREAD_HANDLE);
+			ret = HOMEBREW_ABI_KEY_NOT_PRESENT(LCONFIG_KEY_MAIN_THREAD_HANDLE);
+			goto restore_tls;
 		}
 	} else {
 		dbg_printf("no loader config");
@@ -343,10 +351,14 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		loader_config.main_thread = 0xde00;
 	}
 
-	dbg_printf("backup tls");
-	memcpy(tls_backup, get_tls(), 0x200);
 	memset(get_tls(), 0, 0x200);
-
+	main_thread.handle = loader_config.main_thread;
+	main_thread.owns_stack = false;
+	main_thread.arg = NULL;
+	main_thread.pthread = NULL;
+	_REENT_INIT_PTR(&main_thread.reent);
+	get_tls()->thread = &main_thread;
+	
 	bool initialized_fs = false;
 	bool ran_initializers = false;
 	
@@ -354,13 +366,13 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	if(exit_mode == NOT_EXITING) {
 		ret = as_init();
 		if(ret != RESULT_OK) {
-			return ret;
+			goto restore_tls;
 		}
 		
 		dbg_printf("init alloc_pages");
 		ret = ap_init();
 		if(ret != RESULT_OK) {
-			return ret;
+			goto restore_tls;
 		}
 		
 		dbg_printf("init threads");
@@ -486,7 +498,14 @@ fail_bsd:
 
 restore_tls:
 	memcpy(get_tls(), tls_backup, 0x200);
-	return ret;
+	if(IS_NRO || ret == 0) {
+		return ret;
+	} else {
+		fatal_init();
+		fatal_transition_to_fatal_error(ret, 0);
+		while(1) {}
+		return ret;
+	}
 }
 
 void _exit(int ret) {

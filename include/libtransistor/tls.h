@@ -9,23 +9,32 @@
 extern "C" {
 #endif
 
-#include <reent.h>
+#include<libtransistor/types.h>
+#include<libtransistor/thread.h>
 
-struct thread_ctx {
-	struct _reent reent;
-	void *pthread; // Pointer to pthread internal structure
-};
+#include<reent.h>
+#include<stdint.h>
 
 struct tls {
 	uint8_t ipc_buffer[0x100];
 	uint8_t _unk1[0xF8];
-	struct thread_ctx *ctx;
+	trn_thread_t *thread;
 };
 
 /**
  * @brief Gets the address of the thread-local storage
  */
 struct tls *get_tls();
+
+/**
+ * @brief Gets the current thread struct
+ */
+trn_thread_t *trn_get_thread();
+
+/**
+ * @brief Gets the current thread's handle, or 0xFFFFFFFF if called before threads have been fully initialized.
+ */
+thread_h get_thread_handle();
 
 #ifdef __cplusplus
 }

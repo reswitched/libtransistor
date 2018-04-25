@@ -4,6 +4,7 @@
 #include<libtransistor/loader_config.h>
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/err.h>
+#include<libtransistor/mutex.h>
 
 #include<stdio.h>
 #include<string.h>
@@ -33,18 +34,20 @@ struct mem_block_t {
 };
 typedef struct mem_block_t mem_block_t;
 
-static mem_block_t mem_blocks[512] = {{NULL, 0, STATE_UNUSED, NULL, NULL}};
-static mem_block_t *first_block = NULL;
+static trn_recursive_mutex_t ap_mutex = TRN_RECURSIVE_MUTEX_STATIC_INITIALIZER;
 
-static mem_block_t *ap_get_new_block();
-static mem_block_t *ap_attempt_coalesce(mem_block_t *block);
-static result_t ap_insert_new_block(void *base, size_t size, block_state_t state);
-static result_t ap_insert_and_split_block(void *base, ssize_t size, block_state_t state);
-static void ap_assert_coherency();
+static mem_block_t mem_blocks[512] GUARDED_BY(ap_mutex) = {{NULL, 0, STATE_UNUSED, NULL, NULL}};
+static mem_block_t *first_block GUARDED_BY(ap_mutex) = NULL;
+
+static mem_block_t *ap_get_new_block() REQUIRES(ap_mutex);
+static mem_block_t *ap_attempt_coalesce(mem_block_t *block) REQUIRES(ap_mutex);
+static result_t ap_insert_new_block(void *base, size_t size, block_state_t state) REQUIRES(ap_mutex);
+static result_t ap_insert_and_split_block(void *base, ssize_t size, block_state_t state) REQUIRES(ap_mutex);
+static void ap_assert_coherency() REQUIRES(ap_mutex);
 static void *ap_alloc_pages(size_t min, size_t max, size_t *actual);
 static bool ap_free_pages(void *pages);
 
-static mem_block_t *ap_get_new_block() {
+static mem_block_t *ap_get_new_block() REQUIRES(ap_mutex) {
 	for(uint64_t i = 0; i < ARRAY_LENGTH(mem_blocks); i++) {
 		if(mem_blocks[i].state == STATE_UNUSED) {
 			mem_blocks[i].state = STATE_INVALID;
@@ -55,7 +58,7 @@ static mem_block_t *ap_get_new_block() {
 	return NULL;
 }
 
-static mem_block_t *ap_attempt_coalesce(mem_block_t *block) {
+static mem_block_t *ap_attempt_coalesce(mem_block_t *block) REQUIRES(ap_mutex) {
 	if(block->prev &&
 	   block->prev->state != STATE_ALLOCATED && // never coalesce allocated blocks
 	   block->prev->state == block->state) { // coalesce with block before
@@ -81,7 +84,7 @@ static mem_block_t *ap_attempt_coalesce(mem_block_t *block) {
 	}
 }
 
-static result_t ap_insert_new_block(void *base, size_t size, block_state_t state) {
+static result_t ap_insert_new_block(void *base, size_t size, block_state_t state) REQUIRES(ap_mutex) {
 	AP_DEBUG("inserting [%p, +0x%x)", base, size);
 	size&= ~0xfff; // round down
 	base = (void*) ((((uint64_t) base) + 0xfff) & ~0xfff); // round up
@@ -130,6 +133,7 @@ static result_t ap_insert_new_block(void *base, size_t size, block_state_t state
 }
 
 result_t ap_init() {
+	trn_recursive_mutex_lock(&ap_mutex);
 	if(loader_config.heap_overridden) {
 		ap_insert_and_split_block(0, loader_config.heap_base, STATE_LOCKED_BY_MEMORY_STATE);
 		ap_insert_and_split_block(loader_config.heap_base, loader_config.heap_size, STATE_UNALLOCATED);
@@ -137,15 +141,19 @@ result_t ap_init() {
 		ap_probe_full_address_space();
 	}
 
+	trn_recursive_mutex_unlock(&ap_mutex);
 	return RESULT_OK;
 }
 
 result_t ap_lock_region(void *base, size_t size) {
-	return ap_insert_new_block(base, size, STATE_LOCKED_BY_OVERRIDE);
+	trn_recursive_mutex_lock(&ap_mutex);
+	result_t r = ap_insert_new_block(base, size, STATE_LOCKED_BY_OVERRIDE);
+	trn_recursive_mutex_unlock(&ap_mutex);
+	return r;
 }
 
 // split this block around any existing blocks
-static result_t ap_insert_and_split_block(void *base, ssize_t size, block_state_t state) {
+static result_t ap_insert_and_split_block(void *base, ssize_t size, block_state_t state) REQUIRES(ap_mutex) {
 	AP_DEBUG("probing block: [%p, +0x%lx)...", base, size);
 	if(size < 0x1000) {
 		return RESULT_OK;
@@ -186,7 +194,7 @@ static result_t ap_insert_and_split_block(void *base, ssize_t size, block_state_
 
 // dump address space mapping
 // may not be safe to call if printf has not been set up yet
-static void ap_do_dump_info(bool dbg) {
+static void ap_do_dump_info(bool dbg) REQUIRES(ap_mutex) {
 #define DI_PRINTF(...) if(dbg) { dbg_printf(__VA_ARGS__); } else printf(__VA_ARGS__)
 	
 	void *addr = NULL;
@@ -226,10 +234,12 @@ static void ap_do_dump_info(bool dbg) {
 }
 
 void ap_dump_info() {
+	trn_recursive_mutex_lock(&ap_mutex);
 	ap_do_dump_info(false);
+	trn_recursive_mutex_unlock(&ap_mutex);
 }
 
-static void ap_assert_coherency() {
+static void ap_assert_coherency() REQUIRES(ap_mutex) {
 	mem_block_t *head = first_block;
 	if(head == NULL) {
 		AP_DEBUG("first block is NULL?\n");
@@ -252,6 +262,8 @@ static void ap_assert_coherency() {
 static void *heap_end = NULL;
 
 result_t ap_probe_full_address_space() {
+	trn_recursive_mutex_lock(&ap_mutex);
+	
 	result_t r;
 	void *addr = NULL;
 	memory_info_t minfo;
@@ -276,6 +288,7 @@ result_t ap_probe_full_address_space() {
 	// add new blocks
 	while(1) {
 		if((r = svcQueryMemory(&minfo, &pinfo, addr)) != RESULT_OK) {
+			trn_recursive_mutex_unlock(&ap_mutex);
 			return r;
 		}
 
@@ -292,12 +305,12 @@ result_t ap_probe_full_address_space() {
 			AP_DEBUG("- detected usable heap block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
 			
 			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, STATE_UNALLOCATED);
-			if(r) { return r; }
+			if(r) { trn_recursive_mutex_unlock(&ap_mutex); return r; }
 		} else {
 			AP_DEBUG("- detected unusable block at %p, size 0x%lx\n", minfo.base_addr, minfo.size);
 			
 			r = ap_insert_and_split_block(minfo.base_addr, minfo.size, STATE_LOCKED_BY_MEMORY_STATE);
-			if(r) { return r; }
+			if(r) { trn_recursive_mutex_unlock(&ap_mutex); return r; }
 		}
 
 		addr = minfo.base_addr + minfo.size;
@@ -308,6 +321,7 @@ result_t ap_probe_full_address_space() {
 
 	ap_assert_coherency();
 
+	trn_recursive_mutex_unlock(&ap_mutex);
 	return RESULT_OK;
 }
 
@@ -322,6 +336,8 @@ static void *ap_alloc_pages(size_t min, size_t max, size_t *actual) {
 		return NULL;
 	}
 
+	trn_recursive_mutex_lock(&ap_mutex);
+	
 	mem_block_t *alloc_head;
 	mem_block_t *smallest = NULL;
 	result_t r;
@@ -345,6 +361,7 @@ rescan:
 			void *heap_base;
 			if((r = svcGetInfo(&heap_base, 4, 0xFFFF8001, 0)) != RESULT_OK) {
 				AP_DEBUG("    - failed to determined heap base: 0x%lx\n", r);
+				trn_recursive_mutex_unlock(&ap_mutex);
 				return NULL;
 			}
 
@@ -353,6 +370,7 @@ rescan:
 			if(heap_end == NULL) {
 				if((r = ap_probe_full_address_space()) != RESULT_OK) {
 					AP_DEBUG("    - failed to probe address space: 0x%lx\n");
+					trn_recursive_mutex_unlock(&ap_mutex);
 					return NULL;
 				}
 
@@ -389,6 +407,7 @@ rescan:
 			if(heap_size <= original_heap_size) {
 				AP_DEBUG("  - failed to grow heap\n");
 				heap_size = original_heap_size;
+				trn_recursive_mutex_unlock(&ap_mutex);
 				return NULL;
 			}
 			AP_DEBUG("  - grew heap to 0x%lx bytes\n", heap_size);
@@ -405,6 +424,7 @@ rescan:
 			}
 			goto rescan;
 		}
+		trn_recursive_mutex_unlock(&ap_mutex);
 		return NULL;
 	}
 
@@ -421,6 +441,7 @@ rescan:
 		// split the block
 		mem_block_t *new_block = ap_get_new_block();
 		if(!new_block) {
+			trn_recursive_mutex_unlock(&ap_mutex);
 			return NULL;
 		}
 		
@@ -448,10 +469,13 @@ rescan:
 	if(actual != NULL) {
 		*actual = size;
 	}
+	trn_recursive_mutex_unlock(&ap_mutex);
 	return smallest->base;
 }
 
 static bool ap_free_pages(void *pages) {
+	trn_recursive_mutex_lock(&ap_mutex);
+	
 	mem_block_t *free_head;
 	for(free_head = first_block; free_head != NULL; free_head = free_head->next) {
 		if(free_head->base == pages) {
@@ -460,14 +484,17 @@ static bool ap_free_pages(void *pages) {
 	}
 
 	if(free_head == NULL) {
+		trn_recursive_mutex_unlock(&ap_mutex);
 		return true;
 	}
 	
 	if(free_head->base != pages) {
+		trn_recursive_mutex_unlock(&ap_mutex);
 		return true;
 	}
 
 	if(free_head->state != STATE_ALLOCATED) {
+		trn_recursive_mutex_unlock(&ap_mutex);
 		return true;
 	}
 	
@@ -475,10 +502,12 @@ static bool ap_free_pages(void *pages) {
 	memory_info_t minfo;
 	uint32_t pinfo;
 	if((r = svcQueryMemory(&minfo, &pinfo, pages)) != RESULT_OK) {
+		trn_recursive_mutex_unlock(&ap_mutex);
 		return true;
 	}
 
 	if(minfo.permission != 3 || minfo.memory_type != 5 || minfo.memory_attribute != 0) {
+		trn_recursive_mutex_unlock(&ap_mutex);
 		return true;
 	}
 	
@@ -487,12 +516,15 @@ static bool ap_free_pages(void *pages) {
 	free_head->state = STATE_UNALLOCATED;
 	free_head = ap_attempt_coalesce(free_head);
 	ap_assert_coherency();
-	
+
+	trn_recursive_mutex_unlock(&ap_mutex);
 	return false;
 }
 
 // allocate the largest block available
 void *ap_alloc_largest(size_t *size) {
+	trn_recursive_mutex_lock(&ap_mutex);
+	
 	mem_block_t *alloc_head = first_block;
 	mem_block_t *largest = NULL;
 
@@ -505,11 +537,13 @@ void *ap_alloc_largest(size_t *size) {
 	}
 	
 	if(largest == NULL) {
+		trn_recursive_mutex_unlock(&ap_mutex);
 		return NULL;
 	}
 
 	*size = largest->size;
 	largest->state = STATE_ALLOCATED;
+	trn_recursive_mutex_unlock(&ap_mutex);
 	return largest->base;
 }
 

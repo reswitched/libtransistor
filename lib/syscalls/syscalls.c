@@ -25,15 +25,12 @@
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/util.h>
+#include<libtransistor/mutex.h>
 
 void _exit(); // implemented in libtransistor crt0
 
 struct _reent *__getreent() {
-	struct tls *tls = get_tls();
-	if (tls == NULL || tls->ctx == NULL)
-		return NULL;
-	else
-		return &tls->ctx->reent;
+	return &trn_get_thread()->reent;
 }
 
 int _close_r(struct _reent *reent, int file) {
@@ -97,14 +94,13 @@ off_t _lseek_r(struct _reent *reent, int file, off_t pos, int whence) {
 	}
 
 	result_t r = f->ops->seek(f->data, pos, whence, &res);
+	if(r != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
+		res = -1;
+	}
 	
 finalize:
 	fd_file_put(f);
-	
-	if(r != RESULT_OK) {
-		reent->_errno = trn_result_to_errno(r);
-		return -1;
-	}
 	
 	return res;
 }
@@ -135,14 +131,13 @@ ssize_t _read_r(struct _reent *reent, int file, void *ptr, size_t len) {
 	}
 	
 	result_t r = f->ops->read(f->data, (char*)ptr, len, &res);
+	if(r != RESULT_OK) {
+		reent->_errno = trn_result_to_errno(r);
+		res = -1;
+	}
 	
 finalize:
 	fd_file_put(f);
-	
-	if(r != RESULT_OK) {
-		reent->_errno = trn_result_to_errno(r);
-		return -1;
-	}
 	
 	return res;
 }
@@ -294,14 +289,13 @@ ssize_t _write_r(struct _reent *reent, int file, const void *ptr, size_t len) {
 	}
 	
 	result_t r = f->ops->write(f->data, (char*)ptr, len, &res);
-	
-finalize:
-	fd_file_put(f);
-	
 	if(r != RESULT_OK) {
 		reent->_errno = trn_result_to_errno(r);
-		return -1;
+		res = -1;
 	}
+
+finalize:
+	fd_file_put(f);
 	
 	return res;
 }
@@ -323,7 +317,6 @@ int _gettimeofday_r(struct _reent *reent, struct timeval *__restrict p, void *__
 	if(!time_initialized) {
 		time_init();
 		time_initialized = true;
-		atexit(time_finalize);
 	}
 	
 	if ((res = time_system_clock_get_current_time(time_system_clock_user, &time)) != RESULT_OK) {
@@ -463,4 +456,14 @@ int rename(const char *oldpath, const char *newpath) {
 		return -1;
 	}
 	return 0;
+}
+
+static trn_recursive_mutex_t malloc_mutex = TRN_RECURSIVE_MUTEX_STATIC_INITIALIZER;
+
+void __malloc_lock(struct _reent *reent) ACQUIRE(malloc_mutex) {
+	trn_recursive_mutex_lock(&malloc_mutex);
+}
+
+void __malloc_unlock(struct _reent *reent) RELEASE(malloc_mutex) {
+	trn_recursive_mutex_unlock(&malloc_mutex);
 }

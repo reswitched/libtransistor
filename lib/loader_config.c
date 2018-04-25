@@ -164,9 +164,9 @@ result_t lconfig_parse(loader_config_entry_t *config) {
 
 result_t lconfig_has_syscall(uint8_t syscall) {
 	if(syscall < 0x40) {
-		return (loader_config.syscall_hints[0] & (1 << syscall)) == 0 ? LIBTRANSISTOR_ERR_NEEDS_SYSCALL(syscall) : RESULT_OK;
+		return ((loader_config.syscall_hints[0] >> syscall) & 1 > 0) ? RESULT_OK : LIBTRANSISTOR_ERR_NEEDS_SYSCALL(syscall);
 	} else {
-		return (loader_config.syscall_hints[1] & (1 << (syscall - 0x40))) == 0 ? LIBTRANSISTOR_ERR_NEEDS_SYSCALL(syscall) : RESULT_OK;
+		return ((loader_config.syscall_hints[1] >> (syscall - 0x40)) & 1 > 0) ? RESULT_OK : LIBTRANSISTOR_ERR_NEEDS_SYSCALL(syscall);
 	}
 }
 
