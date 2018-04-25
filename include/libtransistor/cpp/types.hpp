@@ -10,6 +10,7 @@
 namespace Transistor {
 
 struct ResultCode {
+ public:
 	static tl::expected<std::nullopt_t, ResultCode> ExpectOk(result_t code);
 	static void AssertOk(result_t code);
 	template<typename T> static T&& AssertOk(tl::expected<T, ResultCode> &&monad);
@@ -31,8 +32,9 @@ class ResultError : std::runtime_error {
 	ResultError(result_t code);
 	
 	const char *what() noexcept;
- private:
+
 	const ResultCode code;
+ private:
 	std::string description;
 };
 
