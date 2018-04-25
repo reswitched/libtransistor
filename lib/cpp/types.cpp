@@ -5,6 +5,10 @@
 
 #include<sstream>
 
+#define UNW_LOCAL_ONLY
+#include<libunwind.h>
+#include<stdio.h>
+
 namespace Transistor {
 
 tl::expected<std::nullopt_t, ResultCode> ResultCode::ExpectOk(result_t code) {
@@ -29,6 +33,31 @@ ResultError::ResultError(ResultCode code) : std::runtime_error("failed to format
 	std::ostringstream ss;
 	ss << "0x" << std::hex << code.code;
 	description = ss.str();
+
+	if(true) {
+		printf("ResultError 0x%x generated. Backtrace:\n", code.code);
+		unw_cursor_t cursor;
+		unw_context_t context;
+		unw_getcontext(&context);
+		unw_init_local(&cursor, &context);
+
+		while(unw_step(&cursor) > 0) {
+			unw_word_t offset, pc;
+			unw_get_reg(&cursor, UNW_REG_IP, &pc);
+			if(pc == 0) {
+				break;
+			}
+			printf("0x%lx: ", pc);
+
+			char sym[256];
+			if(unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0) {
+				printf("(%s+0x%lx)\n", sym, offset);
+			} else {
+				printf("<unknown>\n");
+			}
+		}
+		printf("end\n");
+	}
 }
 
 ResultError::ResultError(result_t code) : ResultError(ResultCode(code)) {
