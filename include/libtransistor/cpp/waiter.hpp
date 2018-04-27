@@ -9,6 +9,7 @@
 #include<libtransistor/waiter.h>
 
 #include<functional>
+#include<memory>
 
 namespace Transistor {
 
@@ -16,12 +17,16 @@ class Waiter;
 
 class WaitHandle {
  public:
-	WaitHandle(Waiter *waiter, wait_record_t *record);
+	WaitHandle(Waiter *waiter, std::function<bool()> *callback);
+	~WaitHandle();
 	void Cancel();
-
+	bool InvokeCallback();
+	
 	wait_record_t *record;
  private:
+	std::function<bool()> *callback;
 	Waiter *waiter;
+	bool is_cancelled = false;
 };
 
 class Waiter {
@@ -29,9 +34,9 @@ class Waiter {
 	Waiter();
 
 	/* callback should return true if this handle should be kept in the wait list */
-	WaitHandle Add(KWaitable &waitable, std::function<bool()> *callback);
+	/* when WaitHandle dies, it will unregister itself */
+	std::shared_ptr<WaitHandle> Add(KWaitable &waitable, std::function<bool()> callback);
 	Result<std::nullopt_t> Wait(uint64_t timeout);
-	void Cancel(WaitHandle handle);
 
 	~Waiter();
 

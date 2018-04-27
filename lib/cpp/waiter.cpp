@@ -4,11 +4,28 @@
 
 namespace Transistor {
 
-WaitHandle::WaitHandle(Waiter *waiter, wait_record_t *record) : waiter(waiter), record(record) {
+WaitHandle::WaitHandle(Waiter *waiter, std::function<bool()> *callback) : waiter(waiter), callback(callback) {
+}
+
+WaitHandle::~WaitHandle() {
+	if(!is_cancelled) {
+		Cancel();
+	}
+	delete callback;
 }
 
 void WaitHandle::Cancel() {
-	waiter->Cancel(*this);
+	is_cancelled = true;
+	waiter_cancel(waiter->waiter, record);
+}
+
+bool WaitHandle::InvokeCallback() {
+	if((*callback)()) {
+		return true;
+	} else {
+		is_cancelled = true;
+		return false;
+	}
 }
 
 Waiter::Waiter() {
@@ -23,20 +40,19 @@ Waiter::~Waiter() {
 }
 
 static bool signal_shim(void *data, handle_t handle) {
-	std::function<bool()> *func = (std::function<bool()>*) data;
-	return (*func)();
+	WaitHandle *wh = (WaitHandle*) data;
+	return wh->InvokeCallback();
 }
 
-WaitHandle Waiter::Add(KWaitable &waitable, std::function<bool()> *callback) {
-	return WaitHandle(this, waiter_add(waiter, waitable.handle, signal_shim, callback));
+std::shared_ptr<WaitHandle> Waiter::Add(KWaitable &waitable, std::function<bool()> callback) {
+	std::function<bool()> *callback_copy = new std::function<bool()>(callback);
+	std::shared_ptr<WaitHandle> wh = std::make_shared<WaitHandle>(this, callback_copy);
+	wh->record = waiter_add(waiter, waitable.handle, signal_shim, (void*) wh.get());
+	return wh;
 }
 
 Result<std::nullopt_t> Waiter::Wait(uint64_t timeout) {
 	return ResultCode::ExpectOk(waiter_wait(waiter, timeout));
-}
-
-void Waiter::Cancel(WaitHandle wh) {
-	waiter_cancel(waiter, wh.record);
 }
 
 }
