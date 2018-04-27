@@ -50,19 +50,9 @@ typedef enum {
 } usb_ds_state_t;
 
 /**
- * @brief Initialize USB services
+ * @brief Initialize USB as device services
  */
-result_t usb_init();
-
-/**
- * @brief Bind device
- */
-result_t usb_ds_bind_device(uint32_t complex_id);
-
-/**
- * @brief Bind client process
- */
-result_t usb_ds_bind_client_process(process_h handle);
+result_t usb_ds_init(uint32_t complex_id);
 
 /**
  * @brief Open a new USB interface
@@ -89,9 +79,9 @@ result_t usb_ds_get_state(usb_ds_state_t *state);
 result_t usb_ds_set_vid_pid_bcd(usb_descriptor_data_t *data);
 
 /**
- * @brief Finalize USB services
+ * @brief Finalize USB as device services
  */
-void usb_finalize();
+void usb_ds_finalize();
 
 #ifdef __cplusplus
 }

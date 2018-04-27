@@ -120,7 +120,7 @@ result_t waiter_wait(waiter_t *waiter, uint64_t timeout) {
 		// increment age on handles that were not able to signal,
 		// so they get sorted earlier next time and have a chance
 		// to signal.
-		for(size_t i = index; i < num_records; i++) {
+		for(size_t i = index+1; i < num_records; i++) {
 			waiter->record_buffer[i]->age++;
 		}
 

@@ -116,15 +116,11 @@ result_t usb_serial_init() {
 	
 	result_t r;
 	
-	LIB_ASSERT_OK(fail, usb_init());
+	LIB_ASSERT_OK(fail, usb_ds_init(2));
 
 	revent_h usb_state_event = 0xFFFFFFFF;
 	LIB_ASSERT_OK(fail_usb, usb_ds_get_state_change_event(&usb_state_event));
 
-	usb_serial_debug("binding device...\n");
-	LIB_ASSERT_OK(fail_usb,              usb_ds_bind_device(2));
-	usb_serial_debug("bound\n");
-	LIB_ASSERT_OK(fail_usb,              usb_ds_bind_client_process(0xffff8001));
 	LIB_ASSERT_OK(fail_usb,              usb_ds_set_vid_pid_bcd(&descriptor_data));
 	LIB_ASSERT_OK(fail_usb,              usb_ds_get_interface(&interface_descriptor, "usb", &interface));
 	LIB_ASSERT_OK(fail_usb_interface,    usb_ds_interface_get_endpoint(&interface, &endpoint_in_descriptor,  &endpoint_in));
@@ -162,7 +158,7 @@ fail_usb:
 	if(usb_state_event != 0xFFFFFFFF) {
 		svcCloseHandle(usb_state_event);
 	}
-	usb_finalize();
+	usb_ds_finalize();
 fail:
 	usb_serial_initializations--;
 	return r;
@@ -176,7 +172,7 @@ static void usb_serial_force_finalize() {
 	usb_ds_close_endpoint(&endpoint_out);
 	usb_ds_close_endpoint(&endpoint_in);
 	usb_ds_close_interface(&interface);
-	usb_finalize();
+	usb_ds_finalize();
 }
 
 void usb_serial_finalize() {

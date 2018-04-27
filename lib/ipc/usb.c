@@ -17,8 +17,9 @@ static_assert(sizeof(usb_endpoint_descriptor_t) == 0x7, "sizeof(usb_endpoint_des
 
 static ipc_domain_t ds_domain;
 static ipc_object_t idss_object; // nn::usb::ds::IDsService
+static uint32_t ds_complex;
 
-static int usb_initializations = 0;
+static int usb_ds_initializations = 0;
 
 usb_interface_descriptor_t usb_default_interface_descriptor = {
 	.bLength = 0x9,
@@ -32,11 +33,16 @@ usb_interface_descriptor_t usb_default_interface_descriptor = {
 	.iInterface = 0x00
 };
 
-result_t usb_init() {
-	if(usb_initializations++ > 0) {
+result_t usb_ds_init(uint32_t complex_id) {
+	if(usb_ds_initializations++ > 0) {
+		if(ds_complex != complex_id) {
+			return LIBTRANSISTOR_ERR_USB_ALREADY_BOUND_OTHER_COMPLEX;
+		}
 		return RESULT_OK;
 	}
 
+	ds_complex = complex_id;
+	
 	result_t r;
 	r = sm_init();
 	if(r) {
@@ -53,6 +59,30 @@ result_t usb_init() {
 		goto fail_ds_domain;
 	}
 
+	{
+		ipc_request_t rq = ipc_make_request(0);
+		ipc_msg_raw_data_from_value(rq, complex_id);
+
+		// BindDevice
+		r = ipc_send(idss_object, &rq, &ipc_default_response_fmt);
+		if(r) {
+			goto fail_ds_domain;
+		}
+	}
+
+	{
+		ipc_request_t rq = ipc_make_request(1);
+		process_h proc = 0xffff8001;
+		ipc_msg_copy_handle_from_value(rq, proc);
+
+		// BindClientProcess
+		r = ipc_send(idss_object, &rq, &ipc_default_response_fmt);
+		if(r) {
+			goto fail_ds_domain;
+		}
+	}
+
+	
 	sm_finalize();
 	return RESULT_OK;
 
@@ -61,30 +91,12 @@ fail_ds_domain:
 fail_sm:
 	sm_finalize();
 fail:
-	usb_initializations--;
+	usb_ds_initializations--;
 	return r;
 }
 
-result_t usb_ds_bind_device(uint32_t complex_id) {
-	INITIALIZATION_GUARD(usb);
-
-	ipc_request_t rq = ipc_make_request(0);
-	ipc_msg_raw_data_from_value(rq, complex_id);
-
-	return ipc_send(idss_object, &rq, &ipc_default_response_fmt);
-}
-
-result_t usb_ds_bind_client_process(process_h handle) {
-	INITIALIZATION_GUARD(usb);
-
-	ipc_request_t rq = ipc_make_request(1);
-	ipc_msg_copy_handle_from_value(rq, handle);
-
-	return ipc_send(idss_object, &rq, &ipc_default_response_fmt);
-}
-
 result_t usb_ds_get_interface(usb_interface_descriptor_t *descriptor, const char *name, usb_ds_interface_t *out) {
-	INITIALIZATION_GUARD(usb);
+	INITIALIZATION_GUARD(usb_ds);
 
 	out->is_enabled = false;
 	
@@ -107,7 +119,7 @@ result_t usb_ds_get_interface(usb_interface_descriptor_t *descriptor, const char
 }
 
 result_t usb_ds_get_state_change_event(revent_h *event) {
-	INITIALIZATION_GUARD(usb);
+	INITIALIZATION_GUARD(usb_ds);
 
 	ipc_request_t rq = ipc_make_request(3);
 
@@ -118,7 +130,7 @@ result_t usb_ds_get_state_change_event(revent_h *event) {
 }
 
 result_t usb_ds_get_state(usb_ds_state_t *state) {
-	INITIALIZATION_GUARD(usb);
+	INITIALIZATION_GUARD(usb_ds);
 
 	ipc_request_t rq = ipc_make_request(4);
 
@@ -129,7 +141,7 @@ result_t usb_ds_get_state(usb_ds_state_t *state) {
 }
 
 result_t usb_ds_set_vid_pid_bcd(usb_descriptor_data_t *data) {
-	INITIALIZATION_GUARD(usb);
+	INITIALIZATION_GUARD(usb_ds);
 	
 	ipc_buffer_t buffers[] = {ipc_buffer_from_reference(data, 5)};
 
@@ -139,20 +151,20 @@ result_t usb_ds_set_vid_pid_bcd(usb_descriptor_data_t *data) {
 	return ipc_send(idss_object, &rq, &ipc_default_response_fmt);
 }
 
-static void usb_force_finalize() {
+static void usb_ds_force_finalize() {
 	ipc_close(idss_object);
 	ipc_close_domain(ds_domain);
-	usb_initializations = 0;
+	usb_ds_initializations = 0;
 }
 
-void usb_finalize() {
-	if(--usb_initializations == 0) {
-		usb_force_finalize();
+void usb_ds_finalize() {
+	if(--usb_ds_initializations == 0) {
+		usb_ds_force_finalize();
 	}
 }
 
 static __attribute__((destructor)) void usb_destruct() {
-	if(usb_initializations > 0) {
-		usb_force_finalize();
+	if(usb_ds_initializations > 0) {
+		usb_ds_force_finalize();
 	}
 }
