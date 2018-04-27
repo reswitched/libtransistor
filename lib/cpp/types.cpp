@@ -105,4 +105,25 @@ KPort::KPort(port_h handle) : KWaitable(handle) {
 KProcess::KProcess(process_h handle) : KWaitable(handle) {
 }
 
+KEvent::KEvent(revent_h handle) : KWaitable(handle) {
+}
+
+Result<std::nullopt_t> KProcess::ResetSignal() {
+	return ResultCode::ExpectOk(svcResetSignal(handle));
+}
+
+Result<std::nullopt_t> KProcess::WaitSignal(uint64_t timeout) {
+	uint32_t handle_index;
+	return ResultCode::ExpectOk(svcWaitSynchronization(&handle_index, &handle, 1, timeout));
+}
+
+Result<std::nullopt_t> KEvent::ResetSignal() {
+	return ResultCode::ExpectOk(svcResetSignal(handle));
+}
+
+Result<std::nullopt_t> KEvent::WaitSignal(uint64_t timeout) {
+	uint32_t handle_index;
+	return ResultCode::ExpectOk(svcWaitSynchronization(&handle_index, &handle, 1, timeout));
+}
+
 }

@@ -577,7 +577,10 @@ result_t svcCreateProcess(process_h *process, void *procinfo, void *caps, uint32
 result_t svcStartProcess(process_h process, uint32_t main_thread_prio, uint32_t default_cpuid, uint32_t main_thread_stack_size);
 
 // terminateProcess
-// getProcessInfo
+
+// not entirely sure about this one
+result_t svcGetProcessInfo(uint64_t *info, process_h process, uint32_t type);
+
 // createResourceLimit
 // setResourceLimitLimitValue
 // callSecureMonitor

@@ -79,6 +79,15 @@ class KPort : public KWaitable {
 class KProcess : public KWaitable {
  public:
 	KProcess(process_h handle);
+	Result<std::nullopt_t> ResetSignal();
+	Result<std::nullopt_t> WaitSignal(uint64_t timeout);
+};
+
+class KEvent : public KWaitable {
+ public:
+	KEvent(revent_h handle);
+	Result<std::nullopt_t> ResetSignal();
+	Result<std::nullopt_t> WaitSignal(uint64_t timeout);
 };
 
 }

@@ -49,13 +49,20 @@ Result<std::shared_ptr<MemoryMapping>> MapProcessMemory(std::shared_ptr<KProcess
 
 Result<KProcess> CreateProcess(void *process_info, void *caps, uint32_t cap_num) {
 	process_h process;
-	return ResultCode::ExpectOk(svcCreateProcess(&process, process_info, caps, cap_num)).map([process](auto const &ignored) {
+	return ResultCode::ExpectOk(svcCreateProcess(&process, process_info, caps, cap_num)).map([&process](auto const &ignored) {
 			return KProcess(process);
 		});
 }
 
 Result<std::nullopt_t> StartProcess(KProcess &process, uint32_t main_thread_prio, uint32_t default_cpuid, uint32_t main_thread_stack_size) {
 	return ResultCode::ExpectOk(svcStartProcess(process.handle, main_thread_prio, default_cpuid, main_thread_stack_size));
+}
+
+Result<uint64_t> GetProcessInfo(KProcess &process, uint32_t type) {
+	uint64_t info;
+	return ResultCode::ExpectOk(svcGetProcessInfo(&info, process.handle, type)).map([&info](auto const &ignored) {
+			return info;
+		});
 }
 
 }
