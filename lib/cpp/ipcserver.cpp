@@ -80,11 +80,9 @@ IPCServer::~IPCServer() {
 }
 
 static result_t factory_shim(ipc_server_object_t **obj, void *userdata) {
-	printf("in factory shim: %p\n", userdata);
 	std::function<Result<Object*>()> *factory = static_cast<std::function<Result<Object*>()>*>(userdata);
 	Result<Object*> object = (*factory)();
 	if(object.has_value()) {
-		printf("succeeded\n");
 		*obj = &(object.value()->object);
 		return RESULT_OK;
 	} else {
