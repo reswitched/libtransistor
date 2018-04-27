@@ -5,7 +5,7 @@ libtransistor_OBJECT_FILES := $(addprefix $(BUILD_DIR)/transistor/,$(libtransist
 
 libtransistor_WARNINGS := -Wall -Wextra -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-command-line-argument -Werror-thread-safety
 
-libtransistor_BUILD_DEPS := $(DIST_NEWLIB) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREAD) $(DIST_LIBLZMA) $(DIST_TRANSISTOR_HEADERS) $(DIST_TRANSISTOR_SUPPORT) $(DIST_LIBCXX)
+libtransistor_BUILD_DEPS := $(DIST_NEWLIB) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREAD) $(DIST_LIBLZMA) $(DIST_TRANSISTOR_HEADERS) $(DIST_TRANSISTOR_SUPPORT) $(DIST_LIBCXX) $(DIST_LIBUNWIND)
 
 # ARCHIVE RULES
 
