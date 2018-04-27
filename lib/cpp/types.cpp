@@ -93,13 +93,16 @@ handle_t KObject::Claim() {
 	return handle;
 }
 
+KWaitable::KWaitable(handle_t handle) : KObject(handle) {
+}
+
 KSharedMemory::KSharedMemory(shared_memory_h handle) : KObject(handle) {
 }
 
-KPort::KPort(port_h handle) : KObject(handle) {
+KPort::KPort(port_h handle) : KWaitable(handle) {
 }
 
-KProcess::KProcess(process_h handle) : KObject(handle) {
+KProcess::KProcess(process_h handle) : KWaitable(handle) {
 }
 
 }

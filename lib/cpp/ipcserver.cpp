@@ -45,9 +45,9 @@ TransactionFormat::~TransactionFormat() {
 	if(out_objects) { delete[] out_objects; }
 }
 
-Result<IPCServer> IPCServer::Create() {
+Result<IPCServer> IPCServer::Create(Waiter *waiter) {
 	ipc_server_t *server = new ipc_server_t;
-	return ResultCode::ExpectOk(ipc_server_create(server))
+	return ResultCode::ExpectOk(ipc_server_create(server, waiter->waiter))
 		.map([server](auto const &v) -> IPCServer {
 				IPCServer cpp_server(server);
 				return cpp_server;
@@ -103,10 +103,6 @@ Result<std::nullopt_t> IPCServer::CreateService(const char *name, std::function<
 					delete factory;
 					return err;
 				});
-}
-
-Result<std::nullopt_t> IPCServer::Process(uint64_t timeout) {
-	return ResultCode::ExpectOk(ipc_server_process(server, timeout));
 }
 
 IPCServer::IPCServer(ipc_server_t *server) : server(server) {

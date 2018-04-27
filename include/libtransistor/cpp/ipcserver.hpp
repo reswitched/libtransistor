@@ -7,6 +7,7 @@
 
 #include<libtransistor/cpp/types.hpp>
 #include<libtransistor/cpp/ipc.hpp>
+#include<libtransistor/cpp/waiter.hpp>
 
 #include<libtransistor/ipcserver.h>
 #include<libtransistor/ipc.h>
@@ -37,7 +38,7 @@ class Object {
 
 class IPCServer {
  public:
-	static Result<IPCServer> Create();
+	static Result<IPCServer> Create(Waiter *waiter);
 	
 	IPCServer() = delete;
 	IPCServer(const IPCServer &) = delete;
@@ -61,7 +62,6 @@ class IPCServer {
 			});
 	}
 	Result<std::nullopt_t> CreateService(const char *name, std::function<Result<Object*>(IPCServer *server)> factory);
-	Result<std::nullopt_t> Process(uint64_t timeout);
 	
  private:
 	IPCServer(ipc_server_t *server);

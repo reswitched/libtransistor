@@ -61,17 +61,22 @@ class KObject {
 	handle_t handle;
 };
 
+class KWaitable : public KObject {
+ public:
+	KWaitable(handle_t handle);
+};
+
 class KSharedMemory : public KObject {
  public:
 	KSharedMemory(shared_memory_h handle);
 };
 
-class KPort : public KObject {
+class KPort : public KWaitable {
  public:
 	KPort(port_h handle);
 };
 
-class KProcess : public KObject {
+class KProcess : public KWaitable {
  public:
 	KProcess(process_h handle);
 };
