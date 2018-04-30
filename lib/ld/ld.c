@@ -50,19 +50,19 @@ result_t ld_scan_module(module_t *mod) {
 	const char mod_magic[] = "MOD0";
 	if(mod_header->magic != *((uint32_t*) mod_magic)) {
 		r = LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_HEADER;
-		goto fail_mod;
+		goto fail;
 	}
 
 	r = elf_dynamic_find_offset(dynamic, DT_HASH, (void**) &mod->hash, module_base);
 	if(r == RESULT_OK) {
 	} else if(r != LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY) {
-		goto fail_mod;
+		goto fail;
 	}
 
 	r = elf_dynamic_find_offset(dynamic, DT_STRTAB, (void**) &mod->strtab, module_base);
 	if(r == RESULT_OK) {
 	} else if(r != LIBTRANSISTOR_ERR_TRNLD_MISSING_DT_ENTRY) {
-		goto fail_mod;
+		goto fail;
 	}
 
 	r = elf_dynamic_find_offset(mod->dynamic, DT_SYMTAB, (void**) &mod->symtab, mod->input.base);
@@ -85,12 +85,12 @@ result_t ld_scan_module(module_t *mod) {
 		if(walker->d_tag == DT_NEEDED) {
 			dbg_printf("needs %s", mod->strtab + walker->d_val);
 			module_t *dep;
-			LIB_ASSERT_OK(fail_mod, ld_discover_module(mod->strtab + walker->d_val, &dep));
+			LIB_ASSERT_OK(fail, ld_discover_module(mod->strtab + walker->d_val, &dep));
 			module_list_node_t *node = malloc(sizeof(*node));
 			if(node == NULL) {
 				ld_decref_module(dep);
 				r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-				goto fail_mod;
+				goto fail;
 			}
 			node->module = dep;
 			trn_list_add_tail(&mod->dependencies, &node->list);
@@ -101,8 +101,7 @@ result_t ld_scan_module(module_t *mod) {
 	
 	return RESULT_OK;
 
-fail_mod:
-	ld_destroy_module(mod);
+fail:
 	return r;
 }
 
