@@ -66,7 +66,7 @@ before_script:
   - chmod +x ctu_$TRAVIS_OS_NAME
   - pip3 install --user -r requirements.txt
   
-script:  make LD=ld.lld$LLVM_POSTFIX && LD=ld.lld$LLVM_POSTFIX make -C projects/ace_loader && make run_tests MEPHISTO=./ctu_$TRAVIS_OS_NAME
+script:  make LD=ld.lld$LLVM_POSTFIX && make run_tests MEPHISTO=./ctu_$TRAVIS_OS_NAME
 
 after_success:
   # Once the build has passed, build the docs
@@ -95,8 +95,6 @@ deploy:
   - provider: releases
     api_key: $GITHUB_TOKEN
     file:
-      - "projects/ace_loader/wk_ace.nro"
-      - "projects/ace_loader/sysmod_ace.nro"
       - "libtransistor_$TRAVIS_TAG.tar.gz"
       - "build/test/tests_nro.tar.gz"
       - "build/test/tests_nso.tar.gz"
