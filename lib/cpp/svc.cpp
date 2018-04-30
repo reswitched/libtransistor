@@ -118,5 +118,16 @@ Result<uint64_t> GetProcessInfo(KProcess &process, uint32_t type) {
 		});
 }
 
+Result<KResourceLimit> CreateResourceLimit() {
+	resource_limit_h limit;
+	return ResultCode::ExpectOk(svcCreateResourceLimit(&limit)).map([&limit](auto const &ignored) {
+			return KResourceLimit(limit);
+		});
+}
+
+Result<std::nullopt_t> SetResourceLimitLimitValue(KResourceLimit &limit, LimitableResource resource, uint64_t value) {
+	return ResultCode::ExpectOk(svcSetResourceLimitLimitValue(limit.handle, (uint32_t) resource, value));
+}
+
 }
 }

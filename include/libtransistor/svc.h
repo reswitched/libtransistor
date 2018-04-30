@@ -662,8 +662,10 @@ result_t svcTerminateProcess(process_h process);
 
 result_t svcGetProcessInfo(uint64_t *info, process_h process, uint32_t type);
 
-// createResourceLimit
-// setResourceLimitLimitValue
+result_t svcCreateResourceLimit(resource_limit_h *limit);
+
+result_t svcSetResourceLimitLimitValue(resource_limit_h limit, uint32_t resource, uint64_t value);
+
 // callSecureMonitor
 
 enum {

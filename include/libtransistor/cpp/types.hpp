@@ -95,4 +95,9 @@ class KDebug : public KObject {
 	KDebug(debug_h handle);
 };
 
+class KResourceLimit : public KObject {
+ public:
+	KResourceLimit(resource_limit_h handle);
+};
+
 }

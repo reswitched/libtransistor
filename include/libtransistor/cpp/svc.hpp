@@ -29,6 +29,14 @@ enum class ProcessState : uint64_t {
 	DEBUG_SUSPENDED = 7,
 };
 
+enum class LimitableResource : uint32_t {
+	Memory = 0,
+	Threads = 1,
+	Events = 2,
+	TransferMemories = 3,
+	Sessions = 4,
+};
+
 Result<void*> SetHeapSize(uint32_t size);
 Result<std::nullopt_t> SetMemoryPermission(void *addr, uint64_t size, uint32_t permission);
 // etc., etc.
@@ -57,6 +65,8 @@ Result<KProcess> CreateProcess(void *process_info, void *caps, uint32_t cap_num)
 Result<std::nullopt_t> StartProcess(KProcess &process, uint32_t main_thread_prio, uint32_t default_cpuid, uint32_t main_thread_stack_size);
 Result<std::nullopt_t> TerminateProcess(KProcess &process);
 Result<uint64_t> GetProcessInfo(KProcess &process, uint32_t type);
+Result<KResourceLimit> CreateResourceLimit();
+Result<std::nullopt_t> SetResourceLimitLimitValue(KResourceLimit &limit, LimitableResource resource, uint64_t value);
 
 }
 }
