@@ -17,6 +17,7 @@
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/address_space.h>
 #include<libtransistor/usb_serial.h>
+#include<libtransistor/runtime_config.h>
 
 #include<sys/socket.h>
 #include<assert.h>
@@ -32,14 +33,13 @@
 #include "default_squashfs_image.h"
 #include "squashfs/squashfuse.h"
 
-const enum {
-	STDIO_OVERRIDE_NONE,
-	STDIO_OVERRIDE_USB_SERIAL,
-	STDIO_OVERRIDE_SOCKETS,
-} STDIO_OVERRIDE = STDIO_OVERRIDE_NONE;
+runconf_stdio_override_t _trn_runconf_stdio_override __attribute__((weak)) = _TRN_RUNCONF_STDIO_OVERRIDE_NONE;
+const char *_trn_runconf_stdio_override_sockets_host __attribute__((weak)) = "ip.address.or.hostname";
+const char *_trn_runconf_stdio_override_sockets_port __attribute__((weak)) = "2991";
 
-const char *STDIO_OVERRIDE_SOCKETS_HOST = "ip.address.or.hostname";
-const char *STDIO_OVERRIDE_SOCKETS_PORT = "2991";
+runconf_heap_mode_t _trn_runconf_heap_mode __attribute__((weak)) = _TRN_RUNCONF_HEAP_MODE_DEFAULT;
+void *_trn_runconf_heap_base __attribute__((weak)) = NULL;
+size_t _trn_runconf_heap_size __attribute__((weak)) = 0;
 
 int main(int argc, char **argv);
 
@@ -298,8 +298,6 @@ static trn_thread_t main_thread;
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 static int make_dbg_log_fd();
 
-extern void _cleanup_mapped_heap();
-
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
 	dyn_info_t dyn_info;
 	dyn_info.init_array = NULL;
@@ -351,6 +349,16 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		loader_config.main_thread = 0xde00;
 	}
 
+	if(_trn_runconf_heap_mode == _TRN_RUNCONF_HEAP_MODE_DEFAULT) {
+		if(loader_config.heap_overridden) {
+			_trn_runconf_heap_base = loader_config.heap_base;
+			_trn_runconf_heap_size = loader_config.heap_size;
+			_trn_runconf_heap_mode = _TRN_RUNCONF_HEAP_MODE_OVERRIDE;
+		} else {
+			_trn_runconf_heap_mode = _TRN_RUNCONF_HEAP_MODE_NORMAL;
+		}
+	}
+	
 	memset(get_tls(), 0, 0x200);
 	main_thread.handle = loader_config.main_thread;
 	main_thread.owns_stack = false;
@@ -369,12 +377,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			goto restore_tls;
 		}
 		
-		dbg_printf("init alloc_pages");
-		ret = ap_init();
-		if(ret != RESULT_OK) {
-			goto restore_tls;
-		}
-		
 		dbg_printf("init threads");
 		phal_tid tid = { .id = loader_config.main_thread, .stack = NULL };
 		_rthread_internal_init(tid);
@@ -389,7 +391,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			goto restore_tls;
 		}
 
-		if(STDIO_OVERRIDE == STDIO_OVERRIDE_NONE) {
+		if(_trn_runconf_stdio_override  == _TRN_RUNCONF_STDIO_OVERRIDE_NONE) {
 			if(loader_config.has_stdio_sockets) {
 				if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
 					sm_finalize();
@@ -412,7 +414,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 				}
 				fd_close(dbg_fd);
 			}
-		} else if(STDIO_OVERRIDE == STDIO_OVERRIDE_USB_SERIAL) {
+		} else if(_trn_runconf_stdio_override == _TRN_RUNCONF_STDIO_OVERRIDE_USB_SERIAL) {
 			dbg_printf("using USB stdio");
 			int usb_fd = usb_serial_open_fd();
 			dbg_printf("got usb_fd -> %d", usb_fd);
@@ -425,10 +427,11 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			dup2(usb_fd, STDIN_FILENO);
 			dbg_set_file(fd_file_get(usb_fd));
 			fd_close(usb_fd);
-		} else if(STDIO_OVERRIDE == STDIO_OVERRIDE_SOCKETS) {
+		} else if(_trn_runconf_stdio_override == _TRN_RUNCONF_STDIO_OVERRIDE_SOCKETS) {
 			int sock_fd;
 			int e;
-			dbg_connect(STDIO_OVERRIDE_SOCKETS_HOST, STDIO_OVERRIDE_SOCKETS_PORT, &sock_fd);
+			dbg_connect(_trn_runconf_stdio_override_sockets_host,
+			            _trn_runconf_stdio_override_sockets_port, &sock_fd);
 			dbg_printf("connected to overridden host -> %d", sock_fd);
 			e = dup2(sock_fd, STDOUT_FILENO);
 			e = dup2(sock_fd, STDERR_FILENO);
@@ -478,10 +481,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 				}
 			}
 		}
-
-		dbg_printf("cleaning up mapped heap");
-		_cleanup_mapped_heap();
-		dbg_printf("cleaned heap");
 
 		as_finalize();
 	}

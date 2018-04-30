@@ -14,6 +14,7 @@
 #include <reent.h>
 
 #include<libtransistor/loader_config.h>
+#include<libtransistor/runtime_config.h>
 #include<libtransistor/err.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/tls.h>
@@ -22,7 +23,6 @@
 #include<libtransistor/fd.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/util.h>
-#include<libtransistor/alloc_pages.h>
 #include<libtransistor/fs/fs.h>
 #include<libtransistor/util.h>
 #include<libtransistor/mutex.h>
@@ -142,106 +142,40 @@ finalize:
 	return res;
 }
 
-static void *map_addr = NULL;
-static ssize_t map_size = 0;
-static ssize_t map_limit = 0;
-static size_t reported_size = 0;
-
-typedef struct {
-	void *dst;
-	void *src;
-	size_t size;
-} map_entry_t;
-
-static map_entry_t map_entries[512];
-static int num_map_entries = 0;
+static void *heap_addr = NULL;
+static size_t heap_size = 0;
+static size_t heap_capacity = 0;
+static const size_t heap_incr_multiple = 0x200000;
 
 void *_sbrk_r(struct _reent *reent, ptrdiff_t incr) {
 	result_t r;
-	if(map_addr == NULL) {
-		if((r = svcGetInfo((uint64_t*) &map_addr, 14, 0xFFFF8001, 0)) != RESULT_OK) {
-			reent->_errno = ENOMEM;
-			return (void*) -1;
-		}
-		if((r = svcGetInfo(&map_limit, 15, 0xFFFF8001, 0)) != RESULT_OK) {
-			reent->_errno = ENOMEM;
-			return (void*) -1;
-		}
-		dbg_printf("map addr: %p, limit: 0x%zx\n", map_addr, map_limit);
 
-		memory_info_t minfo;
-		uint32_t pinfo;
+	if(heap_size + incr > heap_capacity) {
+		ptrdiff_t capacity_incr = heap_size + incr - heap_capacity;
 
-		// the loader may have already mapped pages at the start of this region
-		while(1) {
-			if((r = svcQueryMemory(&minfo, &pinfo, map_addr)) != RESULT_OK) {
-				reent->_errno = ENOMEM;
-				return (void*) -1;
-			}
-			if(minfo.memory_type != 0) {
-				map_limit-= (minfo.base_addr + minfo.size) - (map_addr);
-				if(map_limit < 0 || minfo.base_addr + minfo.size < map_addr) {
-					reent->_errno = ENOMEM;
-					return (void*) -1;
-				}
-				map_addr = minfo.base_addr + minfo.size;
+		if(_trn_runconf_heap_mode == _TRN_RUNCONF_HEAP_MODE_NORMAL) {
+			capacity_incr+= (heap_incr_multiple-1);
+			capacity_incr = capacity_incr - (capacity_incr % heap_incr_multiple);
+			if((r = svcSetHeapSize(&heap_addr, heap_capacity + capacity_incr)) == RESULT_OK) {
+				heap_capacity+= capacity_incr;
 			} else {
-				break;
+				return NULL;
 			}
-		}
-	}
-
-	if(reported_size + incr > map_size) {
-		ptrdiff_t corrected_incr = reported_size + incr - map_size;
-		ptrdiff_t rounded_incr = ((corrected_incr + 0xfff) >> 12) << 12;
-	
-		if(map_size + rounded_incr > map_limit) {
-			dbg_printf("hit mapping limit");
-			reent->_errno = ENOMEM;
-			return (void*) -1;
-		}
-
-		while(rounded_incr > 0) {
-			if(num_map_entries >= ARRAY_LENGTH(map_entries)) {
-				reent->_errno = ENOMEM;
-				return (void*) -1;
+		} else if(_trn_runconf_heap_mode == _TRN_RUNCONF_HEAP_MODE_OVERRIDE) {
+			if(heap_capacity + capacity_incr > _trn_runconf_heap_size) {
+				return NULL;
+			} else {
+				heap_addr = _trn_runconf_heap_base;
+				heap_capacity+= capacity_incr;
 			}
-
-			size_t src_size;
-			void *src = alloc_pages(0x1000, rounded_incr, &src_size);
-			r = svcMapMemory(map_addr + map_size, src, src_size);
-			if(r != RESULT_OK) {
-				dbg_printf("map memory failed: 0x%x", r);
-				reent->_errno = ENOMEM;
-				return (void*) -1;
-			}
-			map_entry_t entry = {
-				.dst = map_addr + map_size,
-				.src = src,
-				.size = src_size
-			};
-			map_entries[num_map_entries++] = entry;
-			map_size+= src_size;
-			rounded_incr-= src_size;
-		}
-	}
-
-	void *addr = map_addr + reported_size;
-	reported_size+= incr;
-	return addr;
-}
-
-void _cleanup_mapped_heap() {
-	result_t r;
-	
-	for(int i = 0; i < num_map_entries; i++) {
-		map_entry_t e = map_entries[i];
-		if((r = svcUnmapMemory(e.dst, e.src, e.size)) != RESULT_OK) {
-			dbg_printf("failed to unmap %p -> %p, 0x%x\n", e.src, e.dst, e.size);
 		} else {
-			free_pages(e.src);
+			return NULL;
 		}
 	}
+
+	void *addr = heap_addr + heap_size;
+	heap_size+= incr;
+	return addr;
 }
 
 int _stat_r(struct _reent *reent, const char *file, struct stat *st) {
