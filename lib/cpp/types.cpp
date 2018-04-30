@@ -108,6 +108,9 @@ KProcess::KProcess(process_h handle) : KWaitable(handle) {
 KEvent::KEvent(revent_h handle) : KWaitable(handle) {
 }
 
+KDebug::KDebug(debug_h handle) : KObject(handle) {
+}
+
 Result<std::nullopt_t> KProcess::ResetSignal() {
 	return ResultCode::ExpectOk(svcResetSignal(handle));
 }

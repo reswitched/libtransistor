@@ -90,4 +90,9 @@ class KEvent : public KWaitable {
 	Result<std::nullopt_t> WaitSignal(uint64_t timeout);
 };
 
+class KDebug : public KObject {
+ public:
+	KDebug(debug_h handle);
+};
+
 }
