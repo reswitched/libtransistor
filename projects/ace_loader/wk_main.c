@@ -30,7 +30,7 @@ typedef struct
 	uint32_t zero;
 	void *mutex;
 	uint64_t unk3;
-} thread_context_t;
+} wk_thread_context_t;
 
 uint64_t extra_cleanup(uint64_t arg0);
 
@@ -91,11 +91,11 @@ void locate_threads(void *base, uint64_t size, int simple)
 {
 	memory_info_t minfo;
 	uint32_t pinfo;
-	thread_context_t *tc;
+	wk_thread_context_t *tc;
 
 	while(size)
 	{
-		tc = (thread_context_t*)*(uint64_t*)(base + 0x1f8);
+		tc = (wk_thread_context_t*)*(uint64_t*)(base + 0x1f8);
 		if(!svcQueryMemory(&minfo, &pinfo, tc) && minfo.permission == 3)
 		{
 			if(!svcGetThreadPriority(&pinfo, tc->handle))
