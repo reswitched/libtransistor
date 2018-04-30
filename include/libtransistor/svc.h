@@ -25,6 +25,80 @@ typedef struct PACKED {
 	uint32_t padding;
 } memory_info_t;
 
+typedef struct {
+	uint32_t event_type;
+	uint32_t flags;
+	uint64_t thread_id;
+	union {
+		struct {
+			uint64_t title_id;
+			uint64_t process_id;
+			char process_name[12];
+			uint32_t mmu_flags;
+			uint64_t user_exception_context_addr; // [5.0.0+]
+		} attach_process;
+		struct {
+			uint64_t thread_id;
+			uint64_t tls_pointer;
+			uint64_t entrypoint;
+		} attach_thread;
+		struct {
+			uint64_t type;
+		} exit;
+		struct {
+			uint64_t exception_type;
+			uint64_t fault_register;
+			union {
+				struct {
+					uint32_t opcode;
+				} undefined_instruction;
+				struct {
+					uint32_t is_watchpoint;
+				} breakpoint;
+				struct {
+					uint32_t info0;
+					uint64_t info1;
+					uint64_t info2;
+				} user_break;
+				struct {
+					uint32_t svc_id;
+				} bad_svc_id;
+			};
+		} exception;
+		uint8_t padding[0x80]; // not sure how large this actually needs to be, but let's be safe.
+	};
+} debug_event_info_t;
+
+enum {
+	DEBUG_EVENT_EXIT_TYPE_PAUSED_THREAD = 0,
+	DEBUG_EVENT_EXIT_TYPE_RUNNING_THREAD = 1,
+	DEBUG_EVENT_EXIT_TYPE_TERMINATED_PROCESS = 2,
+};
+
+enum {
+	DEBUG_EVENT_ATTACH_PROCESS = 0,
+	DEBUG_EVENT_ATTACH_THREAD = 1,
+	DEBUG_EVENT_UNKNOWN = 2,
+	DEBUG_EVENT_EXIT = 3,
+	DEBUG_EVENT_EXCEPTION = 4,
+};
+
+enum {
+	DEBUG_EXCEPTION_UNDEFINED_INSTRUCTION = 0,
+	DEBUG_EXCEPTION_INSTRUCTION_ABORT = 1,
+	DEBUG_EXCEPTION_DATA_ABORT_MISC = 2,
+	DEBUG_EXCEPTION_PC_SP_ALIGNMENT_FAULT = 3,
+	DEBUG_EXCEPTION_DEBUGGER_ATTACHED = 4,
+	DEBUG_EXCEPTION_BREAKPOINT = 5,
+	DEBUG_EXCEPTION_USER_BREAK = 6,
+	DEBUG_EXCEPTION_DEBUGGER_BREAK = 7,
+	DEBUG_EXCEPTION_BAD_SVC_ID = 8,
+};
+
+typedef struct {
+	uint64_t regs[100];
+} thread_context_t;
+
 /**
  * @brief Sets the size of the heap
  *
@@ -286,8 +360,7 @@ result_t svcSendSyncRequestWithUserBuffer(void *buffer, uint64_t size, session_h
  * @param pid Output PID
  * @param thread_or_process_handle Thread or process to query PID of
  */
-result_t svcGetProcessId(uint32_t *pid, handle_t thread_or_process_handle);
-// getProcessId
+result_t svcGetProcessId(uint64_t *pid, handle_t thread_or_process_handle);
 
 /**
  * @brief Get a thread ID
@@ -296,7 +369,8 @@ result_t svcGetProcessId(uint32_t *pid, handle_t thread_or_process_handle);
  * @param handle_in Description
  */
 result_t svcGetThreadId(thread_h *handle_out, thread_h handle_in);
-// break
+
+result_t svcBreak(uint64_t reason, uint64_t unknown, uint64_t info);
 
 /**
  * @brief Output a debug string
@@ -487,14 +561,21 @@ result_t svcUnmapDeviceAddressSpace(dev_addr_space_h space, process_h process, u
  * @param out Description
  * @param process_id Description
  */
-result_t svcDebugActiveprocess(debug_h *out, uint64_t process_id);
+result_t svcDebugActiveProcess(debug_h *out, uint64_t process_id);
+
 // breakDebugProcess
 // terminateDebugProcess
-// getDebugEvent
+
+result_t svcGetDebugEvent(debug_event_info_t *info, debug_h debug);
+
 // continueDebugEvent
-// getProcessList
-// getThreadList
-// getDebugThreadContext
+
+result_t svcGetProcessList(uint32_t *num_out, uint64_t *pids_out, uint32_t max_out);
+
+result_t svcGetThreadList(uint32_t *num_out, uint64_t *tids_out, uint32_t max_out, debug_h debug);
+
+result_t svcGetDebugThreadContext(thread_context_t *context, debug_h handle, uint64_t thread_id, uint32_t thread_context_flags);
+
 // setDebugThreadContext
 
 /**
@@ -526,6 +607,7 @@ result_t svcReadDebugProcessMemory(void *buffer, debug_h debug, uint64_t addr, u
  * @param size Description
  */
 result_t svcWriteDebugProcessMemory(debug_h debug, void *buffer, uint64_t addr, uint64_t size);
+
 // setHardwareBreakPoint
 // getDebugThreadParam
 // 0x6D-0x6F?
@@ -541,10 +623,19 @@ result_t svcWriteDebugProcessMemory(debug_h debug, void *buffer, uint64_t addr, 
  * @param size Size of region to reprotect
  * @param prot Protections
  */
-result_t svcSetProcessMemoryPermission(process_h process, void *addr, uint64_t size, uint32_t prot);
+result_t svcSetProcessMemoryPermission(process_h process, uint64_t addr, uint64_t size, uint32_t prot);
 
-// mapProcessMemory
-// unmapProcessMemory
+/**
+ * @brief Map memory in the given process
+ */
+
+result_t svcMapProcessMemory(void *src, process_h process, uint64_t dst, uint64_t size);
+
+/**
+ * @brief Unmap memory mapped via \ref svcMapProcessMemory
+ */
+result_t svcUnmapProcessMemory(void *src, process_h process, uint64_t dst, uint64_t size);
+
 // queryProcessmemory
 
 /**
@@ -557,12 +648,24 @@ result_t svcMapProcessCodeMemory(process_h process, void *dst, void *src, uint64
  */
 result_t svcUnmapProcessCodeMemory(process_h process, void *dst, void *src, uint64_t size);
 
-// createProcess
-// startProcess
-// terminateProcess
-// getProcessInfo
-// createResourceLimit
-// setResourceLimitLimitValue
+/**
+ * @brief Creates a new process
+ */
+result_t svcCreateProcess(process_h *process, void *procinfo, void *caps, uint32_t cap_num);
+
+/**
+ * @brief Starts the given process
+ */
+result_t svcStartProcess(process_h process, uint32_t main_thread_prio, uint32_t default_cpuid, uint32_t main_thread_stack_size);
+
+result_t svcTerminateProcess(process_h process);
+
+result_t svcGetProcessInfo(uint64_t *info, process_h process, uint32_t type);
+
+result_t svcCreateResourceLimit(resource_limit_h *limit);
+
+result_t svcSetResourceLimitLimitValue(resource_limit_h limit, uint32_t resource, uint64_t value);
+
 // callSecureMonitor
 
 enum {

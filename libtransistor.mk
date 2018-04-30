@@ -34,7 +34,7 @@ LD_FLAGS := -Bsymbolic --shared --no-gc-sections --eh-frame-hdr --no-undefined -
 LD_SHARED_LIBRARY_FLAGS := -Bsymbolic --shared --no-gc-sections --eh-frame-hdr -T $(LIBTRANSISTOR_HOME)/link.T -L $(LIBTRANSISTOR_HOME)/lib/
 
 CC_FLAGS := -MD -MP -g -fPIC -fexceptions -fuse-ld=lld -fstack-protector-strong -O3 -mtune=cortex-a53 -target aarch64-none-linux-gnu -nostdlib -nostdlibinc $(SYS_INCLUDES) -D__SWITCH__=1 -Wno-unused-command-line-argument
-CXX_FLAGS := $(CC_FLAGS) -std=c++11 -stdlib=libc++ -nodefaultlibs -nostdinc++ $(CPP_INCLUDES)
+CXX_FLAGS := $(CC_FLAGS) -std=c++17 -stdlib=libc++ -nodefaultlibs -nostdinc++ $(CPP_INCLUDES)
 AR_FLAGS := rcs
 AS_FLAGS := -arch=aarch64 -triple aarch64-none-switch
 

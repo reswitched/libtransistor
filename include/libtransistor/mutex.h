@@ -87,6 +87,12 @@ typedef struct CAPABILITY("recursive mutex") {
 
 void trn_mutex_create(trn_mutex_t *mutex);
 void trn_mutex_lock(trn_mutex_t *mutex) ACQUIRE(mutex);
+
+/**
+ * @brief Locks the mutex. If it is currently being held by a thread, that thread will be interrupted via \ref svcCancelSynchronization.
+ */
+void trn_mutex_interrupt_lock(trn_mutex_t *mutex) ACQUIRE(mutex);
+
 bool trn_mutex_try_lock(trn_mutex_t *mutex) TRY_ACQUIRE(true, mutex); // true on success
 void trn_mutex_unlock(trn_mutex_t *mutex) RELEASE(mutex);
 void trn_recursive_mutex_create(trn_recursive_mutex_t *recursive);

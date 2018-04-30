@@ -1,11 +1,11 @@
 # LIBTRANSISTOR
 
-libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/fs.o ipc/fs/ifilesystem.o ipc/fs/ifile.o ipc/fs/idirectory.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o lz4.o squashfs/cache.o squashfs/decompress.o squashfs/dir.o squashfs/file.o squashfs/fs.o squashfs/hash.o squashfs/nonstd-pread.o squashfs/nonstd-stat.o squashfs/stack.o squashfs/swap.o squashfs/table.o squashfs/traverse.o squashfs/util.o squashfs/xattr.o fs/blobfd.o fs/squashfs.o fs/mountfs.o fs/fspfs.o fs/fs.o ipc/audio.o ipc/bpc.o ipcserver.o strtold.o ipc/pm.o alloc_pages.o address_space.o loader_config.o ipc/usb.o ipc/usb/ds/interface.o ipc/usb/ds/endpoint.o usb_serial.o mutex.o tls_support.o thread.o ld/ld.o ld/elf.o ld/relocate.o ld/resolve.o ld/discover.o ld/loader/nro_via_ldr_ro.o sha256.o
+libtransistor_OBJECT_NAMES := crt0_common.o svc.o ipc.o tls.o util.o ipc/sm.o ipc/bsd.o ipc/fs.o ipc/fs/ifilesystem.o ipc/fs/ifile.o ipc/fs/idirectory.o ipc/nv.o ipc/hid.o ipc/ro.o ipc/nifm.o hid.o ipc/vi.o display/binder.o display/parcel.o display/surface.o gpu/gpu.o ipc/am.o display/graphic_buffer_queue.o display/display.o gfx/blit.o ipc/time.o syscalls/syscalls.o syscalls/fd.o syscalls/sched.o syscalls/socket.o lz4.o squashfs/cache.o squashfs/decompress.o squashfs/dir.o squashfs/file.o squashfs/fs.o squashfs/hash.o squashfs/nonstd-pread.o squashfs/nonstd-stat.o squashfs/stack.o squashfs/swap.o squashfs/table.o squashfs/traverse.o squashfs/util.o squashfs/xattr.o fs/blobfd.o fs/squashfs.o fs/mountfs.o fs/fspfs.o fs/fs.o ipc/audio.o ipc/bpc.o ipcserver.o strtold.o ipc/pm.o alloc_pages.o address_space.o loader_config.o ipc/usb.o ipc/usb/ds/interface.o ipc/usb/ds/endpoint.o usb_serial.o mutex.o tls_support.o thread.o ld/ld.o ld/elf.o ld/relocate.o ld/resolve.o ld/discover.o ld/loader/nro_via_ldr_ro.o sha256.o ipc/fatal.o cpp/types.o cpp/ipc/hid.o cpp/svc.o cpp/ipcserver.o cpp/ipc/sm.o ipc/twili.o waiter.o cpp/waiter.o cpp/ipc/usb_ds.o
 libtransistor_OBJECT_FILES := $(addprefix $(BUILD_DIR)/transistor/,$(libtransistor_OBJECT_NAMES))
 
 libtransistor_WARNINGS := -Wall -Wextra -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-command-line-argument -Werror-thread-safety
 
-libtransistor_BUILD_DEPS := $(DIST_NEWLIB) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREAD) $(DIST_LIBLZMA) $(DIST_TRANSISTOR_HEADERS) $(DIST_TRANSISTOR_SUPPORT)
+libtransistor_BUILD_DEPS := $(DIST_NEWLIB) $(DIST_PTHREAD_HEADERS) $(DIST_PTHREAD) $(DIST_LIBLZMA) $(DIST_TRANSISTOR_HEADERS) $(DIST_TRANSISTOR_SUPPORT) $(DIST_LIBCXX) $(DIST_LIBUNWIND)
 
 # ARCHIVE RULES
 
@@ -43,6 +43,10 @@ $(BUILD_DIR)/transistor/ld/%.o $(BUILD_DIR)/transistor/ld/%.d: $(SOURCE_ROOT)/li
 $(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.c $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)
 	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/transistor/$*.o $<
+
+$(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.cpp $(libtransistor_BUILD_DEPS)
+	mkdir -p $(@D)
+	$(CXX) $(CXX_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/transistor/$*.o $<
 
 #include $(libtransistor_OBJECT_FILES:.o=.d)
 

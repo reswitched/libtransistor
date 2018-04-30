@@ -12,7 +12,9 @@ extern "C" {
 
 #include<libtransistor/types.h>
 #include<libtransistor/ipc.h>
+#include<libtransistor/waiter.h>
 
+#define MAX_SERVICE_PORTS 63
 #define MAX_SERVICE_SESSIONS 63 ///< Maximum number of sessions that can be connected to an IPC server
 #define MAX_DOMAIN_OBJECTS 512 ///< Maximum number of objects per domain
 
@@ -81,28 +83,39 @@ typedef struct ipc_server_session_t {
 	ipc_server_session_state_t state; ///< Session's state
 	struct ipc_server_t *owning_server; ///< Server that owns this session
 	uint8_t message_buffer[0x100]; ///< IPC buffer
-	uint64_t last_touch_timestamp; ///< The last time this session was serviced
+	wait_record_t *wait_record;
 } ipc_server_session_t;
 
 /*
   you are expected to initialize `userdata`, `dispatch`, and `close`.
   libtransistor will initialize all other fields.
  */
-typedef result_t (*ipc_server_object_factory_t)(ipc_server_object_t **obj);
+typedef result_t (*ipc_server_object_factory_t)(ipc_server_object_t **obj, void *userdata);
+
+typedef struct ipc_server_port_t {
+	port_h port;
+	ipc_server_object_factory_t factory;
+	void *userdata;
+	wait_record_t *wait_record;
+	struct ipc_server_t *server;
+} ipc_server_port_t;
 
 typedef struct ipc_server_t {
-	port_h port;
+	ipc_server_port_t ports[MAX_SERVICE_PORTS];
+	uint32_t num_ports;
+	
 	ipc_server_session_t sessions[MAX_SERVICE_SESSIONS];
-	ipc_server_object_factory_t object_factory;
+
+	waiter_t *waiter;
 } ipc_server_t;
 
-result_t ipc_server_create(ipc_server_t *srv, port_h port, ipc_server_object_factory_t object_factory);
+result_t ipc_server_create(ipc_server_t *srv, waiter_t *waiter);
+result_t ipc_server_add_port(ipc_server_t *srv, port_h port, ipc_server_object_factory_t object_factory, void *userdata);
 result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, session_h client_side, ipc_server_object_t *object);
-result_t ipc_server_accept_session(ipc_server_t *srv);
-result_t ipc_server_process(ipc_server_t *srv, uint64_t timeout);
+result_t ipc_server_accept_session(ipc_server_t *srv, ipc_server_port_t *port);
 result_t ipc_server_destroy(ipc_server_t *srv);
 
-result_t ipc_server_object_register(ipc_server_object_t *owner, ipc_server_object_t *new);
+result_t ipc_server_object_register(ipc_server_object_t *owner, ipc_server_object_t *new_object);
 result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs);
 result_t ipc_server_object_close(ipc_server_object_t *obj);
 
@@ -110,7 +123,7 @@ result_t ipc_server_domain_add_object(ipc_server_domain_t *domain, ipc_server_ob
 result_t ipc_server_domain_get_object(ipc_server_domain_t *domain, uint32_t object_id, ipc_server_object_t **object);
 result_t ipc_server_domain_destroy(ipc_server_domain_t *domain);
 
-result_t ipc_server_session_receive(ipc_server_session_t *sess, uint64_t timeout);
+result_t ipc_server_session_receive(ipc_server_session_t *sess);
 result_t ipc_server_session_close(ipc_server_session_t *sess);
 
 #ifdef __cplusplus

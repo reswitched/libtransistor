@@ -70,7 +70,7 @@ typedef struct {
 	compositor_timing_t compositor_timing;
 } frame_event_history_delta_t;
 
-enum {
+typedef enum {
 	UNKNOWN = 0x0
 } dataspace_t;
 

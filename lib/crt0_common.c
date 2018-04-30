@@ -6,6 +6,8 @@
 #include<libtransistor/ipc/sm.h>
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/ipc/fs.h>
+#include<libtransistor/ipc/fatal.h>
+#include<libtransistor/ipc/twili.h>
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
@@ -156,6 +158,7 @@ static uint8_t tls_backup[0x200];
 static trn_thread_t main_thread;
 
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
+static void setup_twili_pipe(const char *name, result_t (*open_func)(twili_pipe_t*), int target_fd);
 static int make_dbg_log_fd();
 
 extern void _cleanup_mapped_heap();
@@ -183,19 +186,21 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			// write log_buffer and log_size
 			*((uint64_t*) (((uint8_t*) config) + 0x18)) = log_buffer;
 			*((uint64_t*) (((uint8_t*) config) + 0x20)) = &log_length;
-			
-			return LIBTRANSISTOR_ERR_LEGACY_CONTEXT;
+
+			ret = LIBTRANSISTOR_ERR_LEGACY_CONTEXT;
+			goto restore_tls;
 		}
 		
 		dbg_printf("found loader config");
 		
 		ret = lconfig_parse(config);
 		if(ret != RESULT_OK) {
-			return ret;
+			goto restore_tls;
 		}
 		
 		if(loader_config.main_thread == INVALID_HANDLE) {
-			return HOMEBREW_ABI_KEY_NOT_PRESENT(LCONFIG_KEY_MAIN_THREAD_HANDLE);
+			ret = HOMEBREW_ABI_KEY_NOT_PRESENT(LCONFIG_KEY_MAIN_THREAD_HANDLE);
+			goto restore_tls;
 		}
 	} else {
 		dbg_printf("no loader config");
@@ -219,13 +224,13 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	if(exit_mode == NOT_EXITING) {
 		ret = as_init();
 		if(ret != RESULT_OK) {
-			return ret;
+			goto restore_tls;
 		}
 		
 		dbg_printf("init alloc_pages");
 		ret = ap_init();
 		if(ret != RESULT_OK) {
-			return ret;
+			goto restore_tls;
 		}
 		
 		dbg_printf("init threads");
@@ -255,15 +260,31 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 				setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
 				dbg_set_file(fd_file_get(loader_config.socket_stderr));
 			} else {
-				dbg_printf("using bsslog stdout");
-				int dbg_fd = make_dbg_log_fd();
-				if(dbg_fd < 0) {
-					dbg_printf("error making debug log fd");
-				} else {
-					dup2(dbg_fd, STDOUT_FILENO);
-					dup2(dbg_fd, STDERR_FILENO);
+				bool twili_is_registered = false;
+				if((ret = sm_is_registered("twili", &twili_is_registered)) != RESULT_OK) {
+					sm_finalize();
+					goto restore_tls;
 				}
-				fd_close(dbg_fd);
+				if(twili_is_registered) {
+					if((ret = twili_init()) != RESULT_OK) {
+						sm_finalize();
+						goto restore_tls;
+					}
+					setup_twili_pipe("stdout", twili_open_stdout, STDOUT_FILENO);
+					setup_twili_pipe("stdin", twili_open_stdin, STDIN_FILENO);
+					setup_twili_pipe("stderr", twili_open_stderr, STDERR_FILENO);
+					dbg_set_file(fd_file_get(STDERR_FILENO));
+				} else {
+					dbg_printf("using bsslog stdout");
+					int dbg_fd = make_dbg_log_fd();
+					if(dbg_fd < 0) {
+						dbg_printf("error making debug log fd");
+					} else {
+						dup2(dbg_fd, STDOUT_FILENO);
+						dup2(dbg_fd, STDERR_FILENO);
+					}
+					fd_close(dbg_fd);
+				}
 			}
 		} else if(STDIO_OVERRIDE == STDIO_OVERRIDE_USB_SERIAL) {
 			dbg_printf("using USB stdio");
@@ -354,7 +375,14 @@ fail_bsd:
 
 restore_tls:
 	memcpy(get_tls(), tls_backup, 0x200);
-	return ret;
+	if(IS_NRO || ret == 0) {
+		return ret;
+	} else {
+		fatal_init();
+		fatal_transition_to_fatal_error(ret, 0);
+		while(1) {}
+		return ret;
+	}
 }
 
 void _exit(int ret) {
@@ -378,9 +406,21 @@ static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 	}
 }
 
+static void setup_twili_pipe(const char *name, result_t (*open_func)(twili_pipe_t*), int target_fd) {
+	twili_pipe_t pipe;
+	if(open_func(&pipe) != RESULT_OK) {
+		dbg_printf("Error opening pipe '%s'\n");
+		return;
+	}
+	dup2(twili_pipe_fd(&pipe), target_fd);
+}
+
 static int make_dbg_log_fd() {
 	static trn_file_ops_t fops = {
-		.write = dbg_log_write
+		.seek = NULL,
+		.read = NULL,
+		.write = dbg_log_write,
+		.release = NULL,
 	};
 	return fd_create_file(&fops, NULL);
 }

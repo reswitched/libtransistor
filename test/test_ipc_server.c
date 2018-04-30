@@ -3,6 +3,7 @@
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
+#include<libtransistor/thread.h>
 #include<libtransistor/loader_config.h>
 
 #include<stdio.h>
@@ -186,7 +187,7 @@ static void object_close(ipc_server_object_t *obj) {
 	free(obj);
 }
 
-static result_t object_factory(ipc_server_object_t **objptr) {
+static result_t object_factory(ipc_server_object_t **objptr, void *userdata) {
 	ipc_server_object_t *obj = malloc(sizeof(*obj));
 	if(obj == NULL) {
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
@@ -205,8 +206,15 @@ void server_thread() {
 	result_t r;
 
 	dbg_printf("thread started\n");
+
+	waiter_t *waiter = waiter_create();
+	if(waiter == NULL) {
+		r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+		goto fail_port;
+	}
 	
-	ASSERT_OK(fail_port, ipc_server_create(&server, port, object_factory));
+	ASSERT_OK(fail_port, ipc_server_create(&server, waiter));
+	ASSERT_OK(fail_server, ipc_server_add_port(&server, port, object_factory, NULL));
 
 	dbg_printf("server created\n");
 
@@ -214,7 +222,7 @@ void server_thread() {
 	
 	while(!destroy_server_flag) {
 		dbg_printf("process\n");
-		ASSERT_OK(fail_server, ipc_server_process(&server, 3000000000));
+		ASSERT_OK(fail_server, waiter_wait(waiter, 3000000000));
 	}
 
 fail_server:
@@ -245,22 +253,11 @@ int main(int argc, char *argv[]) {
 
 	printf("registered service\n");
 
-	void *stack = malloc(STACK_SIZE);
-	if(stack == NULL) {
-		printf("failed to allocate stack for thread\n");
-		sm_finalize();
-		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-	}
 
-	printf("stack: %p\n", stack);
+	trn_thread_t thread;
+	ASSERT_OK(fail_port, trn_thread_create(&thread, server_thread, NULL, 0x3f, -2, STACK_SIZE, NULL));
+	ASSERT_OK(fail_thread, trn_thread_start(&thread));
 	
-	thread_h thread;
-	ASSERT_OK(fail_port, svcCreateThread(&thread, server_thread, 0, stack + STACK_SIZE, 0x3f, -2));
-	
-	printf("created thread: 0x%x\n", thread);
-	
-	ASSERT_OK(fail_thread, svcStartThread(thread));
-
 	ASSERT_OK(fail_sm, sm_get_service(&testsrv_object, "testsrv"));
 	ASSERT_OK(fail_server, run_simple_rawdata_test());
 	ASSERT_OK(fail_server, run_object_test());
@@ -280,12 +277,11 @@ fail_server:
 	}
 
 	printf("waiting for server thread to terminate\n");
-	uint32_t handle_index;
-	ASSERT_OK(fail_client, svcWaitSynchronization(&handle_index, &thread, 1, 1000000000));
+	trn_thread_join(&thread, -1);
 	goto fail_client;
 
 fail_thread:
-	svcCloseHandle(thread);
+	trn_thread_destroy(&thread);
 	// server object takes ownership of the port
 fail_port:
 	sm_unregister_service("testsrv");

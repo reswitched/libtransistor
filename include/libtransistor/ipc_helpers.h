@@ -14,7 +14,7 @@ extern "C" {
 
 #include<string.h>
 
-inline ipc_buffer_t ipc_make_buffer(void *addr, size_t size, uint32_t type) {
+static inline ipc_buffer_t ipc_make_buffer(void *addr, size_t size, uint32_t type) {
 	ipc_buffer_t buf;
 	buf.addr = addr;
 	buf.size = size;
@@ -22,15 +22,15 @@ inline ipc_buffer_t ipc_make_buffer(void *addr, size_t size, uint32_t type) {
 	return buf;
 }
 
-inline ipc_buffer_t ipc_buffer_from_string(const char *string, uint32_t type) {
+static inline ipc_buffer_t ipc_buffer_from_string(const char *string, uint32_t type) {
 	ipc_buffer_t buf;
-	buf.addr = string;
+	buf.addr = (void*) string;
 	buf.size = strlen(string) + 1;
 	buf.type = type;
 	return buf;
 }
 
-inline ipc_request_t ipc_make_request(uint32_t id) {
+static inline ipc_request_t ipc_make_request(uint32_t id) {
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = id;
 	return rq;

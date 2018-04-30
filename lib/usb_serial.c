@@ -5,6 +5,7 @@
 #include<libtransistor/internal_util.h>
 #include<libtransistor/usb_serial.h>
 #include<libtransistor/alloc_pages.h>
+#include<libtransistor/mutex.h>
 
 #include<string.h>
 #include<stdio.h>
@@ -101,9 +102,10 @@ static usb_ds_report_entry_t *find_entry(usb_ds_report_t *report, uint32_t urb_i
 }
 
 static usb_ds_interface_t interface;
-static usb_ds_endpoint_t endpoint_in;
-static usb_ds_endpoint_t endpoint_out;
-static void *buffer;
+static trn_mutex_t usb_serial_mutex = TRN_MUTEX_STATIC_INITIALIZER;
+static usb_ds_endpoint_t endpoint_in GUARDED_BY(usb_serial_mutex);
+static usb_ds_endpoint_t endpoint_out GUARDED_BY(usb_serial_mutex);
+static void *buffer GUARDED_BY(usb_serial_mutex);
 static revent_h completion_in;
 static revent_h completion_out;
 
@@ -115,16 +117,13 @@ result_t usb_serial_init() {
 	}
 	
 	result_t r;
+	trn_mutex_lock(&usb_serial_mutex);
 	
-	LIB_ASSERT_OK(fail, usb_init());
+	LIB_ASSERT_OK(fail_mutex, usb_ds_init(2));
 
 	revent_h usb_state_event = 0xFFFFFFFF;
 	LIB_ASSERT_OK(fail_usb, usb_ds_get_state_change_event(&usb_state_event));
 
-	usb_serial_debug("binding device...\n");
-	LIB_ASSERT_OK(fail_usb,              usb_ds_bind_device(2));
-	usb_serial_debug("bound\n");
-	LIB_ASSERT_OK(fail_usb,              usb_ds_bind_client_process(0xffff8001));
 	LIB_ASSERT_OK(fail_usb,              usb_ds_set_vid_pid_bcd(&descriptor_data));
 	LIB_ASSERT_OK(fail_usb,              usb_ds_get_interface(&interface_descriptor, "usb", &interface));
 	LIB_ASSERT_OK(fail_usb_interface,    usb_ds_interface_get_endpoint(&interface, &endpoint_in_descriptor,  &endpoint_in));
@@ -144,6 +143,7 @@ result_t usb_serial_init() {
 	wait_for_state(usb_state_event, 5);
 
 	svcCloseHandle(usb_state_event);
+	trn_mutex_unlock(&usb_serial_mutex);
 	return RESULT_OK;
 	
 fail_completion_in:
@@ -162,13 +162,15 @@ fail_usb:
 	if(usb_state_event != 0xFFFFFFFF) {
 		svcCloseHandle(usb_state_event);
 	}
-	usb_finalize();
+	usb_ds_finalize();
+fail_mutex:
+	trn_mutex_unlock(&usb_serial_mutex);
 fail:
 	usb_serial_initializations--;
-	return r != RESULT_OK;
+	return r;
 }
 
-static void usb_serial_force_finalize() {
+static void usb_serial_force_finalize() NO_THREAD_SAFETY_ANALYSIS {
 	svcCloseHandle(completion_out);
 	svcCloseHandle(completion_in);
 	svcSetMemoryAttribute(buffer, USB_SERIAL_TRANSFER_BUFFER_SIZE, 0x0, 0x0);
@@ -176,7 +178,7 @@ static void usb_serial_force_finalize() {
 	usb_ds_close_endpoint(&endpoint_out);
 	usb_ds_close_endpoint(&endpoint_in);
 	usb_ds_close_interface(&interface);
-	usb_finalize();
+	usb_ds_finalize();
 }
 
 void usb_serial_finalize() {
@@ -194,6 +196,8 @@ static __attribute__((destructor)) void usb_serial_destruct() {
 result_t usb_serial_write(const void *data, size_t size, size_t *bytes_written) {
 	INITIALIZATION_GUARD(usb_serial);
 
+	trn_mutex_lock(&usb_serial_mutex);
+	
 	result_t r;
 	uint32_t urb_id;
 	uint32_t handle_idx;
@@ -218,12 +222,15 @@ result_t usb_serial_write(const void *data, size_t size, size_t *bytes_written) 
 	}
 	*bytes_written = entry->transferred_size;
 fail:
+	trn_mutex_unlock(&usb_serial_mutex);
 	return r;
 }
 
 result_t usb_serial_read(void *data, size_t size, size_t *bytes_read) {
 	INITIALIZATION_GUARD(usb_serial);
 
+	trn_mutex_lock(&usb_serial_mutex);
+	
 	result_t r;
 	uint32_t urb_id;
 	uint32_t handle_idx;
@@ -248,6 +255,7 @@ result_t usb_serial_read(void *data, size_t size, size_t *bytes_read) {
 	memcpy(data, buffer, entry->transferred_size);
 	*bytes_read = entry->transferred_size;
 fail:
+	trn_mutex_unlock(&usb_serial_mutex);
 	return r;
 }
 

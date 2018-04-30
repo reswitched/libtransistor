@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import struct, sys
+import struct, sys, hashlib
 from elftools.elf.elffile import ELFFile
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import *
@@ -91,7 +91,7 @@ def main(input, output, format='nro'):
 				ccode, crodata, cdata = [lz4.block.compress(x, store_size=False) for x in (code, rodata, data)]
 
 				fp.write('NSO0'.encode())
-				fp.write('\0'.encode() * 0xC)
+				fp.write(struct.pack('<III', 0, 0, 0x3f))
 
 				off = 0x100
 				dot = 0
@@ -120,7 +120,13 @@ def main(input, output, format='nro'):
 				
 				fp.write(struct.pack('<IIII', len(ccode), len(crodata), len(cdata), 0))
 				
-				fp.write('\0'.encode() * 0x90)
+				fp.write('\0'.encode() * 0x30)
+
+				for x in (code, rodata, data):
+					 m = hashlib.sha256()
+					 m.update(x)
+					 assert m.digest_size == 0x20
+					 fp.write(m.digest())
 
 				fp.write(ccode)
 				fp.write(crodata)

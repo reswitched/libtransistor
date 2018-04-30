@@ -18,7 +18,7 @@ _mod_header:
 	.word 0 // runtime-generated module object offset
 .global IS_NRO
 IS_NRO: 
-        .word 0
+	.word 0
 
 .section .text, "x"
 .global start
@@ -34,16 +34,18 @@ bssloop:
 	add x5, x5, 8
 	b bssloop
 
-run:	
-        adrp x2, _start // aslr base
-
-        // set LR to svcExitProcess if it's null
-        adrp x3, svcExitProcess
-        cmp x30, xzr
-        csel x30, x3, x30, eq
-
-        sub sp, sp, 0x10
-        stp x29, x30, [sp]
-        bl _libtransistor_start
-        ldp x29, x30, [sp], 0x10
-        ret
+run:
+	adrp x2, _start // aslr base
+	
+	// set LR to svcExitProcess if it's null
+	adrp x3, svcExitProcess
+	add x3, x3, #:lo12:svcExitProcess
+	
+	cmp x30, xzr
+	csel x30, x3, x30, eq
+	
+	sub sp, sp, 0x10
+	stp x29, x30, [sp]
+	bl _libtransistor_start
+	ldp x29, x30, [sp], 0x10
+	ret

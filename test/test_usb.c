@@ -44,17 +44,13 @@ int main() {
 	usb_ds_state_t usb_state;
 	
 	printf("initializing usb\n");
-	ASSERT_OK(fail, usb_init());
+	ASSERT_OK(fail, usb_ds_init(2));
 
 	revent_h usb_state_event = 0xFFFFFFFF;
 	printf("getting state change event\n");
 	ASSERT_OK(fail_usb, usb_ds_get_state_change_event(&usb_state_event));
 	printf("  -> 0x%x\n", usb_state_event);
 	
-	printf("binding device\n");
-	ASSERT_OK(fail_usb, usb_ds_bind_device(2));
-	printf("binding client process\n");
-	ASSERT_OK(fail_usb, usb_ds_bind_client_process(0xffff8001));
 	printf("setting vid, pid, bcd...\n");
 	ASSERT_OK(fail_usb, usb_ds_set_vid_pid_bcd(&descriptor_data));
 
@@ -87,7 +83,7 @@ fail_usb:
 		svcCloseHandle(usb_state_event);
 	}
 	printf("finalizing usb..\n");
-	usb_finalize();
+	usb_ds_finalize();
 fail:
 	return r != RESULT_OK;
 }
