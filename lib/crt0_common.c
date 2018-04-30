@@ -7,6 +7,7 @@
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/ipc/fs.h>
 #include<libtransistor/ipc/fatal.h>
+#include<libtransistor/ipc/twili.h>
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
@@ -296,6 +297,7 @@ static uint8_t tls_backup[0x200];
 static trn_thread_t main_thread;
 
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
+static void setup_twili_pipe(const char *name, result_t (*open_func)(twili_pipe_t*), int target_fd);
 static int make_dbg_log_fd();
 
 extern void _cleanup_mapped_heap();
@@ -402,15 +404,31 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 				setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
 				dbg_set_file(fd_file_get(loader_config.socket_stderr));
 			} else {
-				dbg_printf("using bsslog stdout");
-				int dbg_fd = make_dbg_log_fd();
-				if(dbg_fd < 0) {
-					dbg_printf("error making debug log fd");
-				} else {
-					dup2(dbg_fd, STDOUT_FILENO);
-					dup2(dbg_fd, STDERR_FILENO);
+				bool twili_is_registered = false;
+				if((ret = sm_is_registered("twili", &twili_is_registered)) != RESULT_OK) {
+					sm_finalize();
+					goto restore_tls;
 				}
-				fd_close(dbg_fd);
+				if(twili_is_registered) {
+					if((ret = twili_init()) != RESULT_OK) {
+						sm_finalize();
+						goto restore_tls;
+					}
+					setup_twili_pipe("stdout", twili_open_stdout, STDOUT_FILENO);
+					setup_twili_pipe("stdin", twili_open_stdin, STDIN_FILENO);
+					setup_twili_pipe("stderr", twili_open_stderr, STDERR_FILENO);
+					dbg_set_file(fd_file_get(STDERR_FILENO));
+				} else {
+					dbg_printf("using bsslog stdout");
+					int dbg_fd = make_dbg_log_fd();
+					if(dbg_fd < 0) {
+						dbg_printf("error making debug log fd");
+					} else {
+						dup2(dbg_fd, STDOUT_FILENO);
+						dup2(dbg_fd, STDERR_FILENO);
+					}
+					fd_close(dbg_fd);
+				}
 			}
 		} else if(STDIO_OVERRIDE == STDIO_OVERRIDE_USB_SERIAL) {
 			dbg_printf("using USB stdio");
@@ -527,6 +545,15 @@ static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 			dbg_printf("Error setting up %s: %d", name, errno);
 		}
 	}
+}
+
+static void setup_twili_pipe(const char *name, result_t (*open_func)(twili_pipe_t*), int target_fd) {
+	twili_pipe_t pipe;
+	if(open_func(&pipe) != RESULT_OK) {
+		dbg_printf("Error opening pipe '%s'\n");
+		return;
+	}
+	dup2(twili_pipe_fd(&pipe), target_fd);
 }
 
 static int make_dbg_log_fd() {

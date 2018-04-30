@@ -51,6 +51,14 @@ result_t sm_register_service(port_h *port, const char *name, uint32_t max_sessio
 result_t sm_unregister_service(const char *name);
 
 /**
+ * @brief Test if a service is registered
+ *
+ * @param name Name of service to test registration
+ * @param is_registered Output
+ */
+result_t sm_is_registered(const char *name, bool *is_registered);
+
+/**
 * @brief Finalize Service Manager
 */
 void sm_finalize();
