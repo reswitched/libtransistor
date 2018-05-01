@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include<libtransistor/types.h>
+
 typedef enum {
 	_TRN_RUNCONF_STDIO_OVERRIDE_NONE, ///< Determine stdout via HBABI
 	_TRN_RUNCONF_STDIO_OVERRIDE_USB_SERIAL, ///< Force stdout over usb_serial
