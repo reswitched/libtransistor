@@ -8,18 +8,19 @@ namespace SVC {
 
 class ProcessMemoryMapping : public MemoryMapping {
  public:
-	ProcessMemoryMapping(void *local, std::shared_ptr<KProcess> process, uint64_t remote, size_t size) :
+	ProcessMemoryMapping(uint8_t *local, std::shared_ptr<KProcess> process, uint64_t remote, size_t size) :
 		local(local), process(process), remote(remote), size(size) {
 	}
 
 	virtual ~ProcessMemoryMapping() {
 		ResultCode::AssertOk(svcUnmapProcessMemory(local, process->handle, remote, size));
+		as_release(local, size);
 	}
 
-	virtual void *Base() { return local; }
+	virtual uint8_t *Base() { return local; }
 	virtual size_t Size() { return size; }
 	
-	void *local;
+	uint8_t *local;
 	std::shared_ptr<KProcess> process;
 	uint64_t remote;
 	size_t size;
@@ -92,7 +93,7 @@ Result<std::shared_ptr<MemoryMapping>> MapProcessMemory(std::shared_ptr<KProcess
 	}
 	return ResultCode::ExpectOk(svcMapProcessMemory(local_addr, process->handle, remote_addr, size)).map([local_addr, process, remote_addr, size](auto const &ignored) {
 			return std::static_pointer_cast<MemoryMapping>(
-				std::make_shared<ProcessMemoryMapping>(local_addr, process, remote_addr, size));
+				std::make_shared<ProcessMemoryMapping>((uint8_t*) local_addr, process, remote_addr, size));
 		});
 }
 

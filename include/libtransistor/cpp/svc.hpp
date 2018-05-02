@@ -14,7 +14,7 @@ class MemoryMapping {
  public:
 	virtual ~MemoryMapping();
 
-	virtual void *Base() = 0;
+	virtual uint8_t *Base() = 0;
 	virtual size_t Size() = 0;
 };
 
