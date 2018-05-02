@@ -6,6 +6,8 @@
 #pragma once
 
 #include<libtransistor/cpp/types.hpp>
+#include<libtransistor/cpp/ipc.hpp>
+#include<libtransistor/cpp/ipcclient.hpp>
 #include<expected.hpp>
 
 namespace Transistor {
@@ -18,6 +20,7 @@ class SM {
 	SM(SM&& other);
 	~SM();
 
+	Result<IPCClient::ClientObject> GetService(const char *name);
 	Result<KPort> RegisterService(const char *name, uint32_t max_sessions);
 
  private:

@@ -28,6 +28,13 @@ SM::~SM() {
 	sm_finalize();
 }
 
+Result<IPCClient::ClientObject> SM::GetService(const char *name) {
+	ipc_object_t object;
+	return ResultCode::ExpectOk(sm_get_service(&object, name)).map([&object](auto const &v) {
+			return IPCClient::ClientObject(object);
+		});
+}
+
 Result<KPort> SM::RegisterService(const char *name, uint32_t max_sessions) {
 	port_h handle;
 	return ResultCode::ExpectOk(sm_register_service(&handle, name, max_sessions)).map([&handle](auto const &v) -> KPort {
