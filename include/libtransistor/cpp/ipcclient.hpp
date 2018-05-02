@@ -1,83 +1,27 @@
 /**
- * @file libtransistor/cpp/ipcserver.hpp
- * @brief IPC server (C++ header)
+ * @file libtransistor/cpp/ipcclient.hpp
+ * @brief IPC client template library (C++ header)
  */
 
 #pragma once
 
 #include<libtransistor/cpp/types.hpp>
 #include<libtransistor/cpp/ipc.hpp>
-#include<libtransistor/cpp/waiter.hpp>
-
-#include<libtransistor/ipcserver.h>
 #include<libtransistor/ipc.h>
 
-#include<expected.hpp>
-
-#include<vector>
-#include<forward_list>
 #include<tuple>
+#include<vector>
 
 namespace Transistor {
-
-namespace IPCServer {
-
-class IPCServer;
-
-class Object {
- public:
-	Object(IPCServer *server);
-	virtual ~Object();
-	virtual ResultCode Dispatch(Transistor::IPC::Message msg, uint32_t request_id) = 0;
-
-	IPCServer *server;
-	ipc_server_object_t object;
- protected:
- private:
-};
-
-class IPCServer {
- public:
-	static Result<IPCServer> Create(Waiter *waiter);
-	
-	IPCServer() = delete;
-	IPCServer(const IPCServer &) = delete;
-	IPCServer &operator=(const IPCServer &) = delete;
-	IPCServer(IPCServer &&other);
-	IPCServer &operator=(IPCServer &&other);
-	~IPCServer();
-
-	template<typename T, class... Args>
-	Result<T*> CreateObject(Object *existing, Args &&... args) {
-		T *obj = new T(this, args...);
-		return ResultCode::ExpectOk(ipc_server_object_register(&existing->object, &obj->object)).map([obj](auto const &ignored) {
-				return obj;
-			});
-	}
-
-	template<typename T>
-	Result<std::nullopt_t> CreateService(const char *name) {
-		return CreateService(name, [](IPCServer *server) {
-				return new T(server);
-			});
-	}
-	Result<std::nullopt_t> CreateService(const char *name, std::function<Result<Object*>(IPCServer *server)> factory);
-	
- private:
-	IPCServer(ipc_server_t *server);
-	std::forward_list<std::function<Result<Object*>()>*> factories;
-	ipc_server_t *server;
-};
+namespace IPCClient {
 
 template<typename... T>
 struct ArgPack;
 
 struct TransactionFormat {
-	ipc_request_fmt_t rq = ipc_default_request_fmt;
-	ipc_response_t rs = ipc_default_response;
+	ipc_request_t rq = ipc_default_request;
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	std::vector<ipc_buffer_t*> buffers;
-	Object **out_objects;
-	uint64_t pid;
 	
 	~TransactionFormat();
 };
@@ -88,24 +32,30 @@ struct AccessorHelper;
 template<typename T>
 struct AccessorHelper<IPC::InRaw<T>> {
 	size_t offset;
-	
+
 	AccessorHelper(size_t offset) : offset(offset) {
 	}
-	
-	IPC::InRaw<T> Access(TransactionFormat &f) const {
-		return IPC::InRaw<T>(*((T*) (((uint8_t*) f.rq.raw_data) + offset)));
+
+	void Pack(TransactionFormat &f, IPC::InRaw<T> &arg) const {
+		*((T*) (((uint8_t*) f.rq.raw_data) + offset)) = arg.value;
+	}
+
+	void Unpack(TransactionFormat &f, IPC::InRaw<T> &arg) const {
 	}
 };
 
 template<typename T>
 struct AccessorHelper<IPC::OutRaw<T>> {
 	size_t offset;
-	
+
 	AccessorHelper(size_t offset) : offset(offset) {
 	}
-	
-	IPC::OutRaw<T> Access(TransactionFormat &f) const {
-		return IPC::OutRaw<T>(*(T*) (((uint8_t*) f.rs.raw_data) + offset));
+
+	void Pack(TransactionFormat &f, IPC::OutRaw<T> &arg) const {
+	}
+
+	void Unpack(TransactionFormat &f, IPC::OutRaw<T> &arg) const {
+		arg = *((T*) (((uint8_t*) f.rs.raw_data) + offset));
 	}
 };
 
@@ -116,8 +66,11 @@ struct AccessorHelper<IPC::OutHandle<T, IPC::copy>> {
 	AccessorHelper(size_t index) : index(index) {
 	}
 
-	IPC::OutHandle<T, IPC::copy> Access(TransactionFormat &f) const {
-		return IPC::OutHandle<T, IPC::copy>(f.rs.copy_handles[index]);
+	void Pack(TransactionFormat &f, IPC::OutHandle<T, IPC::copy> &arg) const {
+	}
+
+	void Unpack(TransactionFormat &f, IPC::OutHandle<T, IPC::copy> &arg) const {
+		arg = f.rs.copy_handles[index];
 	}
 };
 
@@ -128,32 +81,42 @@ struct AccessorHelper<IPC::OutHandle<T, IPC::move>> {
 	AccessorHelper(size_t index) : index(index) {
 	}
 
-	IPC::OutHandle<T, IPC::move> Access(TransactionFormat &f) const {
-		return IPC::OutHandle<T, IPC::move>(f.rs.move_handles[index]);
+	void Pack(TransactionFormat &f, IPC::OutHandle<T, IPC::move> &arg) const {
+	}
+
+	void Unpack(TransactionFormat &f, IPC::OutHandle<T, IPC::move> &arg) const {
+		arg = f.rs.move_handles[index];
 	}
 };
 
 template<typename T>
-struct AccessorHelper<IPC::OutObject<T>&> {
+struct AccessorHelper<IPC::OutObject<T>> {
 	size_t index;
-	
+
 	AccessorHelper(size_t index) : index(index) {
 	}
 
-	IPC::OutObject<T> &Access(TransactionFormat &f) const {
-		return *((IPC::OutObject<T>*) &f.out_objects[index]);
+	void Pack(TransactionFormat &f, IPC::OutObject<T> &arg) const {
+	}
+
+	void Unpack(TransactionFormat &f, IPC::OutObject<T> &arg) const {
+		*(arg.value) = T(f.rs.objects[index]);
 	}
 };
 
-template<typename T, uint32_t type, size_t expected_size>
-struct AccessorHelper<IPC::Buffer<T, type, expected_size>> {
+template<typename T, uint32_t type>
+struct AccessorHelper<IPC::Buffer<T, type>> {
 	ipc_buffer_t *buffer;
 
 	AccessorHelper(ipc_buffer_t *buffer) : buffer(buffer) {
 	}
 
-	IPC::Buffer<T, type, expected_size> Access(TransactionFormat &f) const {
-		return {(T*) buffer->addr, buffer->size};
+	void Pack(TransactionFormat &f, IPC::Buffer<T, type> &arg) const {
+		buffer->addr = (void*) arg.data;
+		buffer->size = arg.size;
+	}
+
+	void Unpack(TransactionFormat &f, IPC::Buffer<T, type> &arg) const {
 	}
 };
 
@@ -162,8 +125,10 @@ struct AccessorHelper<IPC::Pid> {
 	AccessorHelper() {
 	}
 
-	IPC::Pid Access(TransactionFormat &f) const {
-		return {f.pid};
+	void Pack(TransactionFormat &f, IPC::Pid &arg) const {
+	}
+
+	void Unpack(TransactionFormat &f, IPC::Pid &arg) const {
 	}
 };
 
@@ -171,9 +136,9 @@ template<typename T>
 struct FormatMutator;
 
 template<typename T>
-struct FormatMutator<IPC::OutObject<T>&> {
-	static AccessorHelper<IPC::OutObject<T>&> MutateFormat(TransactionFormat &fmt) {
-		return AccessorHelper<IPC::OutObject<T>&>(fmt.rs.num_objects++);
+struct FormatMutator<IPC::OutObject<T>> {
+	static AccessorHelper<IPC::OutObject<T>> MutateFormat(TransactionFormat &fmt) {
+		return AccessorHelper<IPC::OutObject<T>>(fmt.rs.num_objects++);
 	}
 };
 
@@ -251,51 +216,56 @@ struct FormatBuilder<ArgPack<>> {
 	}
 };
 
+class ClientObject {
+ public:
+	ClientObject();
+	ClientObject(ipc_object_t object);
+	ClientObject(const ClientObject &) = delete;
+	ClientObject &operator=(const ClientObject &) = delete;
+	ClientObject(ClientObject &&other);
+	ClientObject &operator=(ClientObject &&other);
+	~ClientObject();
 
-template<auto>
-struct RequestHandler;
+	bool is_valid;
+	ipc_object_t object;
 
-template<typename T, typename... Args, ResultCode (T::*Func)(Args...)>
-struct RequestHandler<Func> {
-	static ResultCode Handle(T *object, IPC::Message msg) {
+	template<uint32_t id, typename... Args>
+	Result<std::nullopt_t> SendSyncRequest(Args &&... args) {
 		TransactionFormat fmt;
 		std::tuple<AccessorHelper<Args>...> accessors = FormatBuilder<ArgPack<Args...>>::Build(fmt);
 
+		fmt.rq.request_id = id;
 		fmt.rq.raw_data = new uint8_t[fmt.rq.raw_data_size];
 		fmt.rq.num_buffers = fmt.buffers.size();
 		fmt.rq.buffers = fmt.buffers.data();
-		fmt.rq.pid = &fmt.pid;
 		
 		fmt.rs.raw_data = new uint8_t[fmt.rs.raw_data_size];
-		fmt.rs.objects = new ipc_server_object_t*[fmt.rs.num_objects];
-		fmt.out_objects = new Object*[fmt.rs.num_objects];
+		fmt.rs.objects = new ipc_object_t[fmt.rs.num_objects];
+		fmt.rq.copy_handles = new handle_t[fmt.rq.num_copy_handles];
+		fmt.rq.move_handles = new handle_t[fmt.rq.num_move_handles];
 		
-		ResultCode r = ipc_unflatten_request(&msg.msg, &fmt.rq, &object->object);
+		ClientObject::HelpPack(fmt, accessors, std::index_sequence_for<Args...>(), args...);
+		
+		ResultCode r = ipc_send(object, &fmt.rq, &fmt.rs);
 		if(!r.IsOk()) {
-			// this gets forwarded to dispatch_shim, which will close the session for us
-			return r;
+			return tl::make_unexpected(r);
 		}
 
-		r = RequestHandler<Func>::Helper(object, fmt, accessors, std::index_sequence_for<Args...>());
-		if(!r.IsOk()) {
-			ipc_response_t rs = ipc_default_response;
-			rs.result_code = r.code;
-			return ipc_server_object_reply(&object->object, &rs);
-		}
+		ClientObject::HelpUnpack(fmt, accessors, std::index_sequence_for<Args...>(), args...);
 
-		for(size_t i = 0; i < fmt.rs.num_objects; i++) {
-			fmt.rs.objects[i] = &fmt.out_objects[i]->object;
-		}
-
-		return ipc_server_object_reply(&object->object, &fmt.rs);
+		return std::nullopt;
 	}
  private:
-	template<std::size_t... I>
-	static ResultCode Helper(T *object, TransactionFormat &fmt, const std::tuple<AccessorHelper<Args>...> &accessors, std::index_sequence<I...>) {
-		return std::invoke(Func, object, (std::get<I>(accessors).Access(fmt))...);
+	template<typename... Args, std::size_t... I>
+	static void HelpPack(TransactionFormat &fmt, const std::tuple<AccessorHelper<Args>...> &accessors, std::index_sequence<I...>, Args &... args) {
+		((std::get<I>(accessors).Pack(fmt, args)),...);
+	}
+
+	template<typename... Args, std::size_t... I>
+	static void HelpUnpack(TransactionFormat &fmt, const std::tuple<AccessorHelper<Args>...> &accessors, std::index_sequence<I...>, Args &... args) {
+		((std::get<I>(accessors).Unpack(fmt, args)),...);
 	}
 };
 
 }
-
 }
