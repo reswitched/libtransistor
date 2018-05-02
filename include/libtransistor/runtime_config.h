@@ -9,6 +9,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<libtransistor/types.h>
 
 typedef enum {
@@ -30,3 +34,7 @@ typedef enum {
 extern runconf_heap_mode_t _trn_runconf_heap_mode;
 extern void *_trn_runconf_heap_base;
 extern size_t _trn_runconf_heap_size;
+
+#ifdef __cplusplus
+}
+#endif
