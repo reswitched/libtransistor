@@ -7,8 +7,8 @@
 #include<vector>
 #include<tuple>
 
-namespace Transistor {
-namespace SVC {
+namespace trn {
+namespace svc {
 
 class MemoryMapping {
  public:

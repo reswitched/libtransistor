@@ -11,7 +11,7 @@
 #include<functional>
 #include<memory>
 
-namespace Transistor {
+namespace trn {
 
 class Waiter;
 

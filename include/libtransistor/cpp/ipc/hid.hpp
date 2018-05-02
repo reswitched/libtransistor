@@ -8,8 +8,8 @@
 #include<libtransistor/cpp/types.hpp>
 #include<expected.hpp>
 
-namespace Transistor {
-namespace IPC {
+namespace trn {
+namespace service {
 
 class HID {
  public:

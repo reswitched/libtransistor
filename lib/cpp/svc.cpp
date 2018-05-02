@@ -3,8 +3,8 @@
 #include<libtransistor/err.h>
 #include<libtransistor/address_space.h>
 
-namespace Transistor {
-namespace SVC {
+namespace trn {
+namespace svc {
 
 class ProcessMemoryMapping : public MemoryMapping {
  public:

@@ -11,10 +11,10 @@
 
 #include<memory>
 
-namespace Transistor {
-namespace IPC {
-namespace USB {
-namespace DS {
+namespace trn {
+namespace service {
+namespace usb {
+namespace ds {
 
 enum class State : uint32_t {
 	INITIAL = USB_DS_STATE_INITIAL,

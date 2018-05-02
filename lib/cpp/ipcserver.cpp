@@ -8,12 +8,13 @@
 
 #include<functional>
 
-namespace Transistor {
-namespace IPCServer {
+namespace trn {
+namespace ipc {
+namespace server {
 
 void object_dispatch_shim(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t request_id) {
 	Object *object = (Object*) obj->userdata;
-	IPC::Message message;
+	ipc::Message message;
 	message.msg = *msg;
 	ResultCode r = object->Dispatch(message, request_id);
 	if(!r.IsOk()) {
@@ -94,7 +95,7 @@ static result_t factory_shim(ipc_server_object_t **obj, void *userdata) {
 Result<std::nullopt_t> IPCServer::CreateService(const char *name, std::function<Result<Object*>(IPCServer *server)> factory_src) {
 	std::function<Result<Object*>()> *factory = new std::function<Result<Object*>()>(std::bind(factory_src, this));
 	factories.push_front(factory);
-	return IPC::SM::Initialize().and_then([name](auto sm) -> Result<KPort> {
+	return trn::service::SM::Initialize().and_then([name](auto sm) -> Result<KPort> {
 			return sm.RegisterService(name, 64);
 		}).and_then([this, factory](auto port) -> Result<std::nullopt_t> {
 				return ResultCode::ExpectOk(ipc_server_add_port(server, port.Claim(), factory_shim, factory));
@@ -108,5 +109,6 @@ Result<std::nullopt_t> IPCServer::CreateService(const char *name, std::function<
 IPCServer::IPCServer(ipc_server_t *server) : server(server) {
 }
 
+}
 }
 }

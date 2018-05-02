@@ -2,7 +2,7 @@
 #include<libtransistor/waiter.h>
 #include<libtransistor/err.h>
 
-namespace Transistor {
+namespace trn {
 
 WaitHandle::WaitHandle(Waiter *waiter, std::function<bool()> *callback) : waiter(waiter), callback(callback) {
 }

@@ -7,7 +7,7 @@
 #include<string>
 #include<optional>
 
-namespace Transistor {
+namespace trn {
 
 struct ResultCode {
  public:

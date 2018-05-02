@@ -10,8 +10,8 @@
 #include<libtransistor/cpp/ipcclient.hpp>
 #include<expected.hpp>
 
-namespace Transistor {
-namespace IPC {
+namespace trn {
+namespace service {
 
 class SM {
  public:
@@ -20,7 +20,7 @@ class SM {
 	SM(SM&& other);
 	~SM();
 
-	Result<IPCClient::ClientObject> GetService(const char *name);
+	Result<ipc::client::ClientObject> GetService(const char *name);
 	Result<KPort> RegisterService(const char *name, uint32_t max_sessions);
 
  private:

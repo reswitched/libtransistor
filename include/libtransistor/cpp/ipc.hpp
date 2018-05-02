@@ -10,8 +10,8 @@
 
 #include<type_traits>
 
-namespace Transistor {
-namespace IPC {
+namespace trn {
+namespace ipc {
 
 class Message {
  public:

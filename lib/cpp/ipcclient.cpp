@@ -1,8 +1,9 @@
 #include<libtransistor/cpp/ipc.hpp>
 #include<libtransistor/cpp/ipcclient.hpp>
 
-namespace Transistor {
-namespace IPCClient {
+namespace trn {
+namespace ipc {
+namespace client {
 
 ClientObject::ClientObject() : is_valid(false) {
 }
@@ -41,5 +42,6 @@ TransactionFormat::~TransactionFormat() {
 	if(rs.move_handles) { delete[] rs.move_handles; }
 }
 
+}
 }
 }

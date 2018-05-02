@@ -2,10 +2,10 @@
 #include<libtransistor/cpp/ipc/usb_ds.hpp>
 #include<libtransistor/ipc/usb.h>
 
-namespace Transistor {
-namespace IPC {
-namespace USB {
-namespace DS {
+namespace trn {
+namespace service {
+namespace usb {
+namespace ds {
 
 Result<DS> DS::Initialize(uint32_t complex_id) {
 	DS obj(complex_id);
