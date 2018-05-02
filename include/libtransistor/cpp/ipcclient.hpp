@@ -217,15 +217,15 @@ struct FormatBuilder<ArgPack<>> {
 	}
 };
 
-class ClientObject {
+class Object {
  public:
-	ClientObject();
-	ClientObject(ipc_object_t object);
-	ClientObject(const ClientObject &) = delete;
-	ClientObject &operator=(const ClientObject &) = delete;
-	ClientObject(ClientObject &&other);
-	ClientObject &operator=(ClientObject &&other);
-	~ClientObject();
+	Object();
+	Object(ipc_object_t object);
+	Object(const Object &) = delete;
+	Object &operator=(const Object &) = delete;
+	Object(Object &&other);
+	Object &operator=(Object &&other);
+	~Object();
 
 	bool is_valid;
 	ipc_object_t object;
@@ -245,14 +245,14 @@ class ClientObject {
 		fmt.rq.copy_handles = new handle_t[fmt.rq.num_copy_handles];
 		fmt.rq.move_handles = new handle_t[fmt.rq.num_move_handles];
 		
-		ClientObject::HelpPack(fmt, accessors, std::index_sequence_for<Args...>(), args...);
+		Object::HelpPack(fmt, accessors, std::index_sequence_for<Args...>(), args...);
 		
 		ResultCode r = ipc_send(object, &fmt.rq, &fmt.rs);
 		if(!r.IsOk()) {
 			return tl::make_unexpected(r);
 		}
 
-		ClientObject::HelpUnpack(fmt, accessors, std::index_sequence_for<Args...>(), args...);
+		Object::HelpUnpack(fmt, accessors, std::index_sequence_for<Args...>(), args...);
 
 		return std::nullopt;
 	}

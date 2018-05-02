@@ -20,7 +20,7 @@ class SM {
 	SM(SM&& other);
 	~SM();
 
-	Result<ipc::client::ClientObject> GetService(const char *name);
+	Result<ipc::client::Object> GetService(const char *name);
 	Result<KPort> RegisterService(const char *name, uint32_t max_sessions);
 
  private:

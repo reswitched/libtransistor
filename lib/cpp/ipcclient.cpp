@@ -5,26 +5,26 @@ namespace trn {
 namespace ipc {
 namespace client {
 
-ClientObject::ClientObject() : is_valid(false) {
+Object::Object() : is_valid(false) {
 }
 
-ClientObject::ClientObject(ipc_object_t object) : object(object), is_valid(true) {
+Object::Object(ipc_object_t object) : object(object), is_valid(true) {
 }
 
-ClientObject::ClientObject(ClientObject &&other) {
+Object::Object(Object &&other) {
 	this->is_valid = other.is_valid;
 	this->object = other.object;
 	other.is_valid = false;
 }
 
-ClientObject &ClientObject::operator=(ClientObject &&other) {
+Object &Object::operator=(Object &&other) {
 	this->is_valid = other.is_valid;
 	this->object = other.object;
 	other.is_valid = false;
 	return *this;
 }
 
-ClientObject::~ClientObject() {
+Object::~Object() {
 	if(is_valid) {
 		ipc_close(object);
 	}

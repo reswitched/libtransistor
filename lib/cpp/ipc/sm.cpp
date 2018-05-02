@@ -28,10 +28,10 @@ SM::~SM() {
 	sm_finalize();
 }
 
-Result<ipc::client::ClientObject> SM::GetService(const char *name) {
+Result<ipc::client::Object> SM::GetService(const char *name) {
 	ipc_object_t object;
 	return ResultCode::ExpectOk(sm_get_service(&object, name)).map([&object](auto const &v) {
-			return ipc::client::ClientObject(object);
+			return ipc::client::Object(object);
 		});
 }
 
