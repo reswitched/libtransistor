@@ -136,7 +136,7 @@ typedef struct {
 	void *raw_data;
 
 	bool has_pid;
-	uint32_t *pid;
+	uint64_t *pid;
 } ipc_response_fmt_t;
 
 /**
