@@ -91,8 +91,13 @@ struct Buffer {
 	size_t size;
 };
 
-struct Pid {
+struct InPid {
 	uint64_t value;
+};
+
+struct OutPid {
+	OutPid(uint64_t &ref) : value(&ref) { }
+	uint64_t *value;
 };
 
 }

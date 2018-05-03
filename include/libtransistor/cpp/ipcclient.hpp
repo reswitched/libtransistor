@@ -23,6 +23,7 @@ struct TransactionFormat {
 	ipc_request_t rq = ipc_default_request;
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	std::vector<ipc_buffer_t*> buffers;
+	uint64_t pid;
 	
 	~TransactionFormat();
 };
@@ -122,14 +123,27 @@ struct AccessorHelper<ipc::Buffer<T, type>> {
 };
 
 template<>
-struct AccessorHelper<ipc::Pid> {
+struct AccessorHelper<ipc::InPid> {
 	AccessorHelper() {
 	}
 
-	void Pack(TransactionFormat &f, ipc::Pid &arg) const {
+	void Pack(TransactionFormat &f, ipc::InPid &arg) const {
 	}
 
-	void Unpack(TransactionFormat &f, ipc::Pid &arg) const {
+	void Unpack(TransactionFormat &f, ipc::InPid &arg) const {
+	}
+};
+
+template<>
+struct AccessorHelper<ipc::OutPid> {
+	AccessorHelper() {
+	}
+
+	void Pack(TransactionFormat &f, ipc::OutPid &arg) const {
+	}
+
+	void Unpack(TransactionFormat &f, ipc::OutPid &arg) const {
+		*arg.value = f.pid;
 	}
 };
 
@@ -191,10 +205,18 @@ struct FormatMutator<ipc::Buffer<T, type, expected_size>> {
 };
 
 template<>
-struct FormatMutator<ipc::Pid> {
-	static AccessorHelper<ipc::Pid> MutateFormat(TransactionFormat &fmt) {
+struct FormatMutator<ipc::InPid> {
+	static AccessorHelper<ipc::InPid> MutateFormat(TransactionFormat &fmt) {
 		fmt.rq.send_pid = true;
-		return AccessorHelper<ipc::Pid>();
+		return AccessorHelper<ipc::InPid>();
+	}
+};
+
+template<>
+struct FormatMutator<ipc::OutPid> {
+	static AccessorHelper<ipc::OutPid> MutateFormat(TransactionFormat &fmt) {
+		fmt.rs.has_pid = true;
+		return AccessorHelper<ipc::OutPid>();
 	}
 };
 
@@ -239,11 +261,14 @@ class Object {
 		fmt.rq.raw_data = new uint8_t[fmt.rq.raw_data_size];
 		fmt.rq.num_buffers = fmt.buffers.size();
 		fmt.rq.buffers = fmt.buffers.data();
+		fmt.rq.copy_handles = new handle_t[fmt.rq.num_copy_handles];
+		fmt.rq.move_handles = new handle_t[fmt.rq.num_move_handles];
 		
 		fmt.rs.raw_data = new uint8_t[fmt.rs.raw_data_size];
 		fmt.rs.objects = new ipc_object_t[fmt.rs.num_objects];
-		fmt.rq.copy_handles = new handle_t[fmt.rq.num_copy_handles];
-		fmt.rq.move_handles = new handle_t[fmt.rq.num_move_handles];
+		fmt.rs.copy_handles = new handle_t[fmt.rs.num_copy_handles];
+		fmt.rs.move_handles = new handle_t[fmt.rs.num_move_handles];
+		fmt.rs.pid = &fmt.pid;
 		
 		Object::HelpPack(fmt, accessors, std::index_sequence_for<Args...>(), args...);
 		

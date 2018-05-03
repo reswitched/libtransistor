@@ -39,10 +39,15 @@ TransactionFormat::~TransactionFormat() {
 	for(auto i = buffers.begin(); i != buffers.end(); i++) {
 		delete (*i);
 	}
-	if(rq.raw_data) { delete[] rq.raw_data; }
-	if(rq.objects)  { delete[] rq.objects; }
-	if(rs.raw_data) { delete[] rs.raw_data; }
+	if(rq.raw_data) { delete[] (uint8_t*) rq.raw_data; }
+	if(rq.copy_handles) { delete[] rq.copy_handles; }
+	if(rq.move_handles) { delete[] rq.move_handles; }
+	
+	if(rs.raw_data) { delete[] (uint8_t*) rs.raw_data; }
 	if(rs.objects)  { delete[] rs.objects; }
+	if(rs.copy_handles) { delete[] rs.copy_handles; }
+	if(rs.move_handles) { delete[] rs.move_handles; }
+	
 	if(out_objects) { delete[] out_objects; }
 }
 

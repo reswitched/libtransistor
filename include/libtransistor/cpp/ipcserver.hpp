@@ -158,12 +158,22 @@ struct AccessorHelper<ipc::Buffer<T, type, expected_size>> {
 };
 
 template<>
-struct AccessorHelper<ipc::Pid> {
+struct AccessorHelper<ipc::InPid> {
 	AccessorHelper() {
 	}
 
-	ipc::Pid Access(TransactionFormat &f) const {
+	ipc::InPid Access(TransactionFormat &f) const {
 		return {f.pid};
+	}
+};
+
+template<>
+struct AccessorHelper<ipc::OutPid> {
+	AccessorHelper() {
+	}
+
+	ipc::OutPid Access(TransactionFormat &f) const {
+		return OutPid(f.pid);
 	}
 };
 
@@ -225,10 +235,18 @@ struct FormatMutator<ipc::Buffer<T, type, expected_size>> {
 };
 
 template<>
-struct FormatMutator<ipc::Pid> {
-	static AccessorHelper<ipc::Pid> MutateFormat(TransactionFormat &fmt) {
+struct FormatMutator<ipc::InPid> {
+	static AccessorHelper<ipc::InPid> MutateFormat(TransactionFormat &fmt) {
 		fmt.rq.send_pid = true;
-		return AccessorHelper<ipc::Pid>();
+		return AccessorHelper<ipc::InPid>();
+	}
+};
+
+template<>
+struct FormatMutator<ipc::OutPid> {
+	static AccessorHelper<ipc::OutPid> MutateFormat(TransactionFormat &fmt) {
+		fmt.rs.send_pid = true;
+		return AccessorHelper<ipc::OutPid>();
 	}
 };
 
@@ -265,10 +283,14 @@ struct RequestHandler<Func> {
 		fmt.rq.num_buffers = fmt.buffers.size();
 		fmt.rq.buffers = fmt.buffers.data();
 		fmt.rq.pid = &fmt.pid;
+		fmt.rq.copy_handles = new handle_t[fmt.rq.num_copy_handles];
+		fmt.rq.move_handles = new handle_t[fmt.rq.num_move_handles];
 		
 		fmt.rs.raw_data = new uint8_t[fmt.rs.raw_data_size];
 		fmt.rs.objects = new ipc_server_object_t*[fmt.rs.num_objects];
 		fmt.out_objects = new Object*[fmt.rs.num_objects];
+		fmt.rs.copy_handles = new handle_t[fmt.rs.num_copy_handles];
+		fmt.rs.move_handles = new handle_t[fmt.rs.num_move_handles];
 		
 		ResultCode r = ipc_unflatten_request(&msg.msg, &fmt.rq, &object->object);
 		if(!r.IsOk()) {
