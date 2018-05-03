@@ -8,7 +8,7 @@ namespace client {
 Object::Object() : is_valid(false) {
 }
 
-Object::Object(ipc_object_t object) : object(object), is_valid(true) {
+Object::Object(ipc_object_t object) : is_valid(true), object(object) {
 }
 
 Object::Object(Object &&other) {
