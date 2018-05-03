@@ -37,6 +37,8 @@ void lconfig_init_default(uint64_t thread_handle) {
 	loader_config.has_process_handle = false;
 
 	loader_config.has_alloc_pages = false;
+
+	loader_config.has_twili = false;
 }
 
 result_t lconfig_parse(loader_config_entry_t *config) {
@@ -134,6 +136,10 @@ result_t lconfig_parse(loader_config_entry_t *config) {
 			loader_config.free_pages = entry->alloc_pages.free_pages;
 			break;
 
+		case LCONFIG_KEY_TWILI_PRESENT:
+			loader_config.has_twili = true;
+			break;
+			
 		default: {
 			bool recognition_mandatory = entry->flags & LOADER_CONFIG_FLAG_RECOGNITION_MANDATORY;
 			if(recognition_mandatory) {

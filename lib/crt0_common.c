@@ -7,6 +7,7 @@
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/ipc/fs.h>
 #include<libtransistor/ipc/fatal.h>
+#include<libtransistor/ipc/twili.h>
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
@@ -392,7 +393,22 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		}
 
 		if(_trn_runconf_stdio_override  == _TRN_RUNCONF_STDIO_OVERRIDE_NONE) {
-			if(loader_config.has_stdio_sockets) {
+			if(loader_config.has_twili) {
+				twili_pipe_t twili_out;
+				if((ret = twili_init()) != RESULT_OK) {
+					sm_finalize();
+					goto restore_tls;
+				}
+				if((ret = twili_open_stdout(&twili_out)) != RESULT_OK) {
+					twili_finalize();
+					sm_finalize();
+					goto restore_tls;
+				}
+				int fd = twili_pipe_fd(&twili_out);
+				dup2(fd, STDOUT_FILENO);
+				dbg_set_file(fd_file_get(fd));
+				close(fd);
+			} else if(loader_config.has_stdio_sockets) {
 				if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
 					sm_finalize();
 					goto restore_tls;
@@ -492,6 +508,9 @@ fail_bsd:
 	 */
 	if(loader_config.has_stdio_sockets) {
 		bsd_finalize();
+	}
+	if(loader_config.has_twili) {
+		twili_finalize();
 	}
 	sm_finalize();
 
