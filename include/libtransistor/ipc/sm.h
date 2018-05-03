@@ -63,6 +63,16 @@ result_t sm_is_registered(const char *name, bool *is_registered);
 */
 void sm_finalize();
 
+/**
+ * @brief Force Service Manager finalization
+ *
+ * This is a dangerous call; please make sure that
+ * sm has been initialized before calling this, and
+ * make sure that nothing else will use sm after
+ * calling this.
+ */
+void sm_force_finalize();
+
 #ifdef __cplusplus
 }
 #endif

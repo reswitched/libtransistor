@@ -9,7 +9,7 @@
 #include<libunwind.h>
 #include<stdio.h>
 
-namespace Transistor {
+namespace trn {
 
 tl::expected<std::nullopt_t, ResultCode> ResultCode::ExpectOk(result_t code) {
 	if(code == RESULT_OK) {
@@ -83,7 +83,7 @@ KObject &KObject::operator=(KObject &&other) {
 
 KObject::~KObject() {
 	if(handle > 0) {
-		ResultCode::AssertOk(SVC::CloseHandle(handle));
+		ResultCode::AssertOk(svc::CloseHandle(handle));
 	}
 }
 

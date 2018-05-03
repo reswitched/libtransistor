@@ -8,9 +8,9 @@
 #include<libtransistor/cpp/types.hpp>
 #include<libtransistor/ipc/usb.h>
 
-namespace Transistor {
-namespace IPC {
-namespace USB {
+namespace trn {
+namespace service {
+namespace usb {
 
 enum class DescriptorType {
 	INTERFACE = 0x4,

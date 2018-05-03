@@ -7,14 +7,14 @@
 #include<vector>
 #include<tuple>
 
-namespace Transistor {
-namespace SVC {
+namespace trn {
+namespace svc {
 
 class MemoryMapping {
  public:
 	virtual ~MemoryMapping();
 
-	virtual void *Base() = 0;
+	virtual uint8_t *Base() = 0;
 	virtual size_t Size() = 0;
 };
 

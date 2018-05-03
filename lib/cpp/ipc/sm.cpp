@@ -3,8 +3,8 @@
 #include<libtransistor/types.h>
 #include<libtransistor/ipc/sm.h>
 
-namespace Transistor {
-namespace IPC {
+namespace trn {
+namespace service {
 
 Result<SM> SM::Initialize() {
 	SM obj;
@@ -26,6 +26,13 @@ SM::SM() { // should only be called from SM::Initialize()
 
 SM::~SM() {
 	sm_finalize();
+}
+
+Result<ipc::client::Object> SM::GetService(const char *name) {
+	ipc_object_t object;
+	return ResultCode::ExpectOk(sm_get_service(&object, name)).map([&object](auto const &v) {
+			return ipc::client::Object(object);
+		});
 }
 
 Result<KPort> SM::RegisterService(const char *name, uint32_t max_sessions) {

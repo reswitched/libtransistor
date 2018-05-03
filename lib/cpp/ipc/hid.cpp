@@ -3,8 +3,8 @@
 #include<libtransistor/types.h>
 #include<libtransistor/ipc/hid.h>
 
-namespace Transistor {
-namespace IPC {
+namespace trn {
+namespace service {
 
 Result<HID> HID::Initialize() {
 	HID obj;

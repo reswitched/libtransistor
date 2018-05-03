@@ -851,6 +851,9 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 		}
 	}
 	for(uint32_t i = 0; i < rq->num_move_handles; i++) { rq->move_handles[i] = msg->move_handles[mhi++]; }
+	if(rq->send_pid) {
+		*rq->pid = msg->pid;
+	}
 
 	if(to_domain) {
 		result_t r;
@@ -956,6 +959,9 @@ result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_
 		}
 	}
 	for(uint32_t i = 0; i < rs->num_move_handles; i++) { rs->move_handles[i] = msg->move_handles[mhi++]; }
+	if(rs->has_pid) {
+		*rs->pid = msg->pid;
+	}
 	memcpy(rs->raw_data, raw_data, rs->raw_data_size);
 	return RESULT_OK;
 }

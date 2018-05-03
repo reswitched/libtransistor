@@ -29,7 +29,7 @@ fail:
 	return r;
 }
 
-static void sm_force_finalize() {
+void sm_force_finalize() {
 	ipc_close(sm_object);
 	sm_initializations = 0;
 }

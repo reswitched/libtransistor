@@ -8,12 +8,13 @@
 
 #include<functional>
 
-namespace Transistor {
-namespace IPCServer {
+namespace trn {
+namespace ipc {
+namespace server {
 
 void object_dispatch_shim(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t request_id) {
 	Object *object = (Object*) obj->userdata;
-	IPC::Message message;
+	ipc::Message message;
 	message.msg = *msg;
 	ResultCode r = object->Dispatch(message, request_id);
 	if(!r.IsOk()) {
@@ -38,10 +39,15 @@ TransactionFormat::~TransactionFormat() {
 	for(auto i = buffers.begin(); i != buffers.end(); i++) {
 		delete (*i);
 	}
-	if(rq.raw_data) { delete[] rq.raw_data; }
-	if(rq.objects)  { delete[] rq.objects; }
-	if(rs.raw_data) { delete[] rs.raw_data; }
+	if(rq.raw_data) { delete[] (uint8_t*) rq.raw_data; }
+	if(rq.copy_handles) { delete[] rq.copy_handles; }
+	if(rq.move_handles) { delete[] rq.move_handles; }
+	
+	if(rs.raw_data) { delete[] (uint8_t*) rs.raw_data; }
 	if(rs.objects)  { delete[] rs.objects; }
+	if(rs.copy_handles) { delete[] rs.copy_handles; }
+	if(rs.move_handles) { delete[] rs.move_handles; }
+	
 	if(out_objects) { delete[] out_objects; }
 }
 
@@ -94,7 +100,7 @@ static result_t factory_shim(ipc_server_object_t **obj, void *userdata) {
 Result<std::nullopt_t> IPCServer::CreateService(const char *name, std::function<Result<Object*>(IPCServer *server)> factory_src) {
 	std::function<Result<Object*>()> *factory = new std::function<Result<Object*>()>(std::bind(factory_src, this));
 	factories.push_front(factory);
-	return IPC::SM::Initialize().and_then([name](auto sm) -> Result<KPort> {
+	return trn::service::SM::Initialize().and_then([name](auto sm) -> Result<KPort> {
 			return sm.RegisterService(name, 64);
 		}).and_then([this, factory](auto port) -> Result<std::nullopt_t> {
 				return ResultCode::ExpectOk(ipc_server_add_port(server, port.Claim(), factory_shim, factory));
@@ -108,5 +114,6 @@ Result<std::nullopt_t> IPCServer::CreateService(const char *name, std::function<
 IPCServer::IPCServer(ipc_server_t *server) : server(server) {
 }
 
+}
 }
 }
