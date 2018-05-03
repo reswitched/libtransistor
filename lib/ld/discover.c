@@ -9,6 +9,7 @@
 #include<libtransistor/ld/module.h>
 #include<libtransistor/ld/internal.h>
 #include<libtransistor/ld/loader/nro_via_ldr_ro.h>
+#include<libtransistor/ld/loader/nro_via_svc.h>
 
 #include<stdint.h>
 #include<stdlib.h>
@@ -68,7 +69,7 @@ result_t ld_load_module(FILE *f, const char *name_src, module_t **out) {
 	
 	if(file_size >= 0x14 && memcmp(file_buffer + 0x10, "NRO0", 4) == 0) {
 		result_t r;
-		if((r = ld_nro_via_ldr_ro_load(&input, file_buffer, file_size)) != RESULT_OK) {
+		if((r = ld_nro_via_svc_load(&input, file_buffer, file_size)) != RESULT_OK) {
 			free_pages(file_buffer);
 			return r;
 		}
