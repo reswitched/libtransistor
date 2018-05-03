@@ -84,7 +84,7 @@ struct OutHandle {
 
 template<typename T, uint32_t type, size_t expected_size = 0>
 struct Buffer {
-	Buffer(std::vector<T> vec) : Buffer(vec.data(), vec.size() * sizeof(T)) { }
+	Buffer(std::vector<T> &vec) : Buffer(vec.data(), vec.size() * sizeof(T)) { }
 	Buffer(T *data, size_t size) : data(data), size(size) { }
 	
 	T *data;
