@@ -7,8 +7,10 @@
 #include<libtransistor/svc.h>
 
 #include<libtransistor/ld/ld.h>
+#include<libtransistor/ld/loaders.h>
 
 #include<string.h>
+#include<stdlib.h>
 
 typedef struct {
 	uint32_t file_offset;
@@ -27,6 +29,13 @@ typedef struct {
 	uint32_t bss_size;
 } nro_header_t;
 
+typedef struct {
+	void *nro_image;
+	void *nro_bss;
+	size_t image_size;
+	size_t bss_size;
+} ld_nro_via_svc_data;
+
 static result_t reprotect_segment(void *load_base, segment_header_t segment, int permission) {
 	return svcSetProcessMemoryPermission(loader_config.process_handle, load_base + segment.file_offset, segment.size, permission);
 }
@@ -38,7 +47,7 @@ const uint8_t required_syscalls[] = {
 	0
 };
 
-result_t ld_nro_via_svc_load(module_input_t *spec_out, void *nro_image, size_t nro_image_size) {
+static result_t ld_nro_via_svc_can_load(void *file, size_t file_size) {
 	if(!loader_config.has_process_handle) {
 		return LIBTRANSISTOR_ERR_TRNLD_NEEDS_PROCESS_HANDLE;
 	}
@@ -46,19 +55,27 @@ result_t ld_nro_via_svc_load(module_input_t *spec_out, void *nro_image, size_t n
 	if((r = lconfig_has_syscalls(required_syscalls)) != RESULT_OK) {
 		return r;
 	}
-	if(nro_image_size < sizeof(nro_header_t)) {
+	if(file_size < sizeof(nro_header_t)) {
 		return LIBTRANSISTOR_ERR_TRNLD_MALFORMED_NRO;
 	}
-
-	nro_header_t head = *(nro_header_t*) nro_image;
+	nro_header_t head = *(nro_header_t*) file;
 	if(head.magic != 0x304f524e) {
 		return LIBTRANSISTOR_ERR_TRNLD_MALFORMED_NRO;
 	}
-	if(nro_image_size & 0xFFF) {
+	if(file_size & 0xFFF) {
 		return LIBTRANSISTOR_ERR_TRNLD_MALFORMED_NRO;
 	}
 	if(head.bss_size & 0xFFF) {
 		return LIBTRANSISTOR_ERR_TRNLD_MALFORMED_NRO;
+	}
+	return RESULT_OK;
+}
+
+static result_t ld_nro_via_svc_load(module_input_t *spec_out, void *nro_image, size_t nro_image_size) {
+	result_t r;
+	nro_header_t head = *(nro_header_t*) nro_image;
+	if((r = ld_nro_via_svc_can_load(nro_image, nro_image_size)) != RESULT_OK) {
+		return r;
 	}
 
 	void *load_base = as_reserve(nro_image_size + head.bss_size);
@@ -70,6 +87,16 @@ result_t ld_nro_via_svc_load(module_input_t *spec_out, void *nro_image, size_t n
 	}
 	memset(nro_bss, 0, head.bss_size);
 
+	ld_nro_via_svc_data *loader_data = malloc(sizeof(*loader_data));
+	if(loader_data == NULL) {
+		r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+		goto fail_bss;
+	}
+	loader_data->nro_image = nro_image;
+	loader_data->nro_bss = nro_bss;
+	loader_data->image_size = nro_image_size;
+	loader_data->bss_size = head.bss_size;
+	
 	LIB_ASSERT_OK(fail_bss, svcMapProcessCodeMemory(loader_config.process_handle, load_base, nro_image, nro_image_size));
 	LIB_ASSERT_OK(fail_main_map, svcMapProcessCodeMemory(loader_config.process_handle, load_base + nro_image_size, nro_bss, head.bss_size));
 
@@ -80,17 +107,16 @@ result_t ld_nro_via_svc_load(module_input_t *spec_out, void *nro_image, size_t n
 	LIB_ASSERT_OK(fail_bss_map, svcSetProcessMemoryPermission(loader_config.process_handle, load_base + head.segments[2].file_offset + head.segments[2].size, head.bss_size, 3)); // .bss is RW
 	
 	spec_out->base = load_base;
-	spec_out->type = MODULE_TYPE_NRO_VIA_SVC;
-	spec_out->nro_via_svc.nro_image = nro_image;
-	spec_out->nro_via_svc.nro_bss = nro_bss;
-	spec_out->nro_via_svc.image_size = nro_image_size;
-	spec_out->nro_via_svc.bss_size = head.bss_size;
+	spec_out->loader = &ld_loader_nro_via_svc;
+	spec_out->loader_data = loader_data;
 	return RESULT_OK;
 	
 fail_bss_map:
 	svcUnmapProcessCodeMemory(loader_config.process_handle, load_base + nro_image_size, nro_bss, head.bss_size);
 fail_main_map:
 	svcUnmapProcessCodeMemory(loader_config.process_handle, load_base, nro_image, nro_image_size);
+fail_loader_data:
+	free(loader_data);
 fail_bss:
 	free_pages(nro_bss);
 fail_load_base:
@@ -107,9 +133,17 @@ static result_t result_or(result_t a, result_t b) {
 	}
 }
 
-result_t ld_nro_via_svc_unload(module_input_t *spec) {
+static result_t ld_nro_via_svc_unload(module_input_t *spec) {
 	result_t r = RESULT_OK;
-	r = result_or(r, svcUnmapProcessCodeMemory(loader_config.process_handle, spec->base + spec->nro_via_svc.image_size, spec->nro_via_svc.nro_bss, spec->nro_via_svc.bss_size));
-	r = result_or(r, svcUnmapProcessCodeMemory(loader_config.process_handle, spec->base, spec->nro_via_svc.nro_image, spec->nro_via_svc.image_size));
+	ld_nro_via_svc_data *loader_data = spec->loader_data;
+	r = result_or(r, svcUnmapProcessCodeMemory(loader_config.process_handle, spec->base + loader_data->image_size, loader_data->nro_bss, loader_data->bss_size));
+	r = result_or(r, svcUnmapProcessCodeMemory(loader_config.process_handle, spec->base, loader_data->nro_image, loader_data->image_size));
+	free(loader_data);
 	return r;
 }
+
+ld_loader_t ld_loader_nro_via_svc = {
+	.can_load = ld_nro_via_svc_can_load,
+	.load = ld_nro_via_svc_load,
+	.unload = ld_nro_via_svc_unload,
+};

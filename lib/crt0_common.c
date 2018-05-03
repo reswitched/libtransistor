@@ -337,7 +337,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		module_input_t root_input;
 		root_input.name = "main";
 		root_input.base = aslr_base;
-		root_input.type = MODULE_TYPE_MAIN;
+		root_input.loader = NULL;
 		if((ret = ld_add_module(root_input, &root_module)) != RESULT_OK) {
 			root_inode.ops->release(root_inode.data);
 			dbg_disconnect();

@@ -5,22 +5,42 @@
 #include<libtransistor/ipc/ro.h>
 
 #include<libtransistor/ld/ld.h>
+#include<libtransistor/ld/loaders.h>
 
 #include<sha256.h>
+#include<stdlib.h>
 
 const size_t NRR_SIZE = 0x1000;
 
-result_t ld_nro_via_ldr_ro_load(module_input_t *spec_out, void *nro_image, size_t nro_image_size) {
+typedef struct {
+	void *nro_image;
+	void *nrr;
+	void *bss;
+} ld_nro_via_ldr_ro_data;
+
+static result_t ld_nro_via_ldr_ro_can_load(void *file, size_t file_size) {
+	if(file_size < 0x40) {
+		return LIBTRANSISTOR_ERR_TRNLD_MALFORMED_NRO;
+	}
+	if(*((uint32_t*) (file + 0x10)) != 0x304f524e) {
+		return LIBTRANSISTOR_ERR_TRNLD_MALFORMED_NRO;
+	}
+	return RESULT_OK;
+}
+
+static result_t ld_nro_via_ldr_ro_load(module_input_t *spec_out, void *nro_image, size_t nro_image_size) {
 	if(nro_image_size < 0x40) {
 		return LIBTRANSISTOR_ERR_TRNLD_MALFORMED_NRO;
 	}
 
 	result_t r;
+
+	ld_nro_via_ldr_ro_data *loader_data = malloc(sizeof(*loader_data));
 	
 	uint32_t *nrr = alloc_pages(NRR_SIZE, NRR_SIZE, NULL);
 	if(nrr == NULL) {
 		r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
-		goto fail;
+		goto fail_loader_data;
 	}
 	nrr[0] = 0x3052524E; // NRR0
 	nrr[(0x338 >> 2) + 0] = NRR_SIZE;
@@ -56,10 +76,12 @@ result_t ld_nro_via_ldr_ro_load(module_input_t *spec_out, void *nro_image, size_
 	
 	dbg_printf("loaded NRO @ %p", nro_base);
 	
+	loader_data->nro_image = nro_image;
+	loader_data->bss = nro_bss;
+	loader_data->nrr = nrr;
 	spec_out->base = nro_base;
-	spec_out->type = MODULE_TYPE_NRO_VIA_LDR_RO;
-	spec_out->nro_via_ldr_ro.nro_image = nro_image;
-	spec_out->nro_via_ldr_ro.bss = nro_bss;
+	spec_out->loader = &ld_loader_nro_via_ldr_ro;
+	spec_out->loader_data = loader_data;
 	return RESULT_OK;
 
 fail_loaded_nrr:
@@ -70,14 +92,28 @@ fail_bss:
 	free_pages(nro_bss);
 fail_nrr:
 	free_pages(nrr);
+fail_loader_data:
+	free(loader_data);
 fail:
 	return r;
 }
 
-result_t ld_nro_via_ldr_ro_unload(module_input_t *spec) {
+static result_t ld_nro_via_ldr_ro_unload(module_input_t *spec) {
 	result_t r;
-	r = ro_unload_nro(spec->base, spec->nro_via_ldr_ro.nro_image);
-	free_pages(spec->nro_via_ldr_ro.nro_image);
-	free_pages(spec->nro_via_ldr_ro.bss);
+	ld_nro_via_ldr_ro_data *loader_data = spec->loader_data;
+	r = ro_unload_nro(spec->base, loader_data->nro_image);
+	if(r == RESULT_OK) {
+		r = ro_unload_nrr(loader_data->nrr);
+	}
+	free_pages(loader_data->nrr);
+	free_pages(loader_data->nro_image);
+	free_pages(loader_data->bss);
+	free(loader_data);
 	return r;
 }
+
+ld_loader_t ld_loader_nro_via_ldr_ro = {
+	.can_load = ld_nro_via_ldr_ro_can_load,
+	.load = ld_nro_via_ldr_ro_load,
+	.unload = ld_nro_via_ldr_ro_unload,
+};

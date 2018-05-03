@@ -10,36 +10,18 @@ extern "C" {
 #endif
 
 typedef struct module_t module_t;
+typedef struct ld_loader_t ld_loader_t;
 
 /**
  * @brief Perform basic relocations on a module.
  */
 result_t ld_relocate_module_basic(uint8_t *module_base);
 
-typedef enum {
-	MODULE_TYPE_INVALID = 0,
-	MODULE_TYPE_MAIN, // loaded by an external loader
-	MODULE_TYPE_NRO_VIA_LDR_RO, // loaded NRO by ldr:ro
-	MODULE_TYPE_NRO_VIA_SVC, // loaded NRO by svcMapProcessCodeMemory
-} module_type_t;
-
 typedef struct {
 	const char *name;
 	void *base;
-	module_type_t type;
-	union {
-		struct {
-			void *nro_image;
-			void *nrr;
-			void *bss;
-		} nro_via_ldr_ro;
-		struct {
-			void *nro_image;
-			void *nro_bss;
-			size_t image_size;
-			size_t bss_size;
-		} nro_via_svc;
-	};
+	ld_loader_t *loader;
+	void *loader_data;
 } module_input_t;
 
 /**

@@ -8,8 +8,7 @@
 #include<libtransistor/ld/elf.h>
 #include<libtransistor/ld/module.h>
 #include<libtransistor/ld/internal.h>
-#include<libtransistor/ld/loader/nro_via_ldr_ro.h>
-#include<libtransistor/ld/loader/nro_via_svc.h>
+#include<libtransistor/ld/loader/loaders.h>
 
 #include<stdint.h>
 #include<stdlib.h>
@@ -203,19 +202,9 @@ result_t ld_destroy_module(module_t *mod) {
 		ld_decref_module(node->module);
 		free(node);
 	}
-	
-	switch(mod->input.type) {
-	case MODULE_TYPE_MAIN:
-		break;
-	case MODULE_TYPE_NRO_VIA_LDR_RO:
-		r = ld_nro_via_ldr_ro_unload(&mod->input);
-		break;
-	case MODULE_TYPE_NRO_VIA_SVC:
-		r = ld_nro_via_svc_unload(&mod->input);
-		break;
-	default:
-		r = LIBTRANSISTOR_ERR_TRNLD_INVALID_MODULE_TYPE;
-		break;
+
+	if(mod->input.loader) {
+		mod->input.loader->unload(&mod->input);
 	}
 
 	trn_list_foreach(&ld_module_list_head, i) {

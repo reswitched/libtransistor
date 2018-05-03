@@ -8,8 +8,7 @@
 #include<libtransistor/ld/elf.h>
 #include<libtransistor/ld/module.h>
 #include<libtransistor/ld/internal.h>
-#include<libtransistor/ld/loader/nro_via_ldr_ro.h>
-#include<libtransistor/ld/loader/nro_via_svc.h>
+#include<libtransistor/ld/loaders.h>
 
 #include<stdint.h>
 #include<stdlib.h>
@@ -22,6 +21,11 @@ static const char *ld_search_path[] = {
 	"/squash/lib/",
 	"/sd/",
 	"/squash/",
+};
+
+static const ld_loader_t *loaders[] = {
+	&ld_loader_nro_via_svc,
+	&ld_loader_nro_via_ldr_ro,
 };
 
 result_t ld_load_module(FILE *f, const char *name_src, module_t **out) {
@@ -66,18 +70,20 @@ result_t ld_load_module(FILE *f, const char *name_src, module_t **out) {
 
 	module_input_t input;
 	input.name = name_src;
-	
-	if(file_size >= 0x14 && memcmp(file_buffer + 0x10, "NRO0", 4) == 0) {
-		result_t r;
-		if((r = ld_nro_via_svc_load(&input, file_buffer, file_size)) != RESULT_OK) {
-			free_pages(file_buffer);
-			return r;
+
+	result_t results[ARRAY_LENGTH(loaders)];
+	for(size_t i = 0; i < ARRAY_LENGTH(loaders); i++) {
+		results[i] = loaders[i]->can_load(file_buffer, file_size);
+		if(results[i] == RESULT_OK) {
+			result_t r;
+			if((r = loaders[i]->load(&input, file_buffer, file_size)) != RESULT_OK) {
+				free_pages(file_buffer);
+				return r;
+			}
+			return ld_add_module(input, out);
 		}
-	} else {
-		return LIBTRANSISTOR_ERR_TRNLD_NO_LOADER_FOR_MODULE;
 	}
-	
-	return ld_add_module(input, out);
+	return LIBTRANSISTOR_ERR_TRNLD_NO_LOADER_FOR_MODULE;
 }
 
 result_t ld_discover_module(const char *name_src, module_t **out) {
@@ -96,7 +102,7 @@ result_t ld_discover_module(const char *name_src, module_t **out) {
 	dbg_printf("transformed to %s", name);
 
 	for(int i = 0; i < len; i++) {
-		if(name[i] == "/") {
+		if(name[i] == '/') {
 			FILE *f = fopen(name, "rb");
 			if(f == NULL) {
 				return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_FIND_MODULE;
