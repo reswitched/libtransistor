@@ -346,8 +346,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		}
 	} else {
 		dbg_printf("no loader config");
-		// Temporary fix to run this in Mephisto.
-		loader_config.main_thread = 0xde00;
 	}
 
 	if(_trn_runconf_heap_mode == _TRN_RUNCONF_HEAP_MODE_DEFAULT) {
