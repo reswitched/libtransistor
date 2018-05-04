@@ -142,21 +142,3 @@ result_t sm_unregister_service(const char *name) {
 
 	return ipc_send(sm_object, &rq, &rs);
 }
-
-result_t sm_is_registered(const char *name, bool *is_registered) {
-	result_t r;
-	port_h port;
-	
-	r = sm_register_service(&port, name, 1);
-	if(r == 0x815) {
-		*is_registered = true;
-		return RESULT_OK;
-	} else if(r == RESULT_OK) {
-		*is_registered = false;
-		sm_unregister_service(name);
-		svcCloseHandle(port);
-		return RESULT_OK;
-	} else {
-		return r;
-	}
-}
