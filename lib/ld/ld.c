@@ -8,7 +8,7 @@
 #include<libtransistor/ld/elf.h>
 #include<libtransistor/ld/module.h>
 #include<libtransistor/ld/internal.h>
-#include<libtransistor/ld/loader/loaders.h>
+#include<libtransistor/ld/loaders.h>
 
 #include<stdint.h>
 #include<stdlib.h>
