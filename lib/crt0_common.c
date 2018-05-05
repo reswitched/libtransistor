@@ -327,9 +327,9 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			goto fail_bsd;
 		}
 		if((ret = ld_process_modules()) != RESULT_OK) {
+			root_inode.ops->release(root_inode.data);
 			ld_decref_module(root_module); // error handling?
 			root_module = NULL;
-			root_inode.ops->release(root_inode.data);
 			dbg_disconnect();
 			goto fail_bsd;
 		}
