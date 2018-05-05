@@ -34,31 +34,36 @@ run_dynamic_%_test: $(BUILD_DIR)/test/dynamic/test_%.nro
 
 # LINK RULES
 
+TEST_COMMON_OBJECTS := $(BUILD_DIR)/test/free_poison.o
+TEST_LD_FLAGS := $(LD_FLAGS) --wrap=free $(TEST_COMMON_OBJECTS)
+
 $(BUILD_DIR)/test/dynamic/test_simple.nro.so: \
+	$(TEST_COMMON_OBJECTS) \
 	$(BUILD_DIR)/test/dynamic/test_simple.o \
 	$(BUILD_DIR)/test/dynamic/test_simple.squashfs.o \
 	$(BUILD_DIR)/test/dynamic/libdynamic_simple.nro.so \
 	$(BUILD_DIR)/test/dynamic/libdynamic_simple.nro \
 	$(DIST)
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/dynamic/test_simple.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS) -L $(realpath $(BUILD_DIR)/test/dynamic)/ -ldynamic_simple.nro
+	$(LD) $(TEST_LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/dynamic/test_simple.squashfs.o $(BUILD_DIR)/test/free_poison.o $(LIBTRANSISTOR_NRO_LDFLAGS) -L $(realpath $(BUILD_DIR)/test/dynamic)/ -ldynamic_simple.nro
 
 $(BUILD_DIR)/test/dynamic/test_dlfcn.nro.so: \
+	$(TEST_COMMON_OBJECTS) \
 	$(BUILD_DIR)/test/dynamic/test_dlfcn.o \
 	$(BUILD_DIR)/test/dynamic/test_dlfcn.squashfs.o \
 	$(BUILD_DIR)/test/dynamic/libdynamic_dlfcn.nro.so \
 	$(BUILD_DIR)/test/dynamic/libdynamic_dlfcn.nro \
 	$(DIST)
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/dynamic/test_dlfcn.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS) -L $(realpath $(BUILD_DIR)/test/dynamic)/
+	$(LD) $(TEST_LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/dynamic/test_dlfcn.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS) -L $(realpath $(BUILD_DIR)/test/dynamic)/
 
-$(BUILD_DIR)/test/test_%.nro.so: $(BUILD_DIR)/test/test_%.o $(BUILD_DIR)/test/test_%.squashfs.o $(DIST)
+$(BUILD_DIR)/test/test_%.nro.so: $(BUILD_DIR)/test/test_%.o $(BUILD_DIR)/test/test_%.squashfs.o $(DIST) $(TEST_COMMON_OBJECTS)
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/test_$*.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS)
+	$(LD) $(TEST_LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/test_$*.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS)
 
-$(BUILD_DIR)/test/test_%.nso.so: $(BUILD_DIR)/test/test_%.o $(BUILD_DIR)/test/test_%.squashfs.o $(DIST)
+$(BUILD_DIR)/test/test_%.nso.so: $(BUILD_DIR)/test/test_%.o $(BUILD_DIR)/test/test_%.squashfs.o $(DIST) $(TEST_COMMON_OBJECTS)
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/test_$*.squashfs.o $(LIBTRANSISTOR_NSO_LDFLAGS)
+	$(LD) $(TEST_LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/test_$*.squashfs.o $(LIBTRANSISTOR_NSO_LDFLAGS)
 
 $(BUILD_DIR)/test/dynamic/libdynamic_%.nro.so: $(BUILD_DIR)/test/dynamic/libdynamic_%.o $(DIST)
 	mkdir -p $(@D)
