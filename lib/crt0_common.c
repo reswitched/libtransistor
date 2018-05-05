@@ -321,7 +321,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		root_input.name = "main";
 		root_input.base = aslr_base;
 		root_input.loader = NULL;
-		if((ret = ld_add_module(root_input, &root_module)) != RESULT_OK) {
+		if((ret = ld_add_module(root_input, &root_module, true)) != RESULT_OK) {
 			root_inode.ops->release(root_inode.data);
 			dbg_disconnect();
 			goto fail_bsd;

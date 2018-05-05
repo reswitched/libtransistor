@@ -1,7 +1,7 @@
 # LIBTRANSISTOR TESTS
 
 libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin vi gpu display am sdl sqfs_img audio_output init_fini_arrays ipc_server pthread ipc_fs fs_stress cpp unwind cpp_exceptions cpp_dynamic_memory hid_init_stress usb usb_serial thread mutex override_heap # fs_release_inodes
-libtransistor_DYNAMIC_TESTS := simple
+libtransistor_DYNAMIC_TESTS := simple dlfcn
 
 # RUN RULES
 
@@ -34,14 +34,23 @@ run_dynamic_%_test: $(BUILD_DIR)/test/dynamic/test_%.nro
 
 # LINK RULES
 
-$(BUILD_DIR)/test/dynamic/test_%.nro.so: \
-	$(BUILD_DIR)/test/dynamic/test_%.o \
-	$(BUILD_DIR)/test/dynamic/test_%.squashfs.o \
-	$(BUILD_DIR)/test/dynamic/libdynamic_%.nro.so \
-	$(BUILD_DIR)/test/dynamic/libdynamic_%.nro \
+$(BUILD_DIR)/test/dynamic/test_simple.nro.so: \
+	$(BUILD_DIR)/test/dynamic/test_simple.o \
+	$(BUILD_DIR)/test/dynamic/test_simple.squashfs.o \
+	$(BUILD_DIR)/test/dynamic/libdynamic_simple.nro.so \
+	$(BUILD_DIR)/test/dynamic/libdynamic_simple.nro \
 	$(DIST)
 	mkdir -p $(@D)
-	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/dynamic/test_$*.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS) -L $(realpath $(BUILD_DIR)/test/dynamic)/ -ldynamic_$*.nro
+	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/dynamic/test_simple.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS) -L $(realpath $(BUILD_DIR)/test/dynamic)/ -ldynamic_simple.nro
+
+$(BUILD_DIR)/test/dynamic/test_dlfcn.nro.so: \
+	$(BUILD_DIR)/test/dynamic/test_dlfcn.o \
+	$(BUILD_DIR)/test/dynamic/test_dlfcn.squashfs.o \
+	$(BUILD_DIR)/test/dynamic/libdynamic_dlfcn.nro.so \
+	$(BUILD_DIR)/test/dynamic/libdynamic_dlfcn.nro \
+	$(DIST)
+	mkdir -p $(@D)
+	$(LD) $(LD_FLAGS) -o $@ $< $(BUILD_DIR)/test/dynamic/test_dlfcn.squashfs.o $(LIBTRANSISTOR_NRO_LDFLAGS) -L $(realpath $(BUILD_DIR)/test/dynamic)/
 
 $(BUILD_DIR)/test/test_%.nro.so: $(BUILD_DIR)/test/test_%.o $(BUILD_DIR)/test/test_%.squashfs.o $(DIST)
 	mkdir -p $(@D)

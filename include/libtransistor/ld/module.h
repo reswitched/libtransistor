@@ -42,6 +42,8 @@ struct module_t {
 	Elf64_Sym *symtab;
 	const char *strtab;
 	uint32_t *hash;
+
+	bool is_global;
 };
 
 // module operations

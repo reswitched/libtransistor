@@ -16,7 +16,7 @@
 
 trn_list_head_t ld_module_list_head = TRN_LIST_HEAD_INITIALIZER;
 
-result_t ld_add_module(module_input_t input, module_t **out) {
+result_t ld_add_module(module_input_t input, module_t **out, bool is_global) {
 	dbg_printf("queue %s", input.name);
 	module_t *mod = malloc(sizeof(*mod));
 	if(mod == NULL) {
@@ -25,6 +25,7 @@ result_t ld_add_module(module_input_t input, module_t **out) {
 	memset(mod, 0, sizeof(*mod));
 	mod->refcount = 1;
 	mod->input = input;
+	mod->is_global = is_global;
 	
 	module_list_node_t *node = malloc(sizeof(*node));
 	if(node == NULL) {
@@ -85,7 +86,7 @@ result_t ld_scan_module(module_t *mod) {
 		if(walker->d_tag == DT_NEEDED) {
 			dbg_printf("needs %s", mod->strtab + walker->d_val);
 			module_t *dep;
-			LIB_ASSERT_OK(fail, ld_discover_module(mod->strtab + walker->d_val, &dep));
+			LIB_ASSERT_OK(fail, ld_discover_module(mod->strtab + walker->d_val, &dep, mod->is_global));
 			module_list_node_t *node = malloc(sizeof(*node));
 			if(node == NULL) {
 				ld_decref_module(dep);

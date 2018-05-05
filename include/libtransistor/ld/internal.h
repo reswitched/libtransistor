@@ -25,9 +25,24 @@ typedef struct {
 
 /**
  * @brief Finds the definition for the given symbol
- * Implemented in ld/resolve.c
+ * @param find_name Name of symbol to find
+ * @param def Output for definition of symbol
+ * @param defining_module Output for module defining \def
+ * Implemented in ld/resolve.c, searches for symbols in global modules
+ * in the order they were loaded.
  */
-result_t ld_resolve_symbol(Elf64_Sym *find, module_t *find_module, Elf64_Sym **def, module_t **defining_module);
+result_t ld_resolve_load_symbol(const char *find_name, Elf64_Sym **def, module_t **defining_module);
+
+/**
+ * @brief Finds the definition for the given symbol
+ * @param find_mod Module to begin search with
+ * @param find_name Name of symbol to find
+ * @param def Output for definition of symbol
+ * @param defining_module Output for module defining \def
+ * Implemented in ld/resolve.c, searches for symbols in \ref find_mod's
+ * dependencies, breadth-first.
+ */
+result_t ld_resolve_dependency_symbol(module_t *find_mod, const char *find_name, Elf64_Sym **def, module_t **defining_module);
 
 #ifdef __cplusplus
 }

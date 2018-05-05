@@ -135,8 +135,8 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 			dbg_printf("  -> %s", mod->strtab + sym->st_name);
 			
 			Elf64_Sym *def;
-			if((r = ld_resolve_symbol(sym, mod, &def, &defining_module)) != RESULT_OK) {
-				dbg_printf("while resolving %s", mod->strtab + sym->st_name);
+			if((r = ld_resolve_load_symbol(mod->strtab + sym->st_name, &def, &defining_module)) != RESULT_OK) {
+				dbg_printf("while resolving %s: 0x%x", mod->strtab + sym->st_name, r);
 				return r;
 			}
 			symbol = defining_module->input.base + def->st_value;

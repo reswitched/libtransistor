@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include<libtransistor/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,13 +28,17 @@ typedef struct {
 
 /**
  * @brief Adds a loaded module to the end of the processing queue.
+ * @param is_global Whether or not to also add it to the load-order for symbol resolution
+ *                  in relocation processing.
  */
-result_t ld_add_module(module_input_t input, module_t **out);
+result_t ld_add_module(module_input_t input, module_t **out, bool is_global);
 
 /**
  * @brief Discovers a module in the filesystem, loads it, and adds it to the processing queue
+ * @param is_global Whether or not this module and its dependencies will provide symbols
+ *                  usable for relocation processing.
  */
-result_t ld_discover_module(const char *name, module_t **out);
+result_t ld_discover_module(const char *name, module_t **out, bool is_global);
 
 /**
  * @brief Decrements the module's reference count and finalizes, unloads, and destroys it if it has reached zero

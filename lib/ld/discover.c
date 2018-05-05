@@ -28,7 +28,7 @@ static const ld_loader_t *loaders[] = {
 	&ld_loader_nro_via_ldr_ro,
 };
 
-result_t ld_load_module(FILE *f, const char *name_src, module_t **out) {
+result_t ld_load_module(FILE *f, const char *name_src, module_t **out, bool is_global) {
 	if(fseek(f, 0, SEEK_END) != 0) {
 		dbg_printf("fseek failure");
 		fclose(f);
@@ -80,13 +80,13 @@ result_t ld_load_module(FILE *f, const char *name_src, module_t **out) {
 				free_pages(file_buffer);
 				return r;
 			}
-			return ld_add_module(input, out);
+			return ld_add_module(input, out, is_global);
 		}
 	}
 	return LIBTRANSISTOR_ERR_TRNLD_NO_LOADER_FOR_MODULE;
 }
 
-result_t ld_discover_module(const char *name_src, module_t **out) {
+result_t ld_discover_module(const char *name_src, module_t **out, bool is_global) {
 	dbg_printf("discovering %s", name_src);
 	char name[0x301];
 	strncpy(name, name_src, 0x300);
@@ -107,7 +107,7 @@ result_t ld_discover_module(const char *name_src, module_t **out) {
 			if(f == NULL) {
 				return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_FIND_MODULE;
 			}
-			return ld_load_module(f, name_src, out);
+			return ld_load_module(f, name_src, out, is_global);
 		}
 	}
 	
@@ -126,7 +126,7 @@ result_t ld_discover_module(const char *name_src, module_t **out) {
 		}
 		dbg_printf("got %s", path);
 
-		return ld_load_module(f, name_src, out);
+		return ld_load_module(f, name_src, out, is_global);
 	}
 	return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_FIND_MODULE;
 }
