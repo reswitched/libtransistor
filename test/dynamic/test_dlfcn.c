@@ -2,13 +2,15 @@
 #include<dlfcn.h>
 
 int main(int argc, char *argv[]) {
-	void *handle = dlopen("libdynamic_dlobj.nro", RTLD_LOCAL);
+	void *handle = dlopen("libdynamic_dlfcn.nro", RTLD_LOCAL);
 	if(handle == NULL) {
 		printf("failed to dlopen: %s\n", dlerror());
+		return 1;
 	}
 	int (*func)(int) = dlsym(handle, "func");
 	if(func == NULL) {
 		printf("failed to dlsym: %s\n", dlerror());
+		return 1;
 	}
 	int ret = func(6);
 	printf("func(6) -> %d\n", ret);
