@@ -41,7 +41,7 @@ result_t trn_mountfs_create(trn_inode_t *out);
  * @param mountpoint The filesystem to mount under the mountfs. The mountfs will take ownership of this filesystem.
  *
  */
-result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mountpoint);
+result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t mountpoint);
 
 #ifdef __cplusplus
 }

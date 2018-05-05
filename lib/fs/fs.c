@@ -41,7 +41,7 @@ result_t trn_fs_set_root(trn_inode_t *new_root) {
 }
 
 // This will only work if trn_fs_set_root has not been called!
-result_t trn_fs_mount(const char *mount_name, trn_inode_t *mount) {
+result_t trn_fs_mount(const char *mount_name, trn_inode_t mount) {
 	if (root != NULL)
 		return trn_mountfs_mount_fs(root, mount_name, mount);
 	return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;

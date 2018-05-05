@@ -67,8 +67,6 @@ static result_t dbg_log_write(void *v, const void *ptr, size_t len, size_t *byte
 static blob_file sqfs_blob;
 static sqfs fs;
 static trn_inode_t root_inode;
-static trn_inode_t squash_inode;
-static trn_inode_t sdcard_inode;
 
 bool setup_fs() {
 	size_t sqfs_size = ((uint8_t*) &_libtransistor_squashfs_image_end) - ((uint8_t*) &_libtransistor_squashfs_image); // TODO: not this
@@ -94,12 +92,13 @@ bool setup_fs() {
 	}
 
 	// Mounting squashfs to /squash
+	trn_inode_t squash_inode;
 	if((r = trn_sqfs_open_root(&squash_inode, &fs)) != RESULT_OK) {
 		printf("failed to open SquashFS root: %x\n", r);
 		goto fail_mountfs;
 	}
 
-	if((r = trn_fs_mount("/squashfs", &squash_inode)) != RESULT_OK) {
+	if((r = trn_fs_mount("/squashfs", squash_inode)) != RESULT_OK) {
 		printf("failed to mount SquashFS: %x\n", r);
 		goto fail_trn_sqfs;
 	}
@@ -113,11 +112,12 @@ bool setup_fs() {
 		printf("Failed to mount sdcard on fsp-srv: %x\n", r);
 		goto fail_fsp_srv;
 	}
+	trn_inode_t sdcard_inode;
 	if((r = trn_fspfs_create(&sdcard_inode, sdcard_ifs)) != RESULT_OK) {
 		printf("Failed to create fsp-srv vfs: %x\n", r);
 		goto fail_sdcard_ifs;
 	}
-	if((r = trn_fs_mount("/sd", &sdcard_inode)) != RESULT_OK) {
+	if((r = trn_fs_mount("/sd", sdcard_inode)) != RESULT_OK) {
 		printf("failed to mount sdcard: %x\n", r);
 		goto fail_fspfs;
 	}

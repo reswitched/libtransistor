@@ -76,10 +76,10 @@ result_t trn_fs_set_root(trn_inode_t *new_root);
  *
  * fsp_srv_mount_game_card_partition(&gamecard_inode, 0, 0);
  * trn_fspfs_create(&gamecard_inode, gamecard_ifs);
- * trn_fs_mount("/gamecard", &gamecard_inode);
+ * trn_fs_mount("/gamecard", gamecard_inode);
  * @endcode
  */
-result_t trn_fs_mount(const char *name, trn_inode_t *root);
+result_t trn_fs_mount(const char *name, trn_inode_t root);
 
 // The rest of those functions should probably not be directly used. Instead,
 // use the standard posix calls of the same name...

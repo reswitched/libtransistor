@@ -13,8 +13,9 @@
 struct mountpoint {
 	struct mountpoint *next;
 	char name[256]; // TODO: Static array ?
-	trn_inode_t *fs;
+	trn_inode_t fs;
 	trn_inode_ops_t ops_clone;
+	result_t (*original_release)(void *inode);
 };
 
 static struct trn_inode_ops_t mountfs_inode_ops;
@@ -26,7 +27,7 @@ static result_t empty_release(void *inode) {
 
 // It takes ownership of the mountpoint, and will call release on it automatically
 // on umount.
-result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mountpoint) {
+result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t mountpoint) {
 	if (fs == NULL || fs->ops != &mountfs_inode_ops)
 		return LIBTRANSISTOR_ERR_FS_INTERNAL_ERROR;
 
@@ -57,8 +58,10 @@ result_t trn_mountfs_mount_fs(trn_inode_t *fs, const char *name, trn_inode_t *mo
 	m->name[sizeof(m->name)-1] = '\0'; // just making sure
 	
 	m->fs = mountpoint;
-	m->ops_clone = *m->fs->ops;
-	m->fs->ops->release = empty_release;
+	m->ops_clone = *m->fs.ops;
+	m->original_release = m->ops_clone.release;
+	m->ops_clone.release = empty_release;
+	m->fs.ops = &m->ops_clone;
 
 	// TODO: Locking
 	m->next = *cur_root;
@@ -85,7 +88,7 @@ static result_t trn_mountfs_lookup(void *data, trn_inode_t *out, const char *nam
 		return LIBTRANSISTOR_ERR_FS_NOT_FOUND;
 
 	// Eh. That "pointer begone" thing is pretty ugly.
-	*out = *cur_mount->fs;
+	*out = cur_mount->fs;
 	return RESULT_OK;
 }
 
@@ -97,7 +100,7 @@ static result_t trn_mountfs_release(void *data) {
 	for (; cur_mount != NULL; cur_mount = cur_mount->next) {
 		printf("Unmounting %s\n", cur_mount->name);
 		// Print the error, and discard it.
-		r = cur_mount->ops_clone.release(cur_mount->fs->data);
+		r = cur_mount->original_release(cur_mount->fs.data);
 		if (r != RESULT_OK)
 			printf("Error unmounting %s: %lx\n", cur_mount->name, r);
 	}
