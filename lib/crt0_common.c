@@ -7,6 +7,7 @@
 #include<libtransistor/ipc/bsd.h>
 #include<libtransistor/ipc/fs.h>
 #include<libtransistor/ipc/fatal.h>
+#include<libtransistor/ipc/twili.h>
 #include<libtransistor/fs/blobfd.h>
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fs/squashfs.h>
