@@ -32,7 +32,6 @@ static result_t ld_try_resolve_symbol(module_t *try_mod, const char *find_name, 
 		}
 		*def = sym;
 		*defining_module = try_mod;
-		dbg_printf("found %s in module'%s'@%p + 0x%lx", find_name, try_mod->input.name, try_mod->input.base, sym->st_value);
 		return RESULT_OK;
 	}
 	return LIBTRANSISTOR_ERR_TRNLD_COULD_NOT_RESOLVE_SYMBOL;

@@ -78,7 +78,6 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 	uint64_t table_type = offset_tag;
 	if(offset_tag == DT_JMPREL) {
 		LIB_ASSERT_OK(fail, elf_dynamic_find_value(dynamic, DT_PLTREL, &table_type));
-		dbg_printf("jmprel table is type %d", table_type);
 	}
 
 	uint64_t ent_size;
@@ -128,11 +127,9 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 		void *symbol = NULL;
 		module_t *defining_module = mod;
 		if(rela.r_symbol != 0) {
-			dbg_printf("need to resolve symbol %d", rela.r_symbol);
 			if(mod->symtab == NULL) { return LIBTRANSISTOR_ERR_TRNLD_NEEDS_SYMTAB; }
 			if(mod->strtab == NULL) { return LIBTRANSISTOR_ERR_TRNLD_NEEDS_STRTAB; }
 			Elf64_Sym *sym = &mod->symtab[rela.r_symbol];
-			dbg_printf("  -> %s", mod->strtab + sym->st_name);
 			
 			Elf64_Sym *def;
 			if((r = ld_resolve_load_symbol(mod->strtab + sym->st_name, &def, &defining_module)) != RESULT_OK) {
@@ -147,10 +144,8 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 		case 1026: { // R_AARCH64_JUMP_SLOT
 			void **target = (void**)(mod->input.base + rela.r_offset);
 			if(table_type == DT_REL) {
-				dbg_printf("table is DT_REL");
 				rela.r_addend = *target;
 			}
-			dbg_printf("relocating to %p", symbol + rela.r_addend);
 			*target = symbol + rela.r_addend;
 			break; }
 		case 1027: { // R_AARCH64_RELATIVE
@@ -172,7 +167,6 @@ fail:
 }
 
 result_t ld_relocate_module(module_t *mod) {
-	dbg_printf("relocating module %s", mod->input.name);
 	result_t r;
 	LIB_ASSERT_OK(fail, ld_run_relocation_table(mod, DT_RELA,   DT_RELASZ));
 	LIB_ASSERT_OK(fail, ld_run_relocation_table(mod, DT_REL,    DT_RELSZ));

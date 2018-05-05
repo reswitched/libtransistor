@@ -30,27 +30,23 @@ static const ld_loader_t *loaders[] = {
 
 result_t ld_load_module(FILE *f, const char *name_src, module_t **out, bool is_global) {
 	if(fseek(f, 0, SEEK_END) != 0) {
-		dbg_printf("fseek failure");
 		fclose(f);
 		return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_READ_MODULE;
 	}
 
 	ssize_t file_size = ftell(f);
 	if(file_size == -1) {
-		dbg_printf("ftell failure");
 		fclose(f);
 		return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_READ_MODULE;
 	}
 
 	if(fseek(f, 0, SEEK_SET) != 0) {
-		dbg_printf("fseek failure");
 		fclose(f);
 		return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_READ_MODULE;
 	}
 
 	void *file_buffer = alloc_pages(file_size, file_size, NULL);
 	if(file_buffer == NULL) {
-		dbg_printf("failed to allocate space for library");
 		fclose(f);
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 	}
@@ -59,7 +55,6 @@ result_t ld_load_module(FILE *f, const char *name_src, module_t **out, bool is_g
 	while(total_read < file_size) {
 		size_t r = fread(file_buffer + total_read, 1, file_size - total_read, f);
 		if(r == 0) {
-			dbg_printf("failed to read file (read 0x%x/0x%x bytes): %d", total_read, file_size, errno);
 			free_pages(file_buffer);
 			fclose(f);
 			return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_READ_MODULE;
@@ -87,7 +82,6 @@ result_t ld_load_module(FILE *f, const char *name_src, module_t **out, bool is_g
 }
 
 result_t ld_discover_module(const char *name_src, module_t **out, bool is_global) {
-	dbg_printf("discovering %s", name_src);
 	char name[0x301];
 	strncpy(name, name_src, 0x300);
 	name[0x300] = 0;
@@ -99,7 +93,6 @@ result_t ld_discover_module(const char *name_src, module_t **out, bool is_global
 		len-= 3;
 		name[len] = 0;
 	}
-	dbg_printf("transformed to %s", name);
 
 	for(int i = 0; i < len; i++) {
 		if(name[i] == '/') {
@@ -119,12 +112,10 @@ result_t ld_discover_module(const char *name_src, module_t **out, bool is_global
 		strncpy(path + len, name, 0x300-len);
 		path[0x300] = 0;
 		
-		dbg_printf("try %s", path);
 		FILE *f = fopen(path, "rb");
 		if(f == NULL) {
 			continue;
 		}
-		dbg_printf("got %s", path);
 
 		return ld_load_module(f, name_src, out, is_global);
 	}

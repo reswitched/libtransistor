@@ -81,7 +81,6 @@ static result_t ld_nro_via_svc_load(module_input_t *spec_out, void *nro_image, s
 	void *load_base = as_reserve(nro_image_size + head.bss_size);
 	void *nro_bss = alloc_pages(head.bss_size, head.bss_size, NULL);
 	if(nro_bss == NULL) {
-		dbg_printf("failed to allocate bss");
 		r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 		goto fail_load_base;
 	}

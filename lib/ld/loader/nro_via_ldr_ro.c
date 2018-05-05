@@ -55,13 +55,11 @@ static result_t ld_nro_via_ldr_ro_load(module_input_t *spec_out, void *nro_image
 	uint32_t nro_bss_size = *(uint32_t*)(nro_image + 0x38);
 	void *nro_bss = alloc_pages(nro_bss_size, nro_bss_size, NULL);
 	if(nro_bss == NULL) {
-		dbg_printf("failed to allocate bss");
 		r = LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 		goto fail_nrr;
 	}
 	
 	if((r = ro_init()) != RESULT_OK) {
-		dbg_printf("failed to init ro");
 		goto fail_bss;
 	}
 	
@@ -73,8 +71,6 @@ static result_t ld_nro_via_ldr_ro_load(module_input_t *spec_out, void *nro_image
 	if((r = ro_load_nro(&nro_base, nro_image, nro_image_size, nro_bss, nro_bss_size)) != RESULT_OK) {
 		goto fail_loaded_nrr;
 	}
-	
-	dbg_printf("loaded NRO @ %p", nro_base);
 	
 	loader_data->nro_image = nro_image;
 	loader_data->bss = nro_bss;
