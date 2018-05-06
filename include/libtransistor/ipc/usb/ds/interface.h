@@ -58,6 +58,41 @@ result_t usb_ds_interface_disable(usb_ds_interface_t *intf);
  */
 result_t usb_ds_close_interface(usb_ds_interface_t *intf);
 
+/**
+ * @brief Submits a buffer for transfer over the control input endpoint
+ */
+result_t usb_ds_ctrl_in_post_buffer_async(usb_ds_interface_t *intf, void *buffer, size_t size, uint32_t *urb_id);
+
+/**
+ * @brief Submits a buffer for transfer over the control output endpoint
+ */
+result_t usb_ds_ctrl_out_post_buffer_async(usb_ds_interface_t *intf, void *buffer, size_t size, uint32_t *urb_id);
+
+/**
+ * @brief Gets an event that is signalled when a transaction completes on the control input endpoint
+ */
+result_t usb_ds_get_ctrl_in_completion_event(usb_ds_interface_t *intf, revent_h *event);
+
+/**
+ * @brief Gets report data for the control input endpoint
+ */
+result_t usb_ds_get_ctrl_in_report_data(usb_ds_interface_t *intf, usb_ds_report_t *report);
+
+/**
+ * @brief Gets an event that is signalled when a transaction completes on the control output endpoint
+ */
+result_t usb_ds_get_ctrl_out_completion_event(usb_ds_interface_t *intf, revent_h *event);
+
+/**
+ * @brief Gets report data for the control output endpoint
+ */
+result_t usb_ds_get_ctrl_out_report_data(usb_ds_interface_t *intf, usb_ds_report_t *report);
+
+/**
+ * @brief Stalls control endpoints
+ */
+result_t usb_ds_stall_ctrl(usb_ds_interface_t *intf);
+
 #ifdef __cplusplus
 }
 #endif

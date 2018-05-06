@@ -51,6 +51,9 @@ class Interface {
 	Result<std::nullopt_t> Enable();
 	Result<std::nullopt_t> Disable();
 	Result<std::shared_ptr<Endpoint>> GetEndpoint(usb_endpoint_descriptor_t &descriptor);
+	Result<std::shared_ptr<Endpoint>> GetCtrlInEndpoint();
+	Result<std::shared_ptr<Endpoint>> GetCtrlOutEndpoint();
+	Result<std::nullopt_t> StallCtrl();
 	
 	~Interface();
  private:
@@ -59,17 +62,16 @@ class Interface {
 
 class Endpoint {
  public:
-	Endpoint(usb_ds_endpoint_t endp, KEvent &&completion_event);
+	Endpoint(KEvent &&completion_event);
 
 	// returns urb_id
-	Result<uint32_t> PostBufferAsync(void *buffer, size_t size);
-	Result<usb_ds_report_t> GetReportData();
-
+	virtual Result<uint32_t> PostBufferAsync(void *buffer, size_t size) = 0;
+	virtual Result<usb_ds_report_t> GetReportData() = 0;
+	virtual Result<std::nullopt_t> Stall() = 0;
+	
 	KEvent completion_event;
 	
-	~Endpoint();
- private:
-	usb_ds_endpoint_t endp;
+	virtual ~Endpoint() = 0;
 };
 
 }
