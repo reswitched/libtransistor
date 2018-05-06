@@ -28,7 +28,6 @@
 #include<unistd.h>
 #include<errno.h>
 #include<stdlib.h>
-#include<rthread.h>
 #include<stdnoreturn.h>
 
 #include "default_squashfs_image.h"
@@ -298,6 +297,7 @@ static trn_thread_t main_thread;
 
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
 static int make_dbg_log_fd();
+void phal_init();
 
 int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
 	dyn_info_t dyn_info;
@@ -377,8 +377,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 		}
 		
 		dbg_printf("init threads");
-		phal_tid tid = { .id = loader_config.main_thread, .stack = NULL };
-		_rthread_internal_init(tid);
+		phal_init();
 
 		/*
 		  Automatically initialize sm, since 99% of applications are going to be using it
