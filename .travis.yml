@@ -66,7 +66,7 @@ before_script:
   - wget -nv https://github.com/reswitched/Mephisto/releases/download/v1.1.1/ctu_$TRAVIS_OS_NAME
   - chmod +x ctu_$TRAVIS_OS_NAME
   # Get libtransistor-base
-  - wget -nv https://github.com/misson20000/libtransistor-base/releases/download/rc1/libtransistor-base_rc1.tar.gz
+  - wget -nv https://github.com/reswitched/libtransistor-base/releases/download/v2.0.0-rc1/libtransistor-base_v2.0.0-rc1.tar.gz
   - mkdir dist
   - tar xzf libtransistor-base_rc1.tar.gz -C dist
   # Install Python requirements
