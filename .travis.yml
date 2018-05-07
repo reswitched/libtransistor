@@ -4,8 +4,9 @@ env:
 language: c
 sudo: false
 env:
-  - MEPHISTO_VERSION=v1.1.1
-  - LIBTRANSISTOR_BASE_VERSION=v2.0.0-rc1
+  global:
+    - MEPHISTO_VERSION=v1.1.1
+    - LIBTRANSISTOR_BASE_VERSION=v2.0.0-rc1
 cache:
   directories:
     - ${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
