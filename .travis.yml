@@ -1,10 +1,8 @@
-env:
-  global:
-    - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
 language: c
 sudo: false
 env:
   global:
+    - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
     - MEPHISTO_VERSION=v1.1.1
     - LIBTRANSISTOR_BASE_VERSION=v2.0.0-rc1
 cache:
