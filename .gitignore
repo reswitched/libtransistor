@@ -15,6 +15,3 @@ projects/*
 *.sublime-project
 *.sublime-workspace
 *.vscode
-
-# Automake cache files
-xz/autom4te.cache/*

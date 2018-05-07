@@ -48,7 +48,7 @@ install:
     - |
       if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
         export LLVM_POSTFIX="";
-        brew install llvm qemu lz4 squashfs jq ;
+        brew install llvm qemu lz4 squashfs ;
         brew upgrade python ;
         export PATH="$(brew --prefix llvm)/bin:$(brew --prefix python3)/bin:$PATH";
       fi
@@ -62,9 +62,15 @@ install:
     - export PATH=$PATH:$DOXY_BINPATH
 
 before_script:
+  # Get Mephisto
   - wget -nv https://github.com/reswitched/Mephisto/releases/download/v1.1.1/ctu_$TRAVIS_OS_NAME
   - chmod +x ctu_$TRAVIS_OS_NAME
-  - pip3 install --user -r requirements.txt
+  # Get libtransistor-base
+  - wget -nv https://github.com/misson20000/libtransistor-base/releases/download/rc1/libtransistor-base_rc1.tar.gz
+  - mkdir dist
+  - tar xzf libtransistor-base_rc1.tar.gz -C dist
+  # Install Python requirements
+  - pip3 install --user -r dist/requirements.txt
   
 script:  make LD=ld.lld$LLVM_POSTFIX && make run_tests MEPHISTO=./ctu_$TRAVIS_OS_NAME
 
