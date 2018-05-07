@@ -3,6 +3,9 @@ env:
     - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
 language: c
 sudo: false
+env:
+  - MEPHISTO_VERSION=v1.1.1
+  - LIBTRANSISTOR_BASE_VERSION=v2.0.0-rc1
 cache:
   directories:
     - ${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
@@ -63,12 +66,12 @@ install:
 
 before_script:
   # Get Mephisto
-  - wget -nv https://github.com/reswitched/Mephisto/releases/download/v1.1.1/ctu_$TRAVIS_OS_NAME
+  - wget -nv https://github.com/reswitched/Mephisto/releases/download/$MEPHISTO_VERSION/ctu_$TRAVIS_OS_NAME
   - chmod +x ctu_$TRAVIS_OS_NAME
   # Get libtransistor-base
-  - wget -nv https://github.com/reswitched/libtransistor-base/releases/download/v2.0.0-rc1/libtransistor-base_v2.0.0-rc1.tar.gz
+  - wget -nv https://github.com/reswitched/libtransistor-base/releases/download/$LIBTRANSISTOR_BASE_VERSION/libtransistor-base_$LIBTRANSISTOR_BASE_VERSION.tar.gz
   - mkdir dist
-  - tar xzf libtransistor-base_rc1.tar.gz -C dist
+  - tar xzf libtransistor-base_$LIBTRANSISTOR_BASE_VERSION.tar.gz -C dist
   # Install Python requirements
   - pip3 install --user -r dist/requirements.txt
   
