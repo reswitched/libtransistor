@@ -50,3 +50,8 @@ result_t usb_ds_get_report_data(usb_ds_endpoint_t *endp, usb_ds_report_t *report
 result_t usb_ds_close_endpoint(usb_ds_endpoint_t *endp) {
 	return ipc_close(endp->object);
 }
+
+result_t usb_ds_stall(usb_ds_endpoint_t *endp) {
+	ipc_request_t rq = ipc_make_request(4);
+	return ipc_send(endp->object, &rq, &ipc_default_response_fmt);
+}

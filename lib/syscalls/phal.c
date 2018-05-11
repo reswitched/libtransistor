@@ -5,8 +5,14 @@
 #include <stdatomic.h>
 #include <errno.h>
 #include <string.h>
-#include "thread_private.h"
+
 #include "phal.h"
+
+void  _rthread_internal_init(phal_tid tid);
+void phal_init() {
+	phal_tid tid = {.id = loader_config.main_thread, .stack = NULL };
+	_rthread_internal_init(tid);
+}
 
 static int result_to_errno(result_t res) {
 	switch (res) {

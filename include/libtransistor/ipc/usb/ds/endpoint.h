@@ -57,6 +57,11 @@ result_t usb_ds_get_report_data(usb_ds_endpoint_t *endp, usb_ds_report_t *report
  */
 result_t usb_ds_close_endpoint(usb_ds_endpoint_t *endp);
 
+/**
+ * @brief Halts an in-progress data transfer
+ */
+result_t usb_ds_stall(usb_ds_endpoint_t *endp);
+
 #ifdef __cplusplus
 }
 #endif
