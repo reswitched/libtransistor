@@ -43,6 +43,7 @@ static result_t twili_open_pipe(twili_pipe_t *pipe, uint32_t command_id) {
 	INITIALIZATION_GUARD(twili);
 	
 	ipc_request_t rq = ipc_make_request(command_id);
+	rq.send_pid = true;
 	
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	rs.num_objects = 1;
