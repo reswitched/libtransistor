@@ -141,6 +141,8 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 		void *delta_symbol = defining_module->input.base;
 		
 		switch(rela.r_reloc_type) {
+		case 1025: // R_AARCH64_GLOB_DAT
+			// fall-through
 		case 1026: { // R_AARCH64_JUMP_SLOT
 			void **target = (void**)(mod->input.base + rela.r_offset);
 			if(table_type == DT_REL) {
