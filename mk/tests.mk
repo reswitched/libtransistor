@@ -76,7 +76,7 @@ $(BUILD_DIR)/test/test_%.nso.so: $(BUILD_DIR)/test/test_%.o $(BUILD_DIR)/test/te
 
 $(BUILD_DIR)/test/dynamic/libdynamic_%.nro.so: $(BUILD_DIR)/test/dynamic/libdynamic_%.o $(DIST)
 	mkdir -p $(@D)
-	$(LD) $(LD_SHARED_LIBRARY_FLAGS) -o $@ $< -ltransistor.lib.nro
+	$(LD) $(LD_SHARED_LIBRARY_FLAGS) -o $@ $< -ltransistor.lib.nro $(LIBTRANSISTOR_COMMON_LDFLAGS)
 
 $(BUILD_DIR)/test/dynamic/libdynamic_%.nro: $(BUILD_DIR)/test/dynamic/libdynamic_%.nro.so
 	$(PYTHON3) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py $< $@ nro
