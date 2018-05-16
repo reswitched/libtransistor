@@ -76,6 +76,46 @@ typedef struct {
 } hid_mac;
 
 /**
+* @enum hid_controller_button_mask
+* @brief Bitmasks for hid_controller_state_entry_t.button_state
+*/
+typedef enum {
+	BUTTON_A		= BIT(0),
+	BUTTON_B		= BIT(1),
+	BUTTON_X		= BIT(2),
+	BUTTON_Y		= BIT(3),
+
+	BUTTON_LSTICK		= BIT(4), // Left stick pressed
+	BUTTON_RSTICK		= BIT(5), // Right stick pressed
+
+	BUTTON_L		= BIT(6),
+	BUTTON_R		= BIT(7),
+	BUTTON_ZL		= BIT(8),
+	BUTTON_ZR		= BIT(9),
+
+	BUTTON_PLUS		= BIT(10),
+	BUTTON_MINUS		= BIT(11),
+
+	BUTTON_LEFT		= BIT(12),
+	BUTTON_UP		= BIT(13),
+	BUTTON_RIGHT		= BIT(14),
+	BUTTON_DOWN		= BIT(15),
+
+	BUTTON_LSTICK_LEFT	= BIT(16),
+	BUTTON_LSTICK_UP	= BIT(17),
+	BUTTON_LSTICK_DOWN	= BIT(18),
+	BUTTON_LSTICK_RIGHT	= BIT(19),
+
+	BUTTON_RSTICK_LEFT	= BIT(20),
+	BUTTON_RSTICK_UP	= BIT(21),
+	BUTTON_RSTICK_DOWN	= BIT(22),
+	BUTTON_RSTICK_RIGHT	= BIT(23),
+
+	BUTTON_SL		= BIT(24),
+	BUTTON_SR		= BIT(25),
+} hid_controller_button_mask;
+
+/**
  * @struct hid_controller_state_entry_t
  */
 typedef struct {
