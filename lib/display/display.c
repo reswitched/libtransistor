@@ -41,14 +41,29 @@ result_t display_open_layer(surface_t *surface) {
 	INITIALIZATION_GUARD(display);
 	
 	result_t r;
-
 	uint64_t layer_id;
-	if((r = vi_create_managed_layer(1, &display, 0, &layer_id)) != RESULT_OK) {
-		goto fail;
+	uint64_t aruid;
+	int using_am = 0;
+
+	r = am_iwc_acquire_foreground_rights();
+	if(r == RESULT_OK)
+		r = am_iwc_get_applet_resource_user_id(&aruid);
+
+	if(r != RESULT_OK)
+	{
+		if((r = vi_create_managed_layer(1, &display, 0, &layer_id)) != RESULT_OK) {
+			goto fail;
+		}
+	} else
+	{
+		if((r = am_isc_create_managed_display_layer(&layer_id)) != RESULT_OK) {
+			goto fail;
+		}
+		using_am = 1;
 	}
 
 	igbp_t igbp;
-	if((r = vi_open_layer("Default", layer_id, 0, &igbp)) != RESULT_OK) {
+	if((r = vi_open_layer("Default", layer_id, aruid, &igbp)) != RESULT_OK) {
 		goto fail_managed_layer;
 	}
 
@@ -60,15 +75,18 @@ result_t display_open_layer(surface_t *surface) {
 		goto fail_surface;
 	}
 
-	uint32_t stacks[] = {0x0, 0x2, 0x4, 0x5, 0xA};
-	for(int i = 0; i < ARRAY_LENGTH(stacks); i++) {
-		if((r = vi_imds_add_to_layer_stack(stacks[i], layer_id)) != RESULT_OK) {
+	if(!using_am)
+	{
+		uint32_t stacks[] = {0x0, 0x2, 0x4, 0x5, 0xA};
+		for(int i = 0; i < ARRAY_LENGTH(stacks); i++) {
+			if((r = vi_imds_add_to_layer_stack(stacks[i], layer_id)) != RESULT_OK) {
+				goto fail_surface;
+			}
+		}
+
+		if((r = vi_isds_set_layer_z(layer_id, 2)) != RESULT_OK) {
 			goto fail_surface;
 		}
-	}
-
-	if((r = vi_isds_set_layer_z(layer_id, 2)) != RESULT_OK) {
-		goto fail_surface;
 	}
 	
 	return RESULT_OK;
