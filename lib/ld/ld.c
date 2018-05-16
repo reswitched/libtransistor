@@ -16,8 +16,8 @@
 
 trn_list_head_t ld_module_list_head = TRN_LIST_HEAD_INITIALIZER;
 
-	module_t *mod = malloc(sizeof(*mod));
 result_t ld_add_module(module_input_t input, module_t **out) {
+	module_t *mod = malloc(sizeof(*mod));
 	if(mod == NULL) {
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 	}
