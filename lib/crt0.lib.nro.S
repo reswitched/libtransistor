@@ -7,7 +7,7 @@ _start:
 	
 	.section .data.mod0
 	.word 0, 8
-.global _mod_header
+.local _mod_header
 _mod_header:
         .ascii "MOD0"
 	.word __dynamic_start - _mod_header
