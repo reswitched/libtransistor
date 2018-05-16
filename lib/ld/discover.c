@@ -65,7 +65,9 @@ result_t ld_load_module(FILE *f, const char *name_src, module_t **out, bool is_g
 
 	module_input_t input;
 	input.name = name_src;
-
+	input.has_run_basic_relocations = false;
+	input.is_global = is_global;
+	
 	result_t results[ARRAY_LENGTH(loaders)];
 	for(size_t i = 0; i < ARRAY_LENGTH(loaders); i++) {
 		results[i] = loaders[i]->can_load(file_buffer, file_size);
@@ -75,7 +77,7 @@ result_t ld_load_module(FILE *f, const char *name_src, module_t **out, bool is_g
 				free_pages(file_buffer);
 				return r;
 			}
-			return ld_add_module(input, out, is_global);
+			return ld_add_module(input, out);
 		}
 	}
 	return LIBTRANSISTOR_ERR_TRNLD_NO_LOADER_FOR_MODULE;

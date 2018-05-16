@@ -12,7 +12,7 @@
 #include<string.h>
 
 static result_t ld_try_resolve_symbol(module_t *try_mod, const char *find_name, uint64_t find_name_hash, Elf64_Sym **def, module_t **defining_module) {
-	if(!try_mod->is_global) { return LIBTRANSISTOR_ERR_TRNLD_COULD_NOT_RESOLVE_SYMBOL; }
+	if(!try_mod->input.is_global) { return LIBTRANSISTOR_ERR_TRNLD_COULD_NOT_RESOLVE_SYMBOL; }
 	if(try_mod->symtab == NULL) { return LIBTRANSISTOR_ERR_TRNLD_COULD_NOT_RESOLVE_SYMBOL; }
 	if(try_mod->strtab == NULL) { return LIBTRANSISTOR_ERR_TRNLD_COULD_NOT_RESOLVE_SYMBOL; }
 	if(try_mod->hash != NULL) {

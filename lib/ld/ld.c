@@ -16,15 +16,14 @@
 
 trn_list_head_t ld_module_list_head = TRN_LIST_HEAD_INITIALIZER;
 
-result_t ld_add_module(module_input_t input, module_t **out, bool is_global) {
 	module_t *mod = malloc(sizeof(*mod));
+result_t ld_add_module(module_input_t input, module_t **out) {
 	if(mod == NULL) {
 		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 	}
 	memset(mod, 0, sizeof(*mod));
 	mod->refcount = 1;
 	mod->input = input;
-	mod->is_global = is_global;
 	
 	module_list_node_t *node = malloc(sizeof(*node));
 	if(node == NULL) {
@@ -84,7 +83,7 @@ result_t ld_scan_module(module_t *mod) {
 	for(Elf64_Dyn *walker = dynamic; walker->d_tag != DT_NULL; walker++) {
 		if(walker->d_tag == DT_NEEDED) {
 			module_t *dep;
-			LIB_ASSERT_OK(fail, ld_discover_module(mod->strtab + walker->d_val, &dep, mod->is_global));
+			LIB_ASSERT_OK(fail, ld_discover_module(mod->strtab + walker->d_val, &dep, mod->input.is_global));
 			module_list_node_t *node = malloc(sizeof(*node));
 			if(node == NULL) {
 				ld_decref_module(dep);

@@ -24,6 +24,8 @@ typedef struct {
 	void *base;
 	ld_loader_t *loader;
 	void *loader_data;
+	bool is_global;
+	bool has_run_basic_relocations;
 } module_input_t;
 
 /**
@@ -31,7 +33,7 @@ typedef struct {
  * @param is_global Whether or not to also add it to the load-order for symbol resolution
  *                  in relocation processing.
  */
-result_t ld_add_module(module_input_t input, module_t **out, bool is_global);
+result_t ld_add_module(module_input_t input, module_t **out);
 
 /**
  * @brief Discovers a module in the filesystem, loads it, and adds it to the processing queue

@@ -149,11 +149,13 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 			*target = symbol + rela.r_addend;
 			break; }
 		case 1027: { // R_AARCH64_RELATIVE
-			void **target = (void**)(mod->input.base + rela.r_offset);
-			if(table_type == DT_REL) { // TODO: be careful here if the module was already relocated
-				rela.r_addend = *target;
+			if(!mod->input.has_run_basic_relocations) {
+				void **target = (void**)(mod->input.base + rela.r_offset);
+				if(table_type == DT_REL) { // TODO: be careful here if the module was already relocated
+					rela.r_addend = *target;
+				}
+				*target = delta_symbol + rela.r_addend;
 			}
-			*target = delta_symbol + rela.r_addend;
 			break; }
 		default:
 			dbg_printf("unknown relocation: 0x%x", rela.r_reloc_type);
