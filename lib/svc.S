@@ -128,6 +128,8 @@ DEFINE_OUT00_SVC 0x28, ReturnFromException
 DEFINE_OUT64_SVC 0x29, GetInfo
 DEFINE_OUT00_SVC 0x2A, FlushEntireDataCache
 DEFINE_OUT00_SVC 0x2B, FlushDataCache
+DEFINE_OUT00_SVC 0x2C, MapPhysicalMemory
+DEFINE_OUT00_SVC 0x2D, UnmapPhysicalMemory
 
 SVC_BEGIN svcGetLastThreadInfo
     str x2, [sp, #-0x10]!

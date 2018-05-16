@@ -398,8 +398,21 @@ void svcReturnFromException(uint64_t result);
 result_t svcGetInfo(void *info, uint64_t info_id, handle_t handle, uint64_t info_sub_id);
 // flushEntireDataCache
 // flushDataCache
-// mapPhysicalMemory
-// unmapPhysicalMemory
+
+/**
+ * @brief Maps size bytes of type-5 memory at addr
+ * @param addr Address to map memory at
+ * @param size Amount of memory to map
+ */
+result_t svcMapPhysicalMemory(void *addr, size_t size);
+
+/**
+ * @brief Unmaps memory mapped by \ref svcMapPhysicalMemory
+ * @param addr Address of memory to unmap
+ * @param size Amount of memory to unmap
+ */
+result_t svcUnmapPhysicalMemory(void *addr, size_t size);
+
 // 0x2E?
 // getLastThreadInfo
 // getResourceLimitLimitValue
