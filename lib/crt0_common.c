@@ -296,6 +296,7 @@ static uint8_t tls_backup[0x200];
 static trn_thread_t main_thread;
 
 static void setup_stdio_socket(const char *name, int socket_fd, int target_fd);
+static result_t setup_twili_fd(result_t (*func)(twili_pipe_t *out), int fd);
 static int make_dbg_log_fd();
 void phal_init();
 
@@ -391,20 +392,29 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 
 		if(_trn_runconf_stdio_override  == _TRN_RUNCONF_STDIO_OVERRIDE_NONE) {
 			if(loader_config.has_twili) {
-				twili_pipe_t twili_out;
 				if((ret = twili_init()) != RESULT_OK) {
 					sm_finalize();
 					goto restore_tls;
 				}
-				if((ret = twili_open_stdout(&twili_out)) != RESULT_OK) {
+				if((ret = setup_twili_fd(twili_open_stdout, STDOUT_FILENO)) != RESULT_OK) {
 					twili_finalize();
 					sm_finalize();
 					goto restore_tls;
 				}
-				int fd = twili_pipe_fd(&twili_out);
-				dup2(fd, STDOUT_FILENO);
-				dbg_set_file(fd_file_get(fd));
-				close(fd);
+				dbg_set_file(fd_file_get(STDOUT_FILENO));
+				if((ret = setup_twili_fd(twili_open_stderr, STDERR_FILENO)) != RESULT_OK) {
+					close(STDOUT_FILENO);
+					twili_finalize();
+					sm_finalize();
+					goto restore_tls;
+				}
+				if((ret = setup_twili_fd(twili_open_stdin, STDIN_FILENO)) != RESULT_OK) {
+					close(STDERR_FILENO);
+					close(STDOUT_FILENO);
+					twili_finalize();
+					sm_finalize();
+					goto restore_tls;
+				}
 			} else if(loader_config.has_stdio_sockets) {
 				if((ret = bsd_init_ex(true, loader_config.socket_service)) != RESULT_OK) {
 					sm_finalize();
@@ -542,6 +552,18 @@ static void setup_stdio_socket(const char *name, int socket_fd, int target_fd) {
 			dbg_printf("Error setting up %s: %d", name, errno);
 		}
 	}
+}
+
+static result_t setup_twili_fd(result_t (*func)(twili_pipe_t *out), int fd) {
+	result_t r;
+	twili_pipe_t pipe;
+	if((r = func(&pipe)) != RESULT_OK) {
+		return r;
+	}
+	int pfd = twili_pipe_fd(&pipe);
+	dup2(pfd, fd);
+	close(pfd);
+	return RESULT_OK;
 }
 
 static int make_dbg_log_fd() {
