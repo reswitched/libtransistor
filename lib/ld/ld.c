@@ -195,6 +195,8 @@ result_t ld_destroy_module(module_t *mod) {
 	trn_list_foreach(&mod->dependencies, i) {
 		module_list_node_t *node = trn_list_entry(module_list_node_t, list, i);
 		ld_decref_module(node->module);
+		trn_list_delink(i);
+		i = i->prev;
 		free(node);
 	}
 
