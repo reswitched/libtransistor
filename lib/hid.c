@@ -64,6 +64,15 @@ hid_shared_memory_t *hid_get_shared_memory() {
 	return shared_memory;
 }
 
+bool hid_controller_buttons_pressed(hid_controller_t *c, hid_controller_button_mask m) {
+	hid_controller_state_entry_t ent = c->main.entries[c->main.latest_idx];
+	return ent.button_state & m;
+}
+
+bool hid_controller_buttons_released(hid_controller_t *c, hid_controller_button_mask m) {
+	return !(hid_controller_button_pressed(c, m));
+}
+
 static void hid_force_finalize() {
 	svcUnmapSharedMemory(shared_memory_handle, shared_memory, sizeof(*shared_memory));
 	as_release(shared_memory, sizeof(*shared_memory));

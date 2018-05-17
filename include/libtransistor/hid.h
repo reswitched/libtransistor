@@ -208,6 +208,16 @@ result_t hid_init();
 hid_shared_memory_t *hid_get_shared_memory();
 
 /**
+ * @brief Detect if button(s) are pressed
+ */
+bool hid_controller_buttons_pressed(hid_controller_t *c, hid_controller_button_mask m);
+
+/**
+ * @brief Detect if button(s) are released
+ */
+bool hid_controller_buttons_released(hid_controller_t *c, hid_controller_button_mask m);
+
+/**
  * @brief Finalize HID
  */
 void hid_finalize();
