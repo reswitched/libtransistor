@@ -76,7 +76,7 @@ typedef struct {
 } hid_mac;
 
 /**
-* @enum hid_controller_button_mask
+* @enum hid_controller_button_mask_t
 * @brief Bitmasks for hid_controller_state_entry_t.button_state
 */
 typedef enum {
@@ -113,7 +113,7 @@ typedef enum {
 
 	BUTTON_SL		= BIT(24),
 	BUTTON_SR		= BIT(25),
-} hid_controller_button_mask;
+} hid_controller_button_mask_t;
 
 /**
  * @struct hid_controller_state_entry_t
@@ -206,6 +206,11 @@ result_t hid_init();
  * @brief Get HID shared memory
  */
 hid_shared_memory_t *hid_get_shared_memory();
+
+/**
+ * @brief Detect if button(s) are pressed
+ */
+bool hid_controller_buttons_down(hid_controller_t *c, hid_controller_button_mask_t m);
 
 /**
  * @brief Finalize HID
