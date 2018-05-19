@@ -67,6 +67,14 @@ and you'll also need to install some python dependencies via pip.
 ```bash
 pip install --user -r requirements.txt
 ```
+
+### Building on OSX
+
+You will need to install `squashfs`:
+```bash
+brew install squashfs
+```
+
 ## Running
 
 ```
