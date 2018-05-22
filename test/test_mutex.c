@@ -13,6 +13,8 @@ void other_thread(void *arg) {
 	printf("O: trying to lock mutex: %d\n", (int) (t = trn_mutex_try_lock(&mutex)));
 	if(t) {
 		printf("O: invalid state\n");
+		trn_mutex_unlock(&mutex);
+		return;
 	}
 	printf("O: locking mutex...\n");
 	trn_mutex_lock(&mutex);
