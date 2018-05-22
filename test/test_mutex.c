@@ -7,7 +7,7 @@
 
 static trn_mutex_t mutex;
 
-void other_thread(void *arg) {
+void other_thread(void *arg) NO_THREAD_SAFETY_ANALYSIS {
 	printf("O: other thread started: %p\n", arg);
 	bool t;
 	printf("O: trying to lock mutex: %d\n", (int) (t = trn_mutex_try_lock(&mutex)));
