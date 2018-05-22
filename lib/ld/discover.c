@@ -85,7 +85,7 @@ result_t ld_load_module(FILE *f, const char *name_src, module_t **out, bool is_g
 
 result_t ld_discover_module(const char *name_src, module_t **out, bool is_global) {
 	char name[0x301];
-	strncpy(name, name_src, 0x300);
+	strncpy(name, name_src, 0x29C);
 	name[0x300] = 0;
 
 	int len = strlen(name);
@@ -121,5 +121,12 @@ result_t ld_discover_module(const char *name_src, module_t **out, bool is_global
 
 		return ld_load_module(f, name_src, out, is_global);
 	}
-	return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_FIND_MODULE;
+
+	// try appending .nro if it's not already there
+	if(strcmp(name + len - 4, ".nro") == 0) {
+		return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_FIND_MODULE;
+	} else {
+		strcat(name, ".nro");
+		return ld_discover_module(name, out, is_global);
+	}
 }
