@@ -145,7 +145,7 @@ static bool relocate(uint8_t *aslr_base, dyn_info_t *dyn_info) {
 			rela_count = dynamic->d_val;
 			break;
 		default:
-			return true;
+			break;
 		}
 		dynamic++;
 	}
