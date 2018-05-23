@@ -886,7 +886,7 @@ result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_
 	bool from_domain = object.object_id >= 0;  
 	size_t raw_data_words = rs->raw_data_size / sizeof(uint32_t);
 
-	if(msg->message_type != 0) {
+	if(msg->message_type != 0 && msg->message_type != 4) {
 		return LIBTRANSISTOR_ERR_INVALID_IPC_RESPONSE_TYPE;
 	}
 	
