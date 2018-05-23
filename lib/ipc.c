@@ -878,7 +878,7 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_object_t object) {
 	bool from_domain = object.object_id >= 0;  
 
-	if(msg->message_type != 0) {
+	if(msg->message_type != 0 && msg->message_type != 4) {
 		return LIBTRANSISTOR_ERR_INVALID_IPC_RESPONSE_TYPE;
 	}
 	
