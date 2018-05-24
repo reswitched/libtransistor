@@ -2,7 +2,6 @@
 #include<libtransistor/loader_config.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
-#include<libtransistor/ipc_helpers.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
@@ -54,9 +53,10 @@ static __attribute__((destructor)) void sm_destruct() {
 
 static result_t sm_register() { // we only do this when necessary
 	uint64_t raw = 0;
-	ipc_request_t rq = ipc_make_request(0);
+	ipc_request_t rq = ipc_default_request;
 	rq.send_pid = true;
-	ipc_msg_raw_data_from_value(rq, raw);
+	rq.raw_data_size = sizeof(raw);
+	rq.raw_data = &raw;
 	
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
 	result_t r = ipc_send(sm_object, &rq, &rs);
