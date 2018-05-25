@@ -7,8 +7,6 @@
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/util.h>
 
-#include<stdio.h>
-
 result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp) {
 	surface->layer_id = layer_id;
 	surface->igbp = igbp;
@@ -39,11 +37,8 @@ result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp) {
 	}
 
 	if((r = svcSetMemoryAttribute(surface->gpu_buffer_memory, buffer_size, 0x8, 0x8)) != RESULT_OK) {
-		printf("failed svcsma\n");
 		goto fail_memory;
 	}
-
-	printf("passed svcsma\n");
 
 	if((r = gpu_buffer_initialize(
 		    &surface->gpu_buffer,
