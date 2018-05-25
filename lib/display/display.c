@@ -3,9 +3,11 @@
 #include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/vi.h>
 #include<libtransistor/display/display.h>
+#include<libtransistor/loader_config.h>
 
 static display_t display;
 static int display_initializations = 0;
+static bool display_initialized_am = false;
 
 result_t display_init() {
 	if(display_initializations++ > 0) {
@@ -26,6 +28,8 @@ result_t display_init() {
 		goto fail_vi;
 	}
 
+	display_initialized_am = (r = am_init()) == RESULT_OK;
+
 	return RESULT_OK;
 
 fail_vi:
@@ -42,24 +46,26 @@ result_t display_open_layer(surface_t *surface) {
 	
 	result_t r;
 	uint64_t layer_id;
-	uint64_t aruid;
-	int using_am = 0;
+	uint64_t aruid = loader_config.applet_workaround_aruid;
+	bool using_am = display_initialized_am && !loader_config.applet_workaround_active;
 
-	r = am_iwc_acquire_foreground_rights();
-	if(r == RESULT_OK)
+	if(using_am) {
+		r = am_iwc_acquire_foreground_rights();
+		if(r != RESULT_OK) {
+			goto fail;
+		}
 		r = am_iwc_get_applet_resource_user_id(&aruid);
-
-	if(r != RESULT_OK)
-	{
+		if(r != RESULT_OK) {
+			goto fail;
+		}
+		r = am_isc_create_managed_display_layer(&layer_id);
+		if(r != RESULT_OK) {
+			goto fail;
+		}
+	} else {
 		if((r = vi_create_managed_layer(1, &display, 0, &layer_id)) != RESULT_OK) {
 			goto fail;
 		}
-	} else
-	{
-		if((r = am_isc_create_managed_display_layer(&layer_id)) != RESULT_OK) {
-			goto fail;
-		}
-		using_am = 1;
 	}
 
 	igbp_t igbp;
@@ -127,6 +133,10 @@ result_t display_get_vsync_event(revent_h *event) {
 }
 
 static void display_force_finalize() {
+	if(display_initialized_am) {
+		am_finalize();
+		display_initialized_am = false;
+	}
 	vi_close_display(&display);
 	vi_finalize();
 	gpu_finalize();
