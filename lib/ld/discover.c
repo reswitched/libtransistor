@@ -91,12 +91,6 @@ result_t ld_discover_module(const char *name_src, module_t **out, bool is_global
 
 	int len = strlen(name);
 	
-	// strip .so suffix
-	if(strcmp(name + len - 3, ".so") == 0) {
-		len-= 3;
-		name[len] = 0;
-	}
-
 	for(int i = 0; i < len; i++) {
 		if(name[i] == '/') {
 			FILE *f = fopen(name, "rb");
@@ -123,11 +117,18 @@ result_t ld_discover_module(const char *name_src, module_t **out, bool is_global
 		return ld_load_module(f, name_src, out, is_global);
 	}
 
+	// try stripping .so suffix
+	if(strcmp(name + len - 3, ".so") == 0) {
+		len-= 3;
+		name[len] = 0;
+		return ld_discover_module(name, out, is_global);
+	}
+
 	// try appending .nro if it's not already there
-	if(strcmp(name + len - 4, ".nro") == 0) {
-		return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_FIND_MODULE;
-	} else {
+	if(strcmp(name + len - 4, ".nro") != 0) {
 		strcat(name, ".nro");
 		return ld_discover_module(name, out, is_global);
+	} else {
+		return LIBTRANSISTOR_ERR_TRNLD_FAILED_TO_FIND_MODULE;
 	}
 }
