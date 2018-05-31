@@ -64,7 +64,7 @@ void *dlsym(void *ptr, const char *symbol) {
 	module_t *def_mod;
 
 	if(handle == NULL || handle->module == NULL) {
-		r = ld_resolve_load_symbol(symbol, &def, &def_mod);
+		r = ld_resolve_load_symbol(NULL, symbol, &def, &def_mod);
 	} else {
 		r = ld_resolve_dependency_symbol(handle->module, symbol, &def, &def_mod);
 	}

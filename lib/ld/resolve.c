@@ -37,7 +37,7 @@ static result_t ld_try_resolve_symbol(module_t *try_mod, const char *find_name, 
 	return LIBTRANSISTOR_ERR_TRNLD_COULD_NOT_RESOLVE_SYMBOL;
 }
 
-result_t ld_resolve_load_symbol(const char *find_name, Elf64_Sym **def, module_t **defining_module) {
+result_t ld_resolve_load_symbol(module_t *find_mod, const char *find_name, Elf64_Sym **def, module_t **defining_module) {
 	uint64_t find_name_hash = elf_hash_string(find_name);
 	trn_list_foreach(&ld_module_list_head, i) {
 		result_t r = ld_try_resolve_symbol(trn_list_entry(module_list_node_t, list, i)->module, find_name, find_name_hash, def, defining_module, true);
@@ -47,6 +47,12 @@ result_t ld_resolve_load_symbol(const char *find_name, Elf64_Sym **def, module_t
 			return r;
 		}
 	}
+
+	// use last-resort module
+	if(find_mod != NULL) {
+		return ld_try_resolve_symbol(find_mod, find_name, find_name_hash, def, defining_module, false);
+	}
+	
 	return LIBTRANSISTOR_ERR_TRNLD_COULD_NOT_RESOLVE_SYMBOL;
 }
 

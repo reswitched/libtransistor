@@ -132,7 +132,7 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 			Elf64_Sym *sym = &mod->symtab[rela.r_symbol];
 			
 			Elf64_Sym *def;
-			if((r = ld_resolve_load_symbol(mod->strtab + sym->st_name, &def, &defining_module)) != RESULT_OK) {
+			if((r = ld_resolve_load_symbol(mod, mod->strtab + sym->st_name, &def, &defining_module)) != RESULT_OK) {
 				dbg_printf("while resolving %s: 0x%x", mod->strtab + sym->st_name, r);
 				return r;
 			}
