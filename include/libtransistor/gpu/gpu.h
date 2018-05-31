@@ -22,6 +22,11 @@ typedef struct {
 	uint8_t kind;
 } gpu_buffer_t;
 
+typedef struct {
+	uint32_t syncpt_id;
+	uint32_t syncpt_value;
+} gpu_fence_t;
+
 /**
 * @brief Initialize GPU
 */
@@ -62,6 +67,14 @@ result_t gpu_buffer_get_id(gpu_buffer_t *gpu_b, uint32_t *id);
 * @param id ID of gpu buffer
 */
 result_t gpu_buffer_initialize_from_id(gpu_buffer_t *gpu_b, uint32_t id);
+
+
+/**
+ * @brief Waits on a fence to complete
+ *
+ * @param fence Fence to wait for completion on
+ */
+result_t gpu_wait_fence(gpu_fence_t *fence, uint32_t timeout);
 
 /**
 * @brief Finalize GPU

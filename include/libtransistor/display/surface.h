@@ -33,12 +33,14 @@ typedef struct {
 	surface_state_t state;
 	bool has_requested[2];
 	uint32_t current_slot;
-
+	
 	gpu_buffer_t gpu_buffer;
 	uint32_t *gpu_buffer_memory;
 	uint32_t *gpu_buffer_memory_alloc;
 
 	graphic_buffer_t graphic_buffers[3];
+
+	fence_t current_fence;
 } surface_t;
 
 /**
@@ -59,8 +61,14 @@ result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp);
 * Using \ref gfx_slow_swizzling_blit is recommended. Call \ref surface_queue_buffer
 * when you're done rendering to submit it to be displayed.
 */
-// for now, we ignore fences
 result_t surface_dequeue_buffer(surface_t *surface, uint32_t **image);
+
+/**
+ * @brief Wait for any asynchronous operations on the current buffer to complete
+ *
+ * @param surface Surface
+ */
+result_t surface_wait_buffer(surface_t *surface);
 
 /**
 * @brief Submit the current buffer to be displayed

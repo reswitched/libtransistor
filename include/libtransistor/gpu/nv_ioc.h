@@ -9,20 +9,20 @@
 extern "C" {
 #endif
 
-#define NVHOST_IOCTL_CTRL_SYNCPT_READ 0xC0080014
-#define NVHOST_IOCTL_CTRL_SYNCPT_INCR 0x40040015
-#define NVHOST_IOCTL_CTRL_SYNCPT_WAIT 0xC00C0016
-#define NVHOST_IOCTL_CTRL_MODULE_MUTEX 0x40080017
-#define NVHOST_IOCTL_CTRL_MODULE_REGRDWR 0xC0180018
-#define NVHOST_IOCTL_CTRL_SYNCPT_WAITEX 0xC0100019
-#define NVHOST_IOCTL_CTRL_SYNCPT_READ_MAX 0xC008001A
-#define NVHOST_IOCTL_CTRL_GET_CONFIG 0xC183001B
-#define NVHOST_IOCTL_CTRL_EVENT_SIGNAL 0xC004001C
-#define NVHOST_IOCTL_CTRL_EVENT_WAIT 0xC010001D
-#define NVHOST_IOCTL_CTRL_EVENT_WAIT_ASYNC 0xC010001E
-#define NVHOST_IOCTL_CTRL_EVENT_REGISTER 0xC004001F
-#define NVHOST_IOCTL_CTRL_EVENT_UNREGISTER 0xC0040020
-#define NVHOST_IOCTL_CTRL_EVENT_KILL 0x40080021
+#define NVHOST_IOC_CTRL_SYNCPT_READ 0xC0080014
+#define NVHOST_IOC_CTRL_SYNCPT_INCR 0x40040015
+#define NVHOST_IOC_CTRL_SYNCPT_WAIT 0xC00C0016
+#define NVHOST_IOC_CTRL_MODULE_MUTEX 0x40080017
+#define NVHOST_IOC_CTRL_MODULE_REGRDWR 0xC0180018
+#define NVHOST_IOC_CTRL_SYNCPT_WAITEX 0xC0100019
+#define NVHOST_IOC_CTRL_SYNCPT_READ_MAX 0xC008001A
+#define NVHOST_IOC_CTRL_GET_CONFIG 0xC183001B
+#define NVHOST_IOC_CTRL_EVENT_SIGNAL 0xC004001C
+#define NVHOST_IOC_CTRL_EVENT_WAIT 0xC010001D
+#define NVHOST_IOC_CTRL_EVENT_WAIT_ASYNC 0xC010001E
+#define NVHOST_IOC_CTRL_EVENT_REGISTER 0xC004001F
+#define NVHOST_IOC_CTRL_EVENT_UNREGISTER 0xC0040020
+#define NVHOST_IOC_CTRL_EVENT_KILL 0x40080021
 
 #define NVMAP_IOC_CREATE 0xC0080101
 #define NVMAP_IOC_FROM_ID 0xC0080103
@@ -32,15 +32,25 @@ extern "C" {
 #define NVMAP_IOC_GET_ID 0xC008010E
 
 /**
- * @struct nvhost_ioctl_ctrl_event_wait_args
+ * @struct nvhost_ioctl_ctrl_syncpt_wait_args
  * @brief Arguments to wait on a syncpt
  */
 typedef struct {
 	uint32_t syncpt_id; ///< In
 	uint32_t threshold; ///< In
 	int32_t timeout; ///< In
+} nvhost_ioc_ctrl_syncpt_wait_args;
+
+/**
+ * @struct nvhost_ioctl_ctrl_event_wait_args
+ * @brief Arguments to wait on a syncpt event
+ */
+typedef struct {
+	uint32_t syncpt_id; ///< In
+	uint32_t threshold; ///< In
+	int32_t timeout; ///< In
 	uint32_t value; ///< Inout
-} nvhost_ioctl_ctrl_event_wait_args;
+} nvhost_ioc_ctrl_event_wait_args;
 
 /**
 * @struct nvmap_ioc_create_args
