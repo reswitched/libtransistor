@@ -124,8 +124,8 @@ static result_t ld_elf_load(module_input_t *spec_out, void *file, size_t file_si
 			seg->dst = slide + phdr->p_vaddr;
 			seg->src = file + phdr->p_offset;
 
-			if(phdr->p_offset + seg->size > file_size) {
-				for(int k = 0; k < j; k++) {
+			if(phdr->p_offset + phdr->p_filesz > file_size) {
+				for(int k = 0; k < j-1; k++) {
 					if(data->segments[k].clone) {
 						free_pages(data->segments[k].clone);
 					}
@@ -140,7 +140,7 @@ static result_t ld_elf_load(module_input_t *spec_out, void *file, size_t file_si
 				seg->size = (phdr->p_memsz + 0xFFF) & ~0xFFF;
 				seg->clone = alloc_pages(seg->size, seg->size, NULL);
 				if(seg->clone == NULL) {
-					for(int k = 0; k < j; k++) {
+					for(int k = 0; k < j-1; k++) {
 						if(data->segments[k].clone) {
 							free_pages(data->segments[k].clone);
 						}
