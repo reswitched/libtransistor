@@ -40,7 +40,7 @@ static result_t reprotect_segment(void *load_base, segment_header_t segment, int
 	return svcSetProcessMemoryPermission(loader_config.process_handle, load_base + segment.file_offset, segment.size, permission);
 }
 
-const uint8_t required_syscalls[] = {
+static const uint8_t required_syscalls[] = {
 	SVC_ID_SET_PROCESS_MEMORY_PERMISSION,
 	SVC_ID_MAP_PROCESS_CODE_MEMORY,
 	SVC_ID_UNMAP_PROCESS_CODE_MEMORY,

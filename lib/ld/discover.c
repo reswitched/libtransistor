@@ -26,6 +26,7 @@ static const char *ld_search_path[] = {
 static const ld_loader_t *loaders[] = {
 	&ld_loader_nro_via_svc,
 	&ld_loader_nro_via_ldr_ro,
+	&ld_loader_elf,
 };
 
 result_t ld_load_module(FILE *f, const char *name_src, module_t **out, bool is_global) {

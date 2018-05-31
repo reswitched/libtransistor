@@ -20,6 +20,7 @@ typedef struct ld_loader_t {
 
 extern ld_loader_t ld_loader_nro_via_svc;
 extern ld_loader_t ld_loader_nro_via_ldr_ro;
+extern ld_loader_t ld_loader_elf;
 
 #ifdef __cplusplus
 }
