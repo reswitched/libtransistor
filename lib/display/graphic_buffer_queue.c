@@ -41,26 +41,7 @@ static result_t queue_buffer_output_unflatten(parcel_t *parcel, queue_buffer_out
 }
 
 static result_t queue_buffer_input_flatten(parcel_t *parcel, queue_buffer_input_t *qbi) {
-	static uint32_t ts32 = 0x588bbba9;
-	uint32_t template[] = {
-		0x54, 0, // unknown, but always these values
-		ts32, 0x0, //u64 timestamp
-		1, 0, 0, // unknown, but always these values
-		0, 0, // sometimes zero
-		0,
-		0, // also seen 2
-
-		0, 0,
-
-		// fence?
-		1, 1, 0xa3, 0x0,
-		-1, 0, -1, 0, -1, 0
-	};
-
-	ts32++;
-	//ts32+= 0x2e45f00;
-
-	memcpy(parcel_write_inplace(parcel, sizeof(template)), &template, sizeof(template));
+	memcpy(parcel_write_inplace(parcel, sizeof(*qbi)), qbi, sizeof(*qbi));
   
 	return RESULT_OK;
 }
@@ -127,6 +108,20 @@ static result_t graphic_buffer_flatten(parcel_t *parcel, graphic_buffer_t *gb) {
 }
 
 static result_t fence_unflatten(parcel_t *parcel, fence_t *fence) {
+	struct {
+		uint32_t size;
+		uint32_t num_fds;
+	} *header;
+	header = parcel_read_inplace(parcel, sizeof(*header));
+	if(header->size != sizeof(fence_t)) {
+		return LIBTRANSISTOR_ERR_DISPLAY_INVALID_FENCE;
+	}
+	if(header->num_fds != 0) {
+		return LIBTRANSISTOR_ERR_DISPLAY_FENCE_TOO_MANY_FDS;
+	}
+	for(size_t i = 0; i < ARRAY_LENGTH(fence->sync); i++) {
+		fence->sync[i].syncpt_id = 0xffffffff;
+	}
 	memcpy(fence, parcel_read_inplace(parcel, sizeof(*fence)), sizeof(*fence));
 	return RESULT_OK;
 }
@@ -182,11 +177,17 @@ result_t igbp_dequeue_buffer(igbp_t *igbp, uint32_t width, uint32_t height, pixe
 	}
 
 	*slot = parcel_read_u32(&response);
-	if((r = fence_unflatten(&response, fence)) != RESULT_OK) {
-		return r;
+
+	int32_t has_fence = parcel_read_u32(&response);
+	if(has_fence) {
+		if((r = fence_unflatten(&response, fence)) != RESULT_OK) {
+			return r;
+		}
+	} else {
+		fence->is_valid = false;
 	}
 	*status = parcel_read_u32(&response);
-
+	
 	return RESULT_OK;
 }
 

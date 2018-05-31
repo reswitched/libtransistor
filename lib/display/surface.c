@@ -104,12 +104,11 @@ result_t surface_dequeue_buffer(surface_t *surface, uint32_t **image) {
 	}
 
 	int status;
-	fence_t fence;
 	if((r = igbp_dequeue_buffer(
 		    &surface->igbp,
 		    1280, 720, 1, 0xb00,
 		    false, &status, &surface->current_slot,
-		    &fence, NULL)) != RESULT_OK) {
+		    &surface->current_fence, NULL)) != RESULT_OK) {
 		return r;
 	}
 
@@ -144,11 +143,31 @@ result_t surface_queue_buffer(surface_t *surface) {
 	if(surface->state != SURFACE_STATE_DEQUEUED) {
 		return LIBTRANSISTOR_ERR_SURFACE_INVALID_STATE;
 	}
+
+	queue_buffer_input_t qbi;
+	qbi.size = sizeof(qbi) - 0x8;
+	qbi.num_fds = 0;
+	qbi.timestamp = 0;
+	qbi.is_auto_timestamp = 0;
+	qbi.crop.left = 0;
+	qbi.crop.top = 0;
+	qbi.crop.right = 0;
+	qbi.crop.bottom = 0;
+	qbi.scaling_mode = 0;
+	qbi.transform = 0;
+	qbi.sticky_transform = 0;
+	qbi.unknown[0] = 0;
+	qbi.unknown[1] = 1;
+	qbi.fence.is_valid = 1;
+	for(size_t i = 0; i < ARRAY_LENGTH(qbi.fence.sync); i++) {
+		qbi.fence.sync[i].syncpt_id = 0xffffffff;
+		qbi.fence.sync[i].syncpt_value = 0;
+	}
 	
 	queue_buffer_output_t qbo;
 	int status;
 	if((r = igbp_queue_buffer(&surface->igbp, surface->current_slot,
-	                          NULL, &qbo, &status)) != RESULT_OK) {
+	                          &qbi, &qbo, &status)) != RESULT_OK) {
 		return r;
 	}
 
@@ -158,5 +177,28 @@ result_t surface_queue_buffer(surface_t *surface) {
 
 	surface->state = SURFACE_STATE_QUEUED;
 	
+	return RESULT_OK;
+}
+
+result_t surface_wait_buffer(surface_t *surface) {
+	if(surface->state != SURFACE_STATE_DEQUEUED) {
+		return LIBTRANSISTOR_ERR_SURFACE_INVALID_STATE;
+	}
+
+	if(!surface->current_fence.is_valid) {
+		return RESULT_OK;
+	}
+
+	for(size_t i = 0; i < ARRAY_LENGTH(surface->current_fence.sync); i++) {
+		result_t r;
+		gpu_fence_t *f = &surface->current_fence.sync[i];
+		if(f->syncpt_id == 0xffffffff) {
+			continue;
+		}
+		if((r = gpu_wait_fence(f, -1)) != RESULT_OK) {
+			return r;
+		}
+	}
+
 	return RESULT_OK;
 }

@@ -81,14 +81,17 @@ typedef enum {
 * https://source.android.com/reference/hidl/android/hardware/graphics/bufferqueue/1.0/IGraphicBufferProducer#queuebufferinput
 */
 typedef struct {
+	uint32_t size;
+	uint32_t num_fds;
 	int64_t timestamp;
-	bool is_auto_timestamp;
+	int32_t is_auto_timestamp;
 	rect_t crop;
 	int32_t scaling_mode;
 	uint32_t transform;
+	uint32_t sticky_transform;
+	uint32_t unknown[2];
 	fence_t fence;
-	// and a few more unknown fields
-} queue_buffer_input_t;
+} __attribute__((packed)) queue_buffer_input_t;
 
 /**
 * @struct queue_buffer_output_t

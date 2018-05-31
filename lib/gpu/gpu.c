@@ -7,6 +7,7 @@
 
 static int nvas_fd;
 static int nvmap_fd;
+static int nvhost_ctrl_fd;
 static int gpu_initializations = 0;
 
 result_t gpu_initialize() {
@@ -29,8 +30,15 @@ result_t gpu_initialize() {
 		goto fail_nvas;
 	}
 
+	if((nvhost_ctrl_fd = nv_open("/dev/nvhost-ctrl")) < 0) {
+		r = nv_result;
+		goto fail_nvmap;
+	}
+
 	return RESULT_OK;
 
+fail_nvhost_ctrl:
+	nv_close(nvhost_ctrl_fd);
 fail_nvmap:
 	nv_close(nvmap_fd);
 fail_nvas:
@@ -140,7 +148,23 @@ result_t gpu_buffer_initialize_from_id(gpu_buffer_t *gpu_b, uint32_t id) {
 	return RESULT_OK;
 }
 
+result_t gpu_wait_fence(gpu_fence_t *fence, uint32_t timeout) {
+	INITIALIZATION_GUARD(gpu);
+
+	nvhost_ioc_ctrl_syncpt_wait_args nvh_wait;
+	nvh_wait.syncpt_id = fence->syncpt_id;
+	nvh_wait.threshold = fence->syncpt_value;
+	nvh_wait.timeout = timeout;
+
+	if(nv_ioctl(nvhost_ctrl_fd, NVHOST_IOC_CTRL_SYNCPT_WAIT, &nvh_wait, sizeof(nvh_wait)) != 0) {
+		return nv_result;
+	}
+
+	return RESULT_OK;
+}
+
 static void gpu_force_finalize() {
+	nv_close(nvhost_ctrl_fd);
 	nv_close(nvmap_fd);
 	nv_close(nvas_fd);
 	nv_finalize();

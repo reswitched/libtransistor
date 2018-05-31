@@ -38,9 +38,12 @@ int main() {
 		printf("begin frame %d\n", i);
 		uint32_t *out_buffer;
 		ASSERT_OK(fail_display_event, surface_dequeue_buffer(&surf, &out_buffer));
-
+		if(i < 300) {
+			ASSERT_OK(fail_display_event, surface_wait_buffer(&surf));
+		}
+		
 		for(size_t p = 0; p < (0x3c0000/sizeof(uint32_t)); p++) {
-			out_buffer[p] = 0xFF0000FF;
+			out_buffer[p] = (i < 300) ? 0xFFFF0000 : 0xFF0000FF;
 		}
 		int x = (cos((double) i * 6.28 / 60.0) * 300.0 + 350.0);
 		int y = (sin((double) i * 6.28 / 60.0) * 300.0 + 350.0);
