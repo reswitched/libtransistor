@@ -4,6 +4,7 @@ OBJECTS := example.o
 NRO_ICON		:=	icon.jpg
 NRO_NAME		:=	Example Application
 NRO_DEVELOPER	:=	Example Developer
+NRO_VERSION		:= 	0.0.1
 
 all: $(TARGET).nro $(TARGET).nso
 
