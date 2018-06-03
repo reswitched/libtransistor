@@ -1,6 +1,10 @@
 TARGET := example
 OBJECTS := example.o
 
+NRO_ICON		:=	icon.jpg
+NRO_NAME		:=	Example Application
+NRO_DEVELOPER	:=	Example Developer
+
 all: $(TARGET).nro $(TARGET).nso
 
 clean:
