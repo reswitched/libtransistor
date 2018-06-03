@@ -96,12 +96,12 @@ $(BUILD_DIR)/test/dynamic/libdynamic_%.so: $(BUILD_DIR)/test/dynamic/libdynamic_
 	$(LD) $(LD_SHARED_LIBRARY_FLAGS) -o $@ $< -ltransistor.lib.nro $(LIBTRANSISTOR_LIB_LDFLAGS)
 
 $(BUILD_DIR)/test/dynamic/libdynamic_%.nro: $(BUILD_DIR)/test/dynamic/libdynamic_%.so
-	$(PYTHON3) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py --format nro $< $@
+	$(PYTHON3) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py $< $@ nro
 
 # compile libdynamic_bad_resolution, but name it libdynamic_simple
 $(BUILD_DIR)/test/dynamic/bad_resolution/libdynamic_simple.nro: $(BUILD_DIR)/test/dynamic/libdynamic_bad_resolution.so
 	mkdir -p $(@D)
-	$(PYTHON3) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py --format nro $< $@
+	$(PYTHON3) $(LIBTRANSISTOR_HOME)/tools/elf2nxo.py $< $@ nro
 
 # BUILD RULES
 
