@@ -24,7 +24,7 @@ result_t fsp_srv_open_data_file_system_by_current_process(ifilesystem_t *out_unk
 // result_t fsp_srv_mount_content7(ifilesystem_t *out_unk2, applicationid in_tid, uint32_t in_ncaType);
 // result_t fsp_srv_mount_content(ifilesystem_t *out_contentFs, applicationid in_tid, uint32_t in_flag, const uint8_t in_path[0x301]);
 // result_t fsp_srv_open_data_file_system_by_application_id(ifilesystem_t *out_dataFiles, applicationid in_tid);
-// result_t fsp_srv_mount_bis(ifilesystem_t *out_Bis, partition in_partitionID, const uint8_t in_path[0x301]);
+result_t fsp_srv_open_bis_filesystem(ifilesystem_t *fs, uint32_t partition_id, const char *path);
 // result_t fsp_srv_open_bis_partition(ipc_object_t *out_BisPartition, partition in_partitionID);
 result_t fsp_srv_invalidate_bis_cache();
 result_t fsp_srv_open_host_file_system_impl(ifilesystem_t *out_unk1, const uint8_t in_path[0x301]);

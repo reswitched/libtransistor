@@ -1,6 +1,7 @@
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
+#include<libtransistor/ipc_helpers.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
@@ -88,7 +89,27 @@ result_t fsp_srv_open_data_file_system_by_current_process(ifilesystem_t *out_unk
 
 // result_t fsp_srv_open_data_file_system_by_application_id(ifilesystem_t *out_dataFiles, applicationid in_tid);
 
-// result_t fsp_srv_mount_bis(ifilesystem_t *out_Bis, partition in_partitionID, const uint8_t in_path[0x301]);
+result_t fsp_srv_open_bis_filesystem(ifilesystem_t *fs, uint32_t partition_id, const char *in_path) {
+	result_t res;
+
+	char path[0x301];
+	memset(path, 0, sizeof(path));
+	strncpy(path, in_path, sizeof(path)-1);
+	
+	ipc_buffer_t buffers[] = {
+		ipc_make_buffer(path, 0x301, 0x19)
+	};
+	
+	ipc_request_t rq = ipc_make_request(11);
+	ipc_msg_set_buffers(rq, buffers, buffer_ptrs);
+	ipc_msg_raw_data_from_value(rq, partition_id);
+
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	rs.objects = fs;
+	rs.num_objects = 1;
+
+	return ipc_send(fsp_srv_object, &rq, &rs);
+}
 
 // result_t fsp_srv_open_bis_partition(ipc_object_t *out_BisPartition, partition in_partitionID);
 
