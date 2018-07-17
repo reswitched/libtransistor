@@ -5,6 +5,7 @@
 #include<libtransistor/internal_util.h>
 #include<libtransistor/usb_serial.h>
 #include<libtransistor/alloc_pages.h>
+#include<libtransistor/environment.h>
 #include<libtransistor/mutex.h>
 
 #include<string.h>
@@ -124,7 +125,11 @@ result_t usb_serial_init() {
 	revent_h usb_state_event = 0xFFFFFFFF;
 	LIB_ASSERT_OK(fail_usb, usb_ds_get_state_change_event(&usb_state_event));
 
-	LIB_ASSERT_OK(fail_usb,              usb_ds_set_vid_pid_bcd(&descriptor_data));
+	if(env_get_kernel_version() >= KERNEL_VERSION_200) {
+		// added in 2.0.0
+		LIB_ASSERT_OK(fail_usb,              usb_ds_set_vid_pid_bcd(&descriptor_data));
+	}
+	
 	LIB_ASSERT_OK(fail_usb,              usb_ds_get_interface(&interface_descriptor, "usb", &interface));
 	LIB_ASSERT_OK(fail_usb_interface,    usb_ds_interface_get_endpoint(&interface, &endpoint_in_descriptor,  &endpoint_in));
 	LIB_ASSERT_OK(fail_usb_endpoint_in,  usb_ds_interface_get_endpoint(&interface, &endpoint_out_descriptor, &endpoint_out));

@@ -1,4 +1,5 @@
 #include<libtransistor/address_space.h>
+#include<libtransistor/environment.h>
 #include<libtransistor/util.h>
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
@@ -70,15 +71,27 @@ result_t as_init() {
 		return r;
 	}
 
-	if((r = as_set_region_from_info(as_grab_region(), 14, 15, RESERVED_BY_KERNEL)) != RESULT_OK) { // NewMapRegion
-		trn_mutex_unlock(&as_lock);
-		return r;
-	}
-
-	// TODO: if we want to support 1.0.0, this will need a workaround
-	if((r = as_set_region_from_info(&address_space, 12, 13, INVALID)) != RESULT_OK) { // AddressSpace
-		trn_mutex_unlock(&as_lock);
-		return r;
+	if(env_get_kernel_version() >= KERNEL_VERSION_200) {
+		if((r = as_set_region_from_info(as_grab_region(), 14, 15, RESERVED_BY_KERNEL)) != RESULT_OK) { // NewMapRegion
+			trn_mutex_unlock(&as_lock);
+			return r;
+		}
+		
+		if((r = as_set_region_from_info(&address_space, 12, 13, INVALID)) != RESULT_OK) { // AddressSpace
+			trn_mutex_unlock(&as_lock);
+			return r;
+		}
+	} else {
+		r = svcUnmapMemory((void*) 0xffffffffffffe000, (void *) ((2^36) - 0x2000), 0x1000);
+		if(r == 0xdc01) { // invalid destination address
+			// source 36-bit address was valid
+			address_space.base = 0x8000000;
+			address_space.size = (2^36) - address_space.base;
+		} else {
+			// let's just assume 32-bit
+			address_space.base = 0x200000;
+			address_space.size = (2^32) - address_space.base;
+		}
 	}
 
 	trn_mutex_unlock(&as_lock);
