@@ -4,7 +4,7 @@ env:
   global:
     - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
     - MEPHISTO_VERSION=v1.2.1
-    - LIBTRANSISTOR_BASE_VERSION=v2.0.0-rc7
+    - LIBTRANSISTOR_BASE_VERSION=v2.0.0
 cache:
   directories:
     - ${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
