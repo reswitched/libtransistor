@@ -3,7 +3,7 @@ sudo: false
 env:
   global:
     - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
-    - MEPHISTO_VERSION=v1.2.0
+    - MEPHISTO_VERSION=v1.2.1
     - LIBTRANSISTOR_BASE_VERSION=v2.0.0-rc7
 cache:
   directories:
