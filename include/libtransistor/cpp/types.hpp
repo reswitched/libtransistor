@@ -26,7 +26,7 @@ struct ResultCode {
 template<typename T>
 using Result = tl::expected<T, ResultCode>;
 
-class ResultError : std::runtime_error {
+class ResultError : public std::runtime_error {
  public:
 	ResultError(ResultCode code);
 	ResultError(result_t code);
