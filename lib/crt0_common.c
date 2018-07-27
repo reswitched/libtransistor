@@ -318,8 +318,6 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 			fd_close(sock_fd);
 		}
 
-		dbg_printf("set up stdout");
-		
 		if(setup_fs()) {
 			ret = -14;
 			goto fail_bsd;

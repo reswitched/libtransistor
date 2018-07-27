@@ -98,7 +98,6 @@ static result_t trn_mountfs_release(void *data) {
 	result_t r;
 
 	for (; cur_mount != NULL; cur_mount = cur_mount->next) {
-		printf("Unmounting %s\n", cur_mount->name);
 		// Print the error, and discard it.
 		r = cur_mount->original_release(cur_mount->fs.data);
 		if (r != RESULT_OK)
