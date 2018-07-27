@@ -35,6 +35,21 @@ Object::Object(IPCServer *server) : server(server) {
 Object::~Object() {
 }
 
+void TransactionFormat::Prepare() {
+	rq.raw_data = new uint8_t[rq.raw_data_size];
+	rq.num_buffers = buffers.size();
+	rq.buffers = buffers.data();
+	rq.pid = &pid;
+	rq.copy_handles = new handle_t[rq.num_copy_handles];
+	rq.move_handles = new handle_t[rq.num_move_handles];
+	
+	rs.raw_data = new uint8_t[rs.raw_data_size];
+	rs.objects = new ipc_server_object_t*[rs.num_objects];
+	out_objects = new Object*[rs.num_objects];
+	rs.copy_handles = new handle_t[rs.num_copy_handles];
+	rs.move_handles = new handle_t[rs.num_move_handles];
+}
+
 TransactionFormat::~TransactionFormat() {
 	for(auto i = buffers.begin(); i != buffers.end(); i++) {
 		delete (*i);

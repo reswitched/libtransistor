@@ -78,7 +78,8 @@ struct TransactionFormat {
 	std::vector<ipc_buffer_t*> buffers;
 	Object **out_objects;
 	uint64_t pid;
-	
+
+	void Prepare();
 	~TransactionFormat();
 };
 
@@ -278,19 +279,7 @@ struct RequestHandler<Func> {
 	static ResultCode Handle(T *object, ipc::Message msg) {
 		TransactionFormat fmt;
 		std::tuple<AccessorHelper<Args>...> accessors = FormatBuilder<ArgPack<Args...>>::Build(fmt);
-
-		fmt.rq.raw_data = new uint8_t[fmt.rq.raw_data_size];
-		fmt.rq.num_buffers = fmt.buffers.size();
-		fmt.rq.buffers = fmt.buffers.data();
-		fmt.rq.pid = &fmt.pid;
-		fmt.rq.copy_handles = new handle_t[fmt.rq.num_copy_handles];
-		fmt.rq.move_handles = new handle_t[fmt.rq.num_move_handles];
-		
-		fmt.rs.raw_data = new uint8_t[fmt.rs.raw_data_size];
-		fmt.rs.objects = new ipc_server_object_t*[fmt.rs.num_objects];
-		fmt.out_objects = new Object*[fmt.rs.num_objects];
-		fmt.rs.copy_handles = new handle_t[fmt.rs.num_copy_handles];
-		fmt.rs.move_handles = new handle_t[fmt.rs.num_move_handles];
+		fmt.Prepare();
 		
 		ResultCode r = ipc_unflatten_request(&msg.msg, &fmt.rq, &object->object);
 		if(!r.IsOk()) {
@@ -315,6 +304,45 @@ struct RequestHandler<Func> {
 	template<std::size_t... I>
 	static ResultCode Helper(T *object, TransactionFormat &fmt, const std::tuple<AccessorHelper<Args>...> &accessors, std::index_sequence<I...>) {
 		return std::invoke(Func, object, (std::get<I>(accessors).Access(fmt))...);
+	}
+};
+
+template<typename T, typename... Args, ResultCode (T::*Func)(std::function<void(ResultCode)>, Args...)>
+struct RequestHandler<Func> {
+	static ResultCode Handle(T *object, ipc::Message msg) {
+		std::shared_ptr<TransactionFormat> fmt = std::make_shared<TransactionFormat>();
+		std::tuple<AccessorHelper<Args>...> accessors = FormatBuilder<ArgPack<Args...>>::Build(*fmt);
+		fmt->Prepare();
+		
+		ResultCode r = ipc_unflatten_request(&msg.msg, &fmt->rq, &object->object);
+		if(!r.IsOk()) {
+			// this gets forwarded to dispatch_shim, which will close the session for us
+			return r;
+		}
+
+		RequestHandler<Func>::Helper(object, fmt, accessors, std::index_sequence_for<Args...>());
+	}
+ private:
+	template<std::size_t... I>
+	static ResultCode Helper(T *object, std::shared_ptr<TransactionFormat> fmt, const std::tuple<AccessorHelper<Args>...> &accessors, std::index_sequence<I...>) {
+		return std::invoke(
+			Func, object,
+			[object, fmt](ResultCode r) -> void {
+				if(!r.IsOk()) {
+					ipc_response_t rs = ipc_default_response;
+					rs.result_code = r.code;
+					ipc_server_object_reply(&object->object, &rs);
+					return;
+				}
+				
+				for(size_t i = 0; i < fmt->rs.num_objects; i++) {
+					fmt->rs.objects[i] = &fmt->out_objects[i]->object;
+				}
+
+				if(ipc_server_object_reply(&object->object, &fmt->rs) != RESULT_OK) {
+					ipc_server_session_close(object->object.owning_session);
+				}
+			}, (std::get<I>(accessors).Access(*fmt))...);
 	}
 };
 

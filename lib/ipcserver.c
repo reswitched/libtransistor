@@ -154,7 +154,7 @@ result_t ipc_server_object_register(ipc_server_object_t *parent, ipc_server_obje
 	}
 }
 
-result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs) {
+result_t ipc_server_object_reply(ipc_server_object_t *obj, const ipc_response_t *rs) {
 	if(obj->owning_session->state != IPC_SESSION_STATE_PROCESSING) {
 		return LIBTRANSISTOR_ERR_IPCSERVER_INVALID_SESSION_STATE;
 	}

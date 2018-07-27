@@ -116,7 +116,7 @@ result_t ipc_server_accept_session(ipc_server_t *srv, ipc_server_port_t *port);
 result_t ipc_server_destroy(ipc_server_t *srv);
 
 result_t ipc_server_object_register(ipc_server_object_t *owner, ipc_server_object_t *new_object);
-result_t ipc_server_object_reply(ipc_server_object_t *obj, ipc_response_t *rs);
+result_t ipc_server_object_reply(ipc_server_object_t *obj, const ipc_response_t *rs);
 result_t ipc_server_object_close(ipc_server_object_t *obj);
 
 result_t ipc_server_domain_add_object(ipc_server_domain_t *domain, ipc_server_object_t *object);
