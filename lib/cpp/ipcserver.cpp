@@ -16,7 +16,12 @@ void object_dispatch_shim(ipc_server_object_t *obj, ipc_message_t *msg, uint32_t
 	Object *object = (Object*) obj->userdata;
 	ipc::Message message;
 	message.msg = *msg;
-	ResultCode r = object->Dispatch(message, request_id);
+	ResultCode r(0);
+	try {
+		r = object->Dispatch(message, request_id);
+	} catch(ResultError &e) {
+		r = e.code;
+	}
 	if(!r.IsOk()) {
 		ipc_server_session_close(obj->owning_session);
 	}
