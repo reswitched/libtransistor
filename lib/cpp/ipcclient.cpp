@@ -35,6 +35,7 @@ TransactionFormat::~TransactionFormat() {
 		delete (*i);
 	}
 	if(rq.raw_data)     { delete[] (uint8_t*) rq.raw_data; }
+	if(rq.objects)      { delete[] rq.objects; }
 	if(rq.copy_handles) { delete[] rq.copy_handles; }
 	if(rq.move_handles) { delete[] rq.move_handles; }
 	

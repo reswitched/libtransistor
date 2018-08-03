@@ -19,6 +19,12 @@ class Message {
 };
 
 template<typename T>
+struct InObject {
+	InObject(T &ref) : value(&ref) { }
+	T *value;
+};
+
+template<typename T>
 struct OutObject {
 	OutObject(T &ref) : value(&ref) { }
 	T *value;
@@ -56,6 +62,21 @@ struct copy {};
 struct move {};
 
 template<typename T, typename Transfer>
+struct InHandle;
+
+template<typename Transfer>
+struct InHandle<handle_t, Transfer> {
+	InHandle(handle_t handle) : handle(handle) {}
+
+	InHandle<handle_t, Transfer> &operator=(handle_t val) {
+		handle = val;
+		return *this;
+	}
+
+	handle_t handle;
+};
+
+template<typename T, typename Transfer>
 struct OutHandle;
 
 template<typename Transfer>
@@ -72,14 +93,19 @@ struct OutHandle<handle_t, Transfer> {
 
 template<typename T, typename Transfer>
 struct OutHandle {
-	OutHandle(handle_t &handle) : handle(&handle) {}
+	OutHandle(T &handle) : handle(&handle) {}
 
 	OutHandle<T, Transfer> &operator=(T &val) {
-		*handle = val.handle;
+		*handle = T(val.handle);
 		return *this;
 	}
 
-	handle_t *handle;
+	OutHandle<T, Transfer> &operator=(handle_t &val) {
+		*handle = T(val);
+		return *this;
+	}
+
+	T *handle;
 };
 
 template<typename T, uint32_t type, size_t expected_size = 0>
