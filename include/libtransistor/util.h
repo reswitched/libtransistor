@@ -83,6 +83,8 @@ int log_string(const char *string, size_t len);
 /**
  * @brief Connect the debug log over a socket
  *
+ * Required socket services to be already initialized.
+ *
  * @param host Host to connect to
  * @param port Port to connect to
  * @param fd Output for FD

@@ -19,6 +19,7 @@ typedef enum {
 	_TRN_RUNCONF_STDIO_OVERRIDE_NONE, ///< Determine stdout via HBABI
 	_TRN_RUNCONF_STDIO_OVERRIDE_USB_SERIAL, ///< Force stdout over usb_serial
 	_TRN_RUNCONF_STDIO_OVERRIDE_SOCKETS, ///< Force stdout over sockets
+	_TRN_RUNCONF_STDIO_OVERRIDE_TWILI, ///< Force stdout over twili
 } runconf_stdio_override_t;
 
 extern runconf_stdio_override_t _trn_runconf_stdio_override;

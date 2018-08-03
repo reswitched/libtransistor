@@ -48,10 +48,6 @@ void dbg_set_file(trn_file_t *file) {
 result_t dbg_connect(const char *host, const char *port, int *fd_out) {
 	result_t r;
 
-	if((r = bsd_init()) != RESULT_OK) {
-		goto fail;
-	}
-
 	struct addrinfo *ai = NULL;
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
