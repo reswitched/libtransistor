@@ -29,6 +29,13 @@ class ProcessMemoryMapping : public MemoryMapping {
 MemoryMapping::~MemoryMapping() {
 }
 
+Result<KTransferMemory> CreateTransferMemory(void *addr, uint64_t size, uint32_t permission) {
+	transfer_memory_h handle;
+	return ResultCode::ExpectOk(svcCreateTransferMemory(&handle, addr, size, permission)).map([&](auto const &ignored) {
+			return KTransferMemory(handle, addr, size);
+		});
+}
+
 Result<std::nullopt_t> CloseHandle(handle_t handle) {
 	return ResultCode::ExpectOk(svcCloseHandle(handle));
 }

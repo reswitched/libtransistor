@@ -48,8 +48,8 @@ template<typename T> T&& ResultCode::AssertOk(tl::expected<T, ResultCode> &&mona
 
 class KObject {
  public:
+	KObject() = default;
 	KObject(handle_t handle);
-	KObject() = delete;
 	KObject(const KObject &) = delete;
 	KObject &operator=(const KObject &) = delete;
 	KObject(KObject &&other);
@@ -58,26 +58,47 @@ class KObject {
 
 	handle_t Claim();
 	
-	handle_t handle;
+	handle_t handle = 0;
 };
 
 class KWaitable : public KObject {
  public:
+	KWaitable() = default;
 	KWaitable(handle_t handle);
 };
 
 class KSharedMemory : public KObject {
  public:
+	KSharedMemory() = default;
 	KSharedMemory(shared_memory_h handle);
+};
+
+class KTransferMemory : public KObject {
+ public:
+	KTransferMemory() = default;
+	KTransferMemory(transfer_memory_h handle);
+	KTransferMemory(transfer_memory_h handle, void *addr, uint64_t size);
+	KTransferMemory(size_t size, uint32_t permissions);
+	KTransferMemory(void *work_buf, size_t size, uint32_t permissions, bool owns_buffer=false);
+	KTransferMemory(KTransferMemory &&other);
+	KTransferMemory &operator=(KTransferMemory &&other);
+	~KTransferMemory();
+	
+	uint8_t *buffer = nullptr;
+	size_t buffer_size = 0;
+ private:
+	bool owns_buffer = false;
 };
 
 class KPort : public KWaitable {
  public:
+	KPort() = default;
 	KPort(port_h handle);
 };
 
 class KProcess : public KWaitable {
  public:
+	KProcess() = default;
 	KProcess(process_h handle);
 	Result<std::nullopt_t> ResetSignal();
 	Result<std::nullopt_t> WaitSignal(uint64_t timeout);
@@ -85,6 +106,7 @@ class KProcess : public KWaitable {
 
 class KEvent : public KWaitable {
  public:
+	KEvent() = default;
 	KEvent(revent_h handle);
 	Result<std::nullopt_t> ResetSignal();
 	Result<std::nullopt_t> WaitSignal(uint64_t timeout);
@@ -92,11 +114,13 @@ class KEvent : public KWaitable {
 
 class KDebug : public KObject {
  public:
+	KDebug() = default;
 	KDebug(debug_h handle);
 };
 
 class KResourceLimit : public KObject {
  public:
+	KResourceLimit() = default;
 	KResourceLimit(resource_limit_h handle);
 };
 

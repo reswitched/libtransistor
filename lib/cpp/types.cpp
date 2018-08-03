@@ -2,6 +2,7 @@
 #include<libtransistor/cpp/svc.hpp>
 
 #include<libtransistor/svc.h>
+#include<libtransistor/alloc_pages.h>
 
 #include<sstream>
 
@@ -97,6 +98,39 @@ KWaitable::KWaitable(handle_t handle) : KObject(handle) {
 }
 
 KSharedMemory::KSharedMemory(shared_memory_h handle) : KObject(handle) {
+}
+
+KTransferMemory::KTransferMemory(transfer_memory_h handle) : KObject(handle) {
+}
+
+KTransferMemory::KTransferMemory(transfer_memory_h handle, void *addr, uint64_t size) : KObject(handle), buffer((uint8_t*) addr), buffer_size(size) {
+}
+
+KTransferMemory::KTransferMemory(size_t size, uint32_t permissions) : KTransferMemory(ResultCode::AssertOk(svc::CreateTransferMemory(alloc_pages(size, size, nullptr), size, permissions))) {
+	owns_buffer = true;
+}
+
+KTransferMemory::KTransferMemory(void *buffer, size_t size, uint32_t permissions, bool owns_buffer) : KTransferMemory(ResultCode::AssertOk(svc::CreateTransferMemory(buffer, size, permissions))) {
+	owns_buffer = owns_buffer;
+}
+
+KTransferMemory::KTransferMemory(KTransferMemory &&other) : buffer(other.buffer), buffer_size(other.buffer_size), owns_buffer(other.owns_buffer), KObject(std::move(other)) {
+	other.owns_buffer = false;
+}
+
+KTransferMemory &KTransferMemory::operator=(KTransferMemory &&other) {
+	buffer = other.buffer;
+	buffer_size = other.buffer_size;
+	owns_buffer = other.owns_buffer;
+	other.owns_buffer = false;
+	KObject::operator=(std::move(other));
+	return *this;
+}
+
+KTransferMemory::~KTransferMemory() {
+	if(owns_buffer && buffer) {
+		free_pages(buffer);
+	}
 }
 
 KPort::KPort(port_h handle) : KWaitable(handle) {

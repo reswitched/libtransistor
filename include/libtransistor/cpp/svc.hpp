@@ -40,6 +40,7 @@ enum class LimitableResource : uint32_t {
 Result<void*> SetHeapSize(uint32_t size);
 Result<std::nullopt_t> SetMemoryPermission(void *addr, uint64_t size, uint32_t permission);
 // etc., etc.
+Result<KTransferMemory> CreateTransferMemory(void *addr, uint64_t size, uint32_t permission);
 Result<std::nullopt_t> CloseHandle(handle_t handle);
 // etc., etc.
 
