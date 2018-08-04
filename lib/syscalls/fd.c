@@ -3,6 +3,7 @@
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/fd.h>
+#include<stdatomic.h>
 
 #define FD_MAX 1024
 #define IS_VALID(fd) ((fd) >= 0 && (fd) < FD_MAX)

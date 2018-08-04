@@ -15,7 +15,6 @@ extern "C" {
 
 #include <sys/types.h>
 #include <stdint.h>
-#include <stdatomic.h>
 
 typedef struct trn_file_t trn_file_t;
 
@@ -37,7 +36,7 @@ typedef struct {
  * @struct file
  */
 struct trn_file_t {
-	atomic_int refcount;
+	_Atomic(int) refcount;
 	trn_file_ops_t *ops;
 	void *data;
 };

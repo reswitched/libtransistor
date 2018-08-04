@@ -15,7 +15,6 @@ extern "C" {
 #include<libtransistor/ipc.h>
 
 #include<assert.h>
-#include<stdnoreturn.h>
 
 extern bool IS_NRO;
 
@@ -207,7 +206,7 @@ result_t lconfig_has_syscalls(const uint8_t *syscalls);
  * This is useful if you've done something like overwritten a function
  * pointer and are going to re-enter the application at a later time.
  */
-noreturn void trn_dirty_exit(int code);
+_Noreturn void trn_dirty_exit(int code);
 
 #ifdef __cplusplus
 }

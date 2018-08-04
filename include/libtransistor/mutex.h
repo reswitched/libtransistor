@@ -10,7 +10,6 @@ extern "C" {
 #endif
 
 #include<libtransistor/types.h>
-#include<stdatomic.h>
 
 #define THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
 
@@ -72,7 +71,7 @@ extern "C" {
 	THREAD_ANNOTATION_ATTRIBUTE__(no_thread_safety_analysis)
 
 typedef struct CAPABILITY("mutex") {
-	volatile atomic_uint_fast64_t lock;
+	volatile _Atomic(uint_fast64_t) lock;
 } trn_mutex_t;
 
 #define TRN_MUTEX_STATIC_INITIALIZER {.lock = 0}
