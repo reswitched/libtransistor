@@ -24,7 +24,7 @@ int ls(char *str) {
 
 	printf("Reading sdcard through unix\n");
 	while((dent = readdir(d)) != NULL) {
-		printf("dent: %.*s\n", dent->d_namlen, dent->d_name);
+		printf("dent: %.*s\n", (int) dent->d_namlen, dent->d_name);
 	}
 	closedir(d);
 	return 0;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 		printf("fread failure\n");
 		return 1;
 	}
-	printf("fread: %d: %.*s\n", rd, rd, buf);
+	printf("fread: %ld: %.*s\n", rd, (int) rd, buf);
 
 	printf("Creating test directory\n");
 	if (mkdir("/sd/test_dir", 0777) == -1 && errno != EEXIST) {
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 	}
 	fclose(f);
 	if (strncmp(buf, "A cute truncation now\n", rd) != 0) {
-		printf("We read something different! %.*s\n", rd, buf);
+		printf("We read something different! %.*s\n", (int) rd, buf);
 		return 1;
 	}
 

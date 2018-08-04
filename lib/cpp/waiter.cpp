@@ -4,7 +4,7 @@
 
 namespace trn {
 
-WaitHandle::WaitHandle(Waiter *waiter, std::function<bool()> *callback) : waiter(waiter), callback(callback) {
+WaitHandle::WaitHandle(Waiter *waiter, std::function<bool()> *callback) : callback(callback), waiter(waiter) {
 }
 
 WaitHandle::~WaitHandle() {

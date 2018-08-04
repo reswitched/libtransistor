@@ -61,15 +61,18 @@ result_t dbg_connect(const char *host, const char *port, int *fd_out) {
 	}
 
 	if(ai == NULL) {
+		r = bsd_result;
 		goto fail;
 	}
 
 	int fd = bsd_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 	if(fd < 0) {
+		r = bsd_result;
 		goto fail_ai;
 	}
 
 	if(bsd_connect(fd, ai->ai_addr, ai->ai_addrlen) < 0) {
+		r = bsd_result;
 		goto fail_socket;
 	}
 
@@ -90,10 +93,10 @@ fail:
 }
 
 __attribute__((destructor)) void dbg_disconnect() {
-	trn_mutex_lock(&debug_file_mutex);
+	trn_recursive_mutex_lock(&debug_file_mutex);
 	fd_file_put(debug_file);
 	debug_file = NULL;
-	trn_mutex_unlock(&debug_file_mutex);
+	trn_recursive_mutex_unlock(&debug_file_mutex);
 }
 
 static trn_mutex_t log_mutex = TRN_MUTEX_STATIC_INITIALIZER;

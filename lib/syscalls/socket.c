@@ -177,7 +177,7 @@ ssize_t send(int socket, const void *data, size_t length, int flags) {
 	return ret;
 }
 
-static result_t __socket_read(void *data, char *buf, size_t len, size_t *bytes_read) {
+static result_t __socket_read(void *data, void *buf, size_t len, size_t *bytes_read) {
 	int bsd_sock = *((int*)data);
 	ssize_t ret;
 
@@ -190,7 +190,7 @@ static result_t __socket_read(void *data, char *buf, size_t len, size_t *bytes_r
 	return RESULT_OK;
 }
 
-static result_t __socket_write(void *data, const char *buf, size_t len, size_t *bytes_written) {
+static result_t __socket_write(void *data, const void *buf, size_t len, size_t *bytes_written) {
 	int bsd_sock = *((int*)data);
 	ssize_t ret;
 

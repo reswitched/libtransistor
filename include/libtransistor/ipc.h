@@ -245,7 +245,7 @@ typedef struct {
  * @param rq Request to pack
  * @param object Object to send the request to
  */
-result_t ipc_pack_request(uint32_t *buffer, ipc_request_t *rq, ipc_object_t object);
+result_t ipc_pack_request(uint32_t *buffer, const ipc_request_t *rq, ipc_object_t object);
 
 /**
  * @brief Packs the IPC response described by `rs` and `object` into `buffer`.
@@ -256,7 +256,7 @@ result_t ipc_pack_request(uint32_t *buffer, ipc_request_t *rq, ipc_object_t obje
  * @param rs Response to pack
  * @param object Object to send the response from
  */
-result_t ipc_pack_response(uint32_t *buffer, ipc_response_t *rs, struct ipc_server_object_t *object);
+result_t ipc_pack_response(uint32_t *buffer, const ipc_response_t *rs, struct ipc_server_object_t *object);
 
 /**
  * @brief Unpacks the IPC message from `buffer`, filling out `msg`.

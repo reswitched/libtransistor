@@ -37,7 +37,7 @@ typedef struct {
 } ld_nro_via_svc_data;
 
 static result_t reprotect_segment(void *load_base, segment_header_t segment, int permission) {
-	return svcSetProcessMemoryPermission(loader_config.process_handle, load_base + segment.file_offset, segment.size, permission);
+	return svcSetProcessMemoryPermission(loader_config.process_handle, (uint64_t) load_base + segment.file_offset, segment.size, permission);
 }
 
 static const uint8_t required_syscalls[] = {
@@ -103,7 +103,7 @@ static result_t ld_nro_via_svc_load(module_input_t *spec_out, void *nro_image, s
 	LIB_ASSERT_OK(fail_bss_map, reprotect_segment(load_base, head.segments[0], 5)); // .text is RX
 	LIB_ASSERT_OK(fail_bss_map, reprotect_segment(load_base, head.segments[1], 1)); // .rodata is R
 	LIB_ASSERT_OK(fail_bss_map, reprotect_segment(load_base, head.segments[2], 3)); // .data is RW
-	LIB_ASSERT_OK(fail_bss_map, svcSetProcessMemoryPermission(loader_config.process_handle, load_base + head.segments[2].file_offset + head.segments[2].size, head.bss_size, 3)); // .bss is RW
+	LIB_ASSERT_OK(fail_bss_map, svcSetProcessMemoryPermission(loader_config.process_handle, (uint64_t) load_base + head.segments[2].file_offset + head.segments[2].size, head.bss_size, 3)); // .bss is RW
 	
 	spec_out->base = load_base;
 	spec_out->loader = &ld_loader_nro_via_svc;
@@ -114,13 +114,11 @@ fail_bss_map:
 	svcUnmapProcessCodeMemory(loader_config.process_handle, load_base + nro_image_size, nro_bss, head.bss_size);
 fail_main_map:
 	svcUnmapProcessCodeMemory(loader_config.process_handle, load_base, nro_image, nro_image_size);
-fail_loader_data:
 	free(loader_data);
 fail_bss:
 	free_pages(nro_bss);
 fail_load_base:
 	as_release(load_base, nro_image_size + head.bss_size);
-fail:
 	return r;
 }
 

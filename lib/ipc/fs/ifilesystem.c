@@ -7,7 +7,7 @@
 #include<libtransistor/ipc/fs/ifilesystem.h>
 #include<string.h>
 
-result_t ifilesystem_create_file(ifilesystem_t obj, uint32_t in_mode, uint64_t in_size, const uint8_t in_path[0x301]) {
+result_t ifilesystem_create_file(ifilesystem_t obj, uint32_t in_mode, uint64_t in_size, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 0;
@@ -19,7 +19,7 @@ result_t ifilesystem_create_file(ifilesystem_t obj, uint32_t in_mode, uint64_t i
 	*(uint32_t*)(raw + 0) = in_mode;
 	*(uint64_t*)(raw + 8) = in_size;
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -36,13 +36,13 @@ result_t ifilesystem_create_file(ifilesystem_t obj, uint32_t in_mode, uint64_t i
 	return res;
 }
 
-result_t ifilesystem_delete_file(ifilesystem_t obj, const uint8_t in_path[0x301]) {
+result_t ifilesystem_delete_file(ifilesystem_t obj, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 1;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -59,13 +59,13 @@ result_t ifilesystem_delete_file(ifilesystem_t obj, const uint8_t in_path[0x301]
 	return res;
 }
 
-result_t ifilesystem_create_directory(ifilesystem_t obj, const uint8_t in_path[0x301]) {
+result_t ifilesystem_create_directory(ifilesystem_t obj, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 2;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -82,13 +82,13 @@ result_t ifilesystem_create_directory(ifilesystem_t obj, const uint8_t in_path[0
 	return res;
 }
 
-result_t ifilesystem_delete_directory(ifilesystem_t obj, const uint8_t in_path[0x301]) {
+result_t ifilesystem_delete_directory(ifilesystem_t obj, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 3;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -105,13 +105,13 @@ result_t ifilesystem_delete_directory(ifilesystem_t obj, const uint8_t in_path[0
 	return res;
 }
 
-result_t ifilesystem_delete_directory_recursively(ifilesystem_t obj, const uint8_t in_path[0x301]) {
+result_t ifilesystem_delete_directory_recursively(ifilesystem_t obj, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 4;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -128,18 +128,18 @@ result_t ifilesystem_delete_directory_recursively(ifilesystem_t obj, const uint8
 	return res;
 }
 
-result_t ifilesystem_rename_file(ifilesystem_t obj, const uint8_t in_oldPath[0x301], const uint8_t in_newPath[0x301]) {
+result_t ifilesystem_rename_file(ifilesystem_t obj, const char in_oldPath[0x301], const char in_newPath[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 5;
 
 	ipc_buffer_t in_oldPath_buf = {
-		.addr = in_oldPath,
+		.addr = (void*) in_oldPath,
 		.size = 769,
 		.type = 25,
 	};
 	ipc_buffer_t in_newPath_buf = {
-		.addr = in_newPath,
+		.addr = (void*) in_newPath,
 		.size = 769,
 		.type = 25,
 	};
@@ -157,18 +157,18 @@ result_t ifilesystem_rename_file(ifilesystem_t obj, const uint8_t in_oldPath[0x3
 	return res;
 }
 
-result_t ifilesystem_rename_directory(ifilesystem_t obj, const uint8_t in_oldPath[0x301], const uint8_t in_newPath[0x301]) {
+result_t ifilesystem_rename_directory(ifilesystem_t obj, const char in_oldPath[0x301], const char in_newPath[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 6;
 
 	ipc_buffer_t in_oldPath_buf = {
-		.addr = in_oldPath,
+		.addr = (void*) in_oldPath,
 		.size = 769,
 		.type = 25,
 	};
 	ipc_buffer_t in_newPath_buf = {
-		.addr = in_newPath,
+		.addr = (void*) in_newPath,
 		.size = 769,
 		.type = 25,
 	};
@@ -186,20 +186,20 @@ result_t ifilesystem_rename_directory(ifilesystem_t obj, const uint8_t in_oldPat
 	return res;
 }
 
-result_t ifilesystem_get_entry_type(ifilesystem_t obj, uint32_t *out_unk1, const uint8_t in_path[0x301]) {
+result_t ifilesystem_get_entry_type(ifilesystem_t obj, uint32_t *out_unk1, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 7;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
 
 
 	ipc_response_fmt_t rs = ipc_default_response_fmt;
-	uint8_t output_raw[4];
+	char output_raw[4];
 	rs.raw_data = output_raw;
 	rs.raw_data_size = 4;
 
@@ -215,7 +215,7 @@ result_t ifilesystem_get_entry_type(ifilesystem_t obj, uint32_t *out_unk1, const
 	return res;
 }
 
-result_t ifilesystem_open_file(ifilesystem_t obj, ifile_t *out_file, uint32_t in_mode, const uint8_t in_path[0x301]) {
+result_t ifilesystem_open_file(ifilesystem_t obj, ifile_t *out_file, uint32_t in_mode, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 8;
@@ -226,7 +226,7 @@ result_t ifilesystem_open_file(ifilesystem_t obj, ifile_t *out_file, uint32_t in
 
 	*(uint32_t*)(raw + 0) = in_mode;
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -247,7 +247,7 @@ result_t ifilesystem_open_file(ifilesystem_t obj, ifile_t *out_file, uint32_t in
 	return res;
 }
 
-result_t ifilesystem_open_directory(ifilesystem_t obj, idirectory_t *out_directory, uint32_t in_unk0, const uint8_t in_path[0x301]) {
+result_t ifilesystem_open_directory(ifilesystem_t obj, idirectory_t *out_directory, uint32_t in_unk0, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 9;
@@ -258,7 +258,7 @@ result_t ifilesystem_open_directory(ifilesystem_t obj, idirectory_t *out_directo
 
 	*(uint32_t*)(raw + 0) = in_unk0;
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -289,13 +289,13 @@ result_t ifilesystem_commit(ifilesystem_t obj) {
 	return res;
 }
 
-result_t ifilesystem_get_free_space_size(ifilesystem_t obj, uint64_t *out_totalFreeSpace, const uint8_t in_path[0x301]) {
+result_t ifilesystem_get_free_space_size(ifilesystem_t obj, uint64_t *out_totalFreeSpace, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 11;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -318,13 +318,13 @@ result_t ifilesystem_get_free_space_size(ifilesystem_t obj, uint64_t *out_totalF
 	return res;
 }
 
-result_t ifilesystem_get_total_space_size(ifilesystem_t obj, uint64_t *out_totalSize, const uint8_t in_path[0x301]) {
+result_t ifilesystem_get_total_space_size(ifilesystem_t obj, uint64_t *out_totalSize, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 12;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -347,13 +347,13 @@ result_t ifilesystem_get_total_space_size(ifilesystem_t obj, uint64_t *out_total
 	return res;
 }
 
-result_t ifilesystem_clean_directory_recursively(ifilesystem_t obj, const uint8_t in_path[0x301]) {
+result_t ifilesystem_clean_directory_recursively(ifilesystem_t obj, const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 13;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -370,13 +370,13 @@ result_t ifilesystem_clean_directory_recursively(ifilesystem_t obj, const uint8_
 	return res;
 }
 
-result_t ifilesystem_get_file_time_stamp_raw(ifilesystem_t obj, uint8_t out_timestamp[0x20], const uint8_t in_path[0x301]) {
+result_t ifilesystem_get_file_time_stamp_raw(ifilesystem_t obj, uint8_t out_timestamp[0x20], const char in_path[0x301]) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 14;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};

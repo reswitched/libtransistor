@@ -11,7 +11,7 @@ struct fd {
 	_Atomic(trn_file_t *)file;
 };
 
-static struct fd fds[FD_MAX] = {0};
+static struct fd fds[FD_MAX] = {{0}};
 
 static void lock_fd(struct fd *fd) {
 	int expected = 0;
@@ -34,7 +34,7 @@ int fd_create_file(trn_file_ops_t *fops, void *data) {
 	f->refcount = 1;
 
 	int fd = 10;
-	struct file *expected = NULL;
+	trn_file_t *expected = NULL;
 	while (fd < FD_MAX && !atomic_compare_exchange_strong(&fds[fd].file, &expected, f)) {
 		fd++;
 	}

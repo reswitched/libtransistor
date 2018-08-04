@@ -148,7 +148,7 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 		case 1026: { // R_AARCH64_JUMP_SLOT
 			void **target = (void**)(mod->input.base + rela.r_offset);
 			if(table_type == DT_REL) {
-				rela.r_addend = *target;
+				rela.r_addend = (uint64_t) *target;
 			}
 			*target = symbol + rela.r_addend;
 			break; }
@@ -156,7 +156,7 @@ static result_t ld_run_relocation_table(module_t *mod, uint32_t offset_tag, uint
 			if(!mod->input.has_run_basic_relocations) {
 				void **target = (void**)(mod->input.base + rela.r_offset);
 				if(table_type == DT_REL) { // TODO: be careful here if the module was already relocated
-					rela.r_addend = *target;
+					rela.r_addend = (uint64_t) *target;
 				}
 				*target = delta_symbol + rela.r_addend;
 			}

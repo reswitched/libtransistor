@@ -55,12 +55,12 @@ result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp) {
 	gb_common.usage = 0xb00;
 	gb_common.gpu_buffer = &surface->gpu_buffer;
 
-	for(int i = 0; i < ARRAY_LENGTH(surface->graphic_buffers); i++) {
+	for(size_t i = 0; i < ARRAY_LENGTH(surface->graphic_buffers); i++) {
 		surface->graphic_buffers[i] = gb_common;
 		surface->graphic_buffers[i].unknown = 0x3c0000 * i; // TODO: this isn't unknown; this is the offset within the gpu_buffer where the pixel data lives
 	}
 
-	for(int i = 0; i < ARRAY_LENGTH(surface->graphic_buffers); i++) {
+	for(size_t i = 0; i < ARRAY_LENGTH(surface->graphic_buffers); i++) {
 		if((r = igbp_set_preallocated_buffer(&surface->igbp, i, &surface->graphic_buffers[i])) != RESULT_OK) {
 			goto fail_memory_attribute;
 		}
@@ -103,7 +103,7 @@ result_t surface_dequeue_buffer(surface_t *surface, uint32_t **image) {
 		return  LIBTRANSISTOR_ERR_SURFACE_INVALID_STATE;
 	}
 
-	int status;
+	uint32_t status;
 	if((r = igbp_dequeue_buffer(
 		    &surface->igbp,
 		    1280, 720, 1, 0xb00,

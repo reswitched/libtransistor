@@ -101,7 +101,7 @@ static result_t trn_mountfs_release(void *data) {
 		// Print the error, and discard it.
 		r = cur_mount->original_release(cur_mount->fs.data);
 		if (r != RESULT_OK)
-			printf("Error unmounting %s: %lx\n", cur_mount->name, r);
+			printf("Error unmounting %s: %x\n", cur_mount->name, r);
 	}
 	return RESULT_OK;
 }

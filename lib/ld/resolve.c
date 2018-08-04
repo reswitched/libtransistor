@@ -17,7 +17,7 @@ static result_t ld_try_resolve_symbol(module_t *try_mod, const char *find_name, 
 	if(try_mod->strtab == NULL) { return LIBTRANSISTOR_ERR_TRNLD_COULD_NOT_RESOLVE_SYMBOL; }
 	if(try_mod->hash != NULL) {
 		uint32_t nbucket = try_mod->hash[0];
-		uint32_t nchain = try_mod->hash[1];
+		uint32_t nchain = try_mod->hash[1]; (void) nchain;
 		uint32_t index = try_mod->hash[2 + (find_name_hash % nbucket)];
 		uint32_t *chains = try_mod->hash + 2 + nbucket;
 		while(index != 0 && strcmp(find_name, try_mod->strtab + try_mod->symtab[index].st_name) != 0) {

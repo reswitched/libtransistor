@@ -147,7 +147,9 @@ result_t igbp_request_buffer(igbp_t *igbp, uint32_t slot, uint32_t *status, grap
 			return LIBTRANSISTOR_ERR_DISPLAY_GRAPHIC_BUFFER_LENGTH_MISMATCH;
 		}
 		int unknown = parcel_read_u32(&response);
+		(void) unknown;
 		void *gb_flat = parcel_read_inplace(&response, 0x16c);
+		(void) gb_flat;
 	}
 	*status = parcel_read_u32(&response);
   

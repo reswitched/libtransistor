@@ -101,7 +101,6 @@ static result_t fspfs_create_file(void *data, const char *name) {
 
 static result_t fspfs_create_directory(void *data, const char *name) {
 	struct inode *inode = (struct inode*)data;
-	result_t r;
 	char full_path[0x301];
 	size_t name_len = strlen(name);
 
@@ -121,14 +120,12 @@ static result_t fspfs_create_directory(void *data, const char *name) {
 
 static result_t fspfs_remove_file(void *data) {
 	struct inode *inode = (struct inode*)data;
-	result_t r;
 
 	return ifilesystem_delete_file(inode->fs, inode->path);
 }
 
 static result_t fspfs_remove_empty_directory(void *data) {
 	struct inode *inode = (struct inode*)data;
-	result_t r;
 
 	return ifilesystem_delete_directory(inode->fs, inode->path);
 }
@@ -303,7 +300,7 @@ static result_t fspfs_file_seek(void *data, off_t offset, int whence, off_t *pos
 	return RESULT_OK;
 }
 
-static result_t fspfs_file_read(void *data, char *buf, size_t buf_size, size_t *bytes_read) {
+static result_t fspfs_file_read(void *data, void *buf, size_t buf_size, size_t *bytes_read) {
 	struct ifs_file *f = data;
 	uint64_t out_size;
 	result_t r;
@@ -317,7 +314,7 @@ static result_t fspfs_file_read(void *data, char *buf, size_t buf_size, size_t *
 	return RESULT_OK;
 }
 
-static result_t fspfs_file_write(void *data, const char *buf, size_t buf_size, size_t *bytes_written) {
+static result_t fspfs_file_write(void *data, const void *buf, size_t buf_size, size_t *bytes_written) {
 	struct ifs_file *f = data;
 	result_t r;
 

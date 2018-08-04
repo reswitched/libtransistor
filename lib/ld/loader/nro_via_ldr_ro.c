@@ -90,7 +90,6 @@ fail_nrr:
 	free_pages(nrr);
 fail_loader_data:
 	free(loader_data);
-fail:
 	return r;
 }
 

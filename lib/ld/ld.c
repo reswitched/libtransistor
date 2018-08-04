@@ -109,7 +109,7 @@ result_t ld_initialize_module(module_t *mod) {
 	}
 	
 	void (**init_array)(void);
-	ssize_t init_array_size;
+	size_t init_array_size;
 
 	result_t r;
 	r = elf_dynamic_find_offset(mod->dynamic, DT_INIT_ARRAY, (void**) &init_array, mod->input.base);
@@ -135,7 +135,7 @@ result_t ld_finalize_module(module_t *mod) {
 	}
 	
 	void (**fini_array)(void);
-	ssize_t fini_array_size;
+	size_t fini_array_size;
 
 	result_t r;
 	r = elf_dynamic_find_offset(mod->dynamic, DT_FINI_ARRAY, (void**) &fini_array, mod->input.base);

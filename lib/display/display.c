@@ -84,7 +84,7 @@ result_t display_open_layer(surface_t *surface) {
 	if(!using_am)
 	{
 		uint32_t stacks[] = {0x0, 0x2, 0x4, 0x5, 0xA};
-		for(int i = 0; i < ARRAY_LENGTH(stacks); i++) {
+		for(size_t i = 0; i < ARRAY_LENGTH(stacks); i++) {
 			if((r = vi_imds_add_to_layer_stack(stacks[i], layer_id)) != RESULT_OK) {
 				goto fail_surface;
 			}

@@ -15,7 +15,7 @@ static_assert(sizeof(usb_ds_report_t) == 0x84, "malformed usb_ds_report_t struct
 result_t usb_ds_post_buffer_async(usb_ds_endpoint_t *endp, void *buffer, size_t size, uint32_t *urb_id) {
 	struct {
 		uint32_t size;
-		uint64_t ptr;
+		void *ptr;
 	} raw;
 	raw.size = size;
 	raw.ptr = buffer;

@@ -318,7 +318,7 @@ static result_t ipc_pack_message(uint32_t *buffer, ipc_pack_message_t *msg) {
 	return RESULT_OK;
 }
 
-result_t ipc_pack_request(uint32_t *marshal_buffer, ipc_request_t *rq, ipc_object_t object) {
+result_t ipc_pack_request(uint32_t *marshal_buffer, const ipc_request_t *rq, ipc_object_t object) {
 	ipc_pack_message_t msg;
 
 	bool to_domain = rq->type == 4 && object.object_id >= 0;
@@ -426,7 +426,7 @@ result_t ipc_pack_request(uint32_t *marshal_buffer, ipc_request_t *rq, ipc_objec
 	return ipc_pack_message(marshal_buffer, &msg);
 }
 
-result_t ipc_pack_response(uint32_t *marshal_buffer, ipc_response_t *rs, ipc_server_object_t *object) {
+result_t ipc_pack_response(uint32_t *marshal_buffer, const ipc_response_t *rs, ipc_server_object_t *object) {
 	ipc_pack_message_t msg;
 
 	bool from_domain = object->is_domain_object;

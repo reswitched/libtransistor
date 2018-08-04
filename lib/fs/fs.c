@@ -178,9 +178,9 @@ fail: // release inodes that were opened during traversal
 	return r;
 }
 
-static void get_path_parent_child(char *path, char **out_parent, size_t *out_len_parent, char **out_child, size_t *out_child_len) {
-	char *path_end = path + strlen(path) - 1;
-	char *child;
+static void get_path_parent_child(const char *path, const char **out_parent, size_t *out_len_parent, const char **out_child, size_t *out_child_len) {
+	const char *path_end = path + strlen(path) - 1;
+	const char *child;
 
 	while (path < path_end && *path_end == '/') {
 		// Skip trailing slashes
@@ -210,7 +210,7 @@ result_t trn_fs_mkdir(const char *path) {
 	trn_traverse_t traverse[MAX_RECURSION];
 	int borrowed_recursion = 0;
 	int traverse_recursion = 0;
-	char *parent_path, *child_path;
+	const char *parent_path, *child_path;
 	size_t parent_path_size, child_path_size;
 
 	get_path_parent_child(path, &parent_path, &parent_path_size, &child_path, &child_path_size);
@@ -303,7 +303,7 @@ result_t trn_fs_open(int *fd, const char *path, int flags) {
 
 	if (flags & O_CREAT) {
 		// Create file if it does not exist. First traverse to the parent.
-		char *parent_path, *child;
+		const char *parent_path, *child;
 		size_t parent_path_size, child_path_size;
 		get_path_parent_child(path, &parent_path, &parent_path_size, &child, &child_path_size);
 

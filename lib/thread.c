@@ -8,7 +8,8 @@
 #include<reent.h>
 #include<string.h>
 
-static void trn_thread_entry(trn_thread_t *thread) {
+static void trn_thread_entry(void *data) {
+	trn_thread_t *thread = data;
 	get_tls()->thread = thread;
 	_REENT_INIT_PTR(&thread->reent);
 	thread->entry(thread->arg);

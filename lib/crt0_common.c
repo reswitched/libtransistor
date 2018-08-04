@@ -326,6 +326,7 @@ static result_t setup_socket_stdio(int s_stdout, int s_stdin, int s_stderr) {
 	setup_stdio_socket("stdin",  loader_config.socket_stdin,  STDIN_FILENO);
 	setup_stdio_socket("stderr", loader_config.socket_stderr, STDERR_FILENO);
 	dbg_set_file(fd_file_get(loader_config.socket_stderr));
+	return RESULT_OK;
 }
 
 static result_t setup_usb_stdio() {
@@ -340,6 +341,7 @@ static result_t setup_usb_stdio() {
 	dup2(usb_fd, STDIN_FILENO);
 	dbg_set_file(fd_file_get(usb_fd));
 	fd_close(usb_fd);
+	return RESULT_OK;
 }
 
 static result_t dbg_log_write(void *v, const void *ptr, size_t len, size_t *bytes_written) {
@@ -364,6 +366,7 @@ static result_t setup_bss_stdio() {
 		dup2(dbg_fd, STDERR_FILENO);
 	}
 	fd_close(dbg_fd);
+	return RESULT_OK;
 }
 
 // filesystem stuff

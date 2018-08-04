@@ -13,8 +13,8 @@
 
 #include"../lib/squashfs/squashfuse.h"
 
-void hash_file(char hash[32], int fd) {
-	char buf[4096];
+void hash_file(uint8_t hash[32], int fd) {
+	uint8_t buf[4096];
 	ssize_t r;
 	SHA256_CTX ctx;
 
@@ -33,7 +33,7 @@ void tohex(unsigned char * in, size_t insz, char * out, size_t outsz)
 	for(; pin < in+insz; pout +=2, pin++){
 		pout[0] = hex[(*pin>>4) & 0xF];
 		pout[1] = hex[ *pin     & 0xF];
-		if (pout + 2 - out > outsz){
+		if ((size_t) (pout + 2 - out) > outsz){
 			/* Better to truncate output string than overflow buffer */
 			/* it would be still better to either return a status */
 			/* or ensure the target buffer is large enough and it never happen */
@@ -44,7 +44,7 @@ void tohex(unsigned char * in, size_t insz, char * out, size_t outsz)
 }
 
 void print_file(char *name, int indent) {
-	char hash[32];
+	uint8_t hash[32];
 	char hashstr[65];
 
 	int fd = open(name, O_RDONLY);

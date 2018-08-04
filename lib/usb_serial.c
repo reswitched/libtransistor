@@ -78,21 +78,6 @@ fail:
 	return r;
 }
 
-static void dump_report(usb_ds_report_t *report) {
-	if(USB_SERIAL_DEBUG_ENABLED) {
-		usb_serial_debug("report: (%d entries)\n", report->entry_count);
-		for(uint32_t i = 0; i < report->entry_count; i++) {
-			usb_ds_report_entry_t entry = report->entries[i];
-			usb_serial_debug("  [%d]: urb 0x%x, requested 0x%x bytes, transferred 0x%x bytes, status 0x%x\n",
-			                 i, entry.urb_id, entry.requested_size, entry.transferred_size, entry.urb_status);
-			
-		}
-		usb_serial_debug("hexdump of report:\n");
-		hexdump(report, sizeof(*report));
-		usb_serial_debug("end report\n");
-	}
-}
-
 static usb_ds_report_entry_t *find_entry(usb_ds_report_t *report, uint32_t urb_id) {
 	for(uint32_t i = 0; i < report->entry_count; i++) {
 		if(report->entries[i].urb_id == urb_id) {
@@ -170,7 +155,6 @@ fail_usb:
 	usb_ds_finalize();
 fail_mutex:
 	trn_mutex_unlock(&usb_serial_mutex);
-fail:
 	usb_serial_initializations--;
 	return r;
 }

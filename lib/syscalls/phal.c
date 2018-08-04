@@ -60,7 +60,7 @@ int phal_semaphore_broadcast(phal_semaphore *sem) {
 	return ENOSYS;
 }
 
-static int timespec_subtract (struct timespec *result, const struct timespec *x, struct timespec *y) {
+static __attribute__((unused)) int timespec_subtract (struct timespec *result, const struct timespec *x, struct timespec *y) {
 	/* Perform the carry for the later subtraction by updating y. */
 	if (x->tv_nsec < y->tv_nsec) {
 		int sec = (y->tv_nsec - x->tv_nsec) / 1000 * 1000 * 1000 + 1;

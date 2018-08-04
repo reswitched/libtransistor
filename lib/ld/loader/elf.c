@@ -36,14 +36,14 @@ static const uint8_t required_syscalls[] = {
 };
 
 static result_t ld_elf_can_load(void *file, size_t file_size) {
-	/*if(!loader_config.has_process_handle) {
+	if(!loader_config.has_process_handle) {
 		dbg_printf("rejecting because no process handle");
 		return LIBTRANSISTOR_ERR_TRNLD_NEEDS_PROCESS_HANDLE;
 	}
 	result_t r;
 	if((r = lconfig_has_syscalls(required_syscalls)) != RESULT_OK) {
 		return r;
-	}*/
+	}
 
 	// check header
 	if(file_size < sizeof(Elf64_Ehdr)) {
@@ -169,7 +169,7 @@ static result_t ld_elf_load(module_input_t *spec_out, void *file, size_t file_si
 		if(seg->phdr.p_flags & PF_W) { permissions |= 2; }
 		if(seg->phdr.p_flags & PF_R) { permissions |= 1; }
 
-		if((r = svcSetProcessMemoryPermission(loader_config.process_handle, seg->dst, seg->size, permissions)) != RESULT_OK) {
+		if((r = svcSetProcessMemoryPermission(loader_config.process_handle, (uint64_t) seg->dst, seg->size, permissions)) != RESULT_OK) {
 			for(uint64_t j = 0; j <= i; j++) {
 				svcUnmapProcessCodeMemory(loader_config.process_handle, seg->dst, seg->src, seg->size);
 			}

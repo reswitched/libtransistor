@@ -8,7 +8,7 @@
 #include<string.h>
 
 
-result_t ifile_read(ifile_t obj, uint64_t *out_out_size, int8_t * out_out_buf, size_t out_out_buf_size, uint64_t in_unk0, uint64_t in_offset, uint64_t in_size) {
+result_t ifile_read(ifile_t obj, uint64_t *out_out_size, uint8_t * out_out_buf, size_t out_out_buf_size, uint64_t in_unk0, uint64_t in_offset, uint64_t in_size) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 0;
@@ -46,7 +46,7 @@ result_t ifile_read(ifile_t obj, uint64_t *out_out_size, int8_t * out_out_buf, s
 	return res;
 }
 
-result_t ifile_write(ifile_t obj, uint32_t in_unk0, uint64_t in_offset, uint64_t in_size, const int8_t * in_buf, size_t in_buf_size) {
+result_t ifile_write(ifile_t obj, uint32_t in_unk0, uint64_t in_offset, uint64_t in_size, const uint8_t * in_buf, size_t in_buf_size) {
 	result_t res;
 	ipc_request_t rq = ipc_default_request;
 	rq.request_id = 1;
@@ -59,7 +59,7 @@ result_t ifile_write(ifile_t obj, uint32_t in_unk0, uint64_t in_offset, uint64_t
 	*(uint64_t*)(raw + 8) = in_offset;
 	*(uint64_t*)(raw + 16) = in_size;
 	ipc_buffer_t in_buf_buf = {
-		.addr = in_buf,
+		.addr = (void*) in_buf,
 		.size = in_buf_size,
 		.type = 69,
 	};

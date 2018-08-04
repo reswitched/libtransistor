@@ -82,7 +82,7 @@ result_t twili_pipe_write(twili_pipe_t *pipe, const void *buffer, size_t size) {
 	ipc_request_t rq = ipc_make_request(1);
 
 	ipc_buffer_t buffers[] = {
-		ipc_make_buffer(buffer, size, 0x5),
+		ipc_make_buffer((void*) buffer, size, 0x5),
 	};
 	ipc_msg_set_buffers(rq, buffers, buffer_ptrs);
 	

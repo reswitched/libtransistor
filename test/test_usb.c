@@ -22,7 +22,7 @@ static usb_endpoint_descriptor_t endpoint_descriptor = {
 
 #define TRACE_STATE r = usb_ds_get_state(&usb_state); printf("usb state: 0x%x -> 0x%x\n", r, usb_state);
 
-static result_t wait_for_state(revent_h event, usb_ds_state_t state) {
+/*static result_t wait_for_state(revent_h event, usb_ds_state_t state) {
 	usb_ds_state_t current_state;
 	result_t r = RESULT_OK;
 	svcResetSignal(event);
@@ -37,7 +37,7 @@ static result_t wait_for_state(revent_h event, usb_ds_state_t state) {
 	}
 fail:
 	return r;
-}
+}*/
 
 int main() {
 	result_t r;

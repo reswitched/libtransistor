@@ -27,8 +27,6 @@ result_t sm_init() {
 	sm_registered = false;
 	return RESULT_OK;
 
-fail_port:
-	ipc_close(sm_object);
 fail:
 	sm_initializations--;
 	return r;

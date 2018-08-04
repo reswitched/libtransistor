@@ -46,7 +46,7 @@ result_t usb_ds_close_interface(usb_ds_interface_t *intf) {
 result_t usb_ds_ctrl_in_post_buffer_async(usb_ds_interface_t *intf, void *buffer, size_t size, uint32_t *urb_id) {
 	struct {
 		uint32_t size;
-		uint64_t ptr;
+		void *ptr;
 	} raw;
 	raw.size = size;
 	raw.ptr = buffer;
@@ -63,7 +63,7 @@ result_t usb_ds_ctrl_in_post_buffer_async(usb_ds_interface_t *intf, void *buffer
 result_t usb_ds_ctrl_out_post_buffer_async(usb_ds_interface_t *intf, void *buffer, size_t size, uint32_t *urb_id) {
 	struct {
 		uint32_t size;
-		uint64_t ptr;
+		void *ptr;
 	} raw;
 	raw.size = size;
 	raw.ptr = buffer;

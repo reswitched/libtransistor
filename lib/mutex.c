@@ -31,7 +31,7 @@ void trn_mutex_lock(trn_mutex_t *mutex) ACQUIRE(mutex) NO_THREAD_SAFETY_ANALYSIS
 			}
 		}
 
-		svcArbitrateLock(cur & ~HAS_LISTENERS, &mutex->lock, self_handle);
+		svcArbitrateLock(cur & ~HAS_LISTENERS, (void*) &mutex->lock, self_handle);
 	}
 }
 
@@ -55,7 +55,7 @@ void trn_mutex_interrupt_lock(trn_mutex_t *mutex) ACQUIRE(mutex) NO_THREAD_SAFET
 		}
 
 		svcCancelSynchronization(cur & ~HAS_LISTENERS); // interrupt the thread that holds the mutex
-		svcArbitrateLock(cur & ~HAS_LISTENERS, &mutex->lock, self_handle);
+		svcArbitrateLock(cur & ~HAS_LISTENERS, (void*) &mutex->lock, self_handle);
 	}
 }
 
@@ -76,7 +76,7 @@ bool trn_mutex_try_lock(trn_mutex_t *mutex) TRY_ACQUIRE(true, mutex) NO_THREAD_S
 void trn_mutex_unlock(trn_mutex_t *mutex) RELEASE(mutex) NO_THREAD_SAFETY_ANALYSIS {
 	uint64_t old = atomic_exchange(&mutex->lock, 0);
 	if(old & HAS_LISTENERS) {
-		svcArbitrateUnlock(&mutex->lock);
+		svcArbitrateUnlock((void*) &mutex->lock);
 	}
 }
 
@@ -104,6 +104,7 @@ bool trn_recursive_mutex_try_lock(trn_recursive_mutex_t *recursive) TRY_ACQUIRE(
 		recursive->owner = self_handle;
 	}
 	recursive->count++;
+	return true;
 }
 
 void trn_recursive_mutex_unlock(trn_recursive_mutex_t *recursive) RELEASE(recursive) NO_THREAD_SAFETY_ANALYSIS {

@@ -37,8 +37,6 @@ result_t gpu_initialize() {
 
 	return RESULT_OK;
 
-fail_nvhost_ctrl:
-	nv_close(nvhost_ctrl_fd);
 fail_nvmap:
 	nv_close(nvmap_fd);
 fail_nvas:

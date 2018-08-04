@@ -9,11 +9,6 @@
 #include<stdio.h>
 #include<malloc.h>
 
-#define ASSERT_OK(label, expr) if((r = expr) != RESULT_OK) {            \
-		dbg_printf("assertion failed at %s:%d: result 0x%x is not OK\n", __FILE__, __LINE__, r); \
-		goto label; \
-	}
-
 bool destroy_server_flag = false;
 
 static result_t add_object_add(uint64_t *userdata, uint64_t value, uint64_t *out) {

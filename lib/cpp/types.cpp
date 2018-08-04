@@ -111,10 +111,10 @@ KTransferMemory::KTransferMemory(size_t size, uint32_t permissions) : KTransferM
 }
 
 KTransferMemory::KTransferMemory(void *buffer, size_t size, uint32_t permissions, bool owns_buffer) : KTransferMemory(ResultCode::AssertOk(svc::CreateTransferMemory(buffer, size, permissions))) {
-	owns_buffer = owns_buffer;
+	this->owns_buffer = owns_buffer;
 }
 
-KTransferMemory::KTransferMemory(KTransferMemory &&other) : buffer(other.buffer), buffer_size(other.buffer_size), owns_buffer(other.owns_buffer), KObject(std::move(other)) {
+KTransferMemory::KTransferMemory(KTransferMemory &&other) : KObject(std::move(other)), buffer(other.buffer), buffer_size(other.buffer_size), owns_buffer(other.owns_buffer) {
 	other.owns_buffer = false;
 }
 

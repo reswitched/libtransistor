@@ -24,7 +24,7 @@ static result_t blobfd_seek(void *vfile, off_t offset, int whence, off_t *positi
 	return RESULT_OK;
 }
 
-static result_t blobfd_read(void *vfile, char *buffer, size_t size, size_t *bytes_read) {
+static result_t blobfd_read(void *vfile, void *buffer, size_t size, size_t *bytes_read) {
 	blob_file *file = vfile;
 	size_t sz = size;
 	if(file->head + sz > file->size) {
@@ -36,7 +36,7 @@ static result_t blobfd_read(void *vfile, char *buffer, size_t size, size_t *byte
 	return RESULT_OK;
 }
 
-static result_t blobfd_write(void *vfile, const char *buffer, size_t size, size_t *bytes_written) {
+static result_t blobfd_write(void *vfile, const void *buffer, size_t size, size_t *bytes_written) {
 	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
 }
 

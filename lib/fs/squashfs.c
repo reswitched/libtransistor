@@ -76,7 +76,7 @@ static result_t trn_sqfs_file_seek(void *data, off_t offset, int whence, off_t *
 	return RESULT_OK;
 }
 
-static result_t trn_sqfs_file_read(void *data, char *buf, size_t size, size_t *bytes_read) {
+static result_t trn_sqfs_file_read(void *data, void *buf, size_t size, size_t *bytes_read) {
 	trn_sqfs_file_t *file = data;
 	off_t osize = size;
 	if(sqfs_read_range(file->fs, &file->inode, file->head, &osize, buf)) {
@@ -87,7 +87,7 @@ static result_t trn_sqfs_file_read(void *data, char *buf, size_t size, size_t *b
 	return RESULT_OK;
 }
 
-static result_t trn_sqfs_file_write(void *data, const char *buf, size_t size, size_t *bytes_written) {
+static result_t trn_sqfs_file_write(void *data, const void *buf, size_t size, size_t *bytes_written) {
 	return LIBTRANSISTOR_ERR_FS_READ_ONLY;
 }
 

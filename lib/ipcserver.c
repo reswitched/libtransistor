@@ -128,7 +128,7 @@ result_t ipc_server_accept_session(ipc_server_t *srv, ipc_server_port_t *port) {
 }
 
 result_t ipc_server_destroy(ipc_server_t *srv) {
-	for(int i = 0; i < srv->num_ports; i++) {
+	for(uint32_t i = 0; i < srv->num_ports; i++) {
 		waiter_cancel(srv->waiter, srv->ports[i].wait_record);
 		svcCloseHandle(srv->ports[i].port);
 	}

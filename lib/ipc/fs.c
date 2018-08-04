@@ -90,8 +90,6 @@ result_t fsp_srv_open_data_file_system_by_current_process(ifilesystem_t *out_unk
 // result_t fsp_srv_open_data_file_system_by_application_id(ifilesystem_t *out_dataFiles, applicationid in_tid);
 
 result_t fsp_srv_open_bis_filesystem(ifilesystem_t *fs, uint32_t partition_id, const char *in_path) {
-	result_t res;
-
 	char path[0x301];
 	memset(path, 0, sizeof(path));
 	strncpy(path, in_path, sizeof(path)-1);
@@ -129,7 +127,7 @@ result_t fsp_srv_open_host_file_system_impl(ifilesystem_t *out_unk1, const uint8
 	rq.request_id = 17;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -484,7 +482,7 @@ result_t fsp_srv_set_bis_root_for_host(uint32_t in_unk0, const uint8_t in_path[0
 
 	*(uint32_t*)(raw + 0) = in_unk0;
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};
@@ -525,7 +523,7 @@ result_t fsp_srv_set_save_data_root_path(const uint8_t in_path[0x301]) {
 	rq.request_id = 1002;
 
 	ipc_buffer_t in_path_buf = {
-		.addr = in_path,
+		.addr = (void*) in_path,
 		.size = 769,
 		.type = 25,
 	};

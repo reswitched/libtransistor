@@ -32,6 +32,8 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#pragma GCC diagnostic ignored "-Wsign-compare"
+
 sqfs_err sqfs_frag_entry(sqfs *fs, struct squashfs_fragment_entry *frag,
 		uint32_t idx) {
 	sqfs_err err = SQFS_OK;

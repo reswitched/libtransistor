@@ -33,6 +33,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#pragma GCC diagnostic ignored "-Wsign-compare"
 
 #define DATA_CACHED_BLKS 1
 #define FRAG_CACHED_BLKS 3

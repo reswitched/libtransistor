@@ -20,10 +20,10 @@ static uint32_t swizzle_y(uint32_t v) { return pdep(0x7B4, v); }
 void gfx_slow_swizzling_blit(uint32_t *buffer, uint32_t *image, int w, int h, int tx, int ty) {
   uint32_t *dest = buffer;
   uint32_t *src = image;
-  int x0 = tx;
-  int y0 = ty;
-  int x1 = x0+w;
-  int y1 = y0+h;
+  uint32_t x0 = tx;
+  uint32_t y0 = ty;
+  uint32_t x1 = x0+w;
+  uint32_t y1 = y0+h;
   const uint32_t tile_height = 128;
   const uint32_t padded_width = 128 * 10;
 

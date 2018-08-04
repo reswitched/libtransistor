@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 	printf("local heap at %p\n", local_heap);
 	uint8_t *buf = malloc(64);
 	printf("allocated at %p\n", buf);
-	if(buf >= local_heap && buf - local_heap < sizeof(local_heap)) {
+	if(buf >= local_heap && (size_t) (buf - local_heap) < sizeof(local_heap)) {
 		printf("inside local heap\n");
 		return 0;
 	} else {

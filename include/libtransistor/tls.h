@@ -16,7 +16,7 @@ extern "C" {
 #include<stdint.h>
 
 struct tls {
-	uint8_t ipc_buffer[0x100];
+	uint32_t ipc_buffer[0x100/sizeof(uint32_t)];
 	uint8_t _unk1[0xF8];
 	trn_thread_t *thread;
 };

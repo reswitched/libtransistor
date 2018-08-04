@@ -170,7 +170,7 @@ void __attribute__((__noreturn__)) svcExitProcess();
  * @param priority Description
  * @param processor_id Description
  */
-result_t svcCreateThread(thread_h *out, thread_entry entry, uint64_t arg, void *stacktop, int32_t priority, int32_t processor_id);
+result_t svcCreateThread(thread_h *out, thread_entry entry, void *arg, void *stacktop, int32_t priority, int32_t processor_id);
 
 /**
  * @brief Start a thread
