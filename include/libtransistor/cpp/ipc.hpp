@@ -76,7 +76,7 @@ struct InHandle<handle_t, Transfer> {
 	handle_t handle;
 };
 
-template<typename T, typename Transfer>
+template<typename T, typename Transfer, typename... Args>
 struct OutHandle;
 
 template<typename Transfer>
@@ -91,21 +91,27 @@ struct OutHandle<handle_t, Transfer> {
 	handle_t *handle;
 };
 
-template<typename T, typename Transfer>
+template<typename T, typename Transfer, typename... Args>
 struct OutHandle {
-	OutHandle(T &handle) : handle(&handle) {}
+	OutHandle(T &handle, Args... args) : handle(&handle), args(std::make_tuple(args...)) {}
 
-	OutHandle<T, Transfer> &operator=(T &val) {
+	OutHandle<T, Transfer, Args...> &operator=(T &val) {
 		*handle = T(val.handle);
 		return *this;
 	}
 
-	OutHandle<T, Transfer> &operator=(handle_t &val) {
-		*handle = T(val);
+	OutHandle<T, Transfer, Args...> &operator=(handle_t &val) {
+		HelpConstruct(val, std::index_sequence_for<Args...>());
 		return *this;
 	}
 
 	T *handle;
+	std::tuple<Args...> args;
+ private:
+	template<std::size_t... I>
+	void HelpConstruct(handle_t &val, std::index_sequence<I...>) {
+		*handle = T(val, std::get<I>(args)...);
+	}
 };
 
 template<typename T, uint32_t type, size_t expected_size = 0>

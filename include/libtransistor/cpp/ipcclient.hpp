@@ -30,7 +30,7 @@ struct TransactionFormat {
 	~TransactionFormat();
 };
 
-template<typename T>
+template<typename T, typename... Extra>
 struct AccessorHelper;
 
 template<typename T>
@@ -93,32 +93,32 @@ struct AccessorHelper<ipc::InHandle<T, ipc::move>> {
 	}
 };
 
-template<typename T>
-struct AccessorHelper<ipc::OutHandle<T, ipc::copy>> {
+template<typename T, typename... Extra>
+struct AccessorHelper<ipc::OutHandle<T, ipc::copy, Extra...>> {
 	size_t index;
 
 	AccessorHelper(size_t index) : index(index) {
 	}
 
-	void Pack(TransactionFormat &f, ipc::OutHandle<T, ipc::copy> &arg) const {
+	void Pack(TransactionFormat &f, ipc::OutHandle<T, ipc::copy, Extra...> &arg) const {
 	}
 
-	void Unpack(TransactionFormat &f, ipc::OutHandle<T, ipc::copy> &arg) const {
+	void Unpack(TransactionFormat &f, ipc::OutHandle<T, ipc::copy, Extra...> &arg) const {
 		arg = f.rs.copy_handles[index];
 	}
 };
 
-template<typename T>
-struct AccessorHelper<ipc::OutHandle<T, ipc::move>> {
+template<typename T, typename... Extra>
+struct AccessorHelper<ipc::OutHandle<T, ipc::move, Extra...>> {
 	size_t index;
 
 	AccessorHelper(size_t index) : index(index) {
 	}
 
-	void Pack(TransactionFormat &f, ipc::OutHandle<T, ipc::move> &arg) const {
+	void Pack(TransactionFormat &f, ipc::OutHandle<T, ipc::move, Extra...> &arg) const {
 	}
 
-	void Unpack(TransactionFormat &f, ipc::OutHandle<T, ipc::move> &arg) const {
+	void Unpack(TransactionFormat &f, ipc::OutHandle<T, ipc::move, Extra...> &arg) const {
 		arg = f.rs.move_handles[index];
 	}
 };
@@ -194,7 +194,7 @@ struct AccessorHelper<ipc::OutPid> {
 	}
 };
 
-template<typename T>
+template<typename T, typename... Extra>
 struct FormatMutator;
 
 template<typename T>
@@ -233,17 +233,17 @@ struct FormatMutator<ipc::InHandle<T, ipc::move>> {
 	}
 };
 
-template<typename T>
-struct FormatMutator<ipc::OutHandle<T, ipc::copy>> {
-	static AccessorHelper<ipc::OutHandle<T, ipc::copy>> MutateFormat(TransactionFormat &fmt) {
-		return AccessorHelper<ipc::OutHandle<T, ipc::copy>>(fmt.rs.num_copy_handles++);
+template<typename T, typename... Extra>
+struct FormatMutator<ipc::OutHandle<T, ipc::copy, Extra...>> {
+	static AccessorHelper<ipc::OutHandle<T, ipc::copy, Extra...>> MutateFormat(TransactionFormat &fmt) {
+		return AccessorHelper<ipc::OutHandle<T, ipc::copy, Extra...>>(fmt.rs.num_copy_handles++);
 	}
 };
 
-template<typename T>
-struct FormatMutator<ipc::OutHandle<T, ipc::move>> {
-	static AccessorHelper<ipc::OutHandle<T, ipc::move>> MutateFormat(TransactionFormat &fmt) {
-		return AccessorHelper<ipc::OutHandle<T, ipc::move>>(fmt.rs.num_move_handles++);
+template<typename T, typename... Extra>
+struct FormatMutator<ipc::OutHandle<T, ipc::move, Extra...>> {
+	static AccessorHelper<ipc::OutHandle<T, ipc::move, Extra...>> MutateFormat(TransactionFormat &fmt) {
+		return AccessorHelper<ipc::OutHandle<T, ipc::move, Extra...>>(fmt.rs.num_move_handles++);
 	}
 };
 
