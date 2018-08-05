@@ -31,7 +31,7 @@ HID::~HID() {
 Result<KSharedMemory> HID::GetSharedMemory() {
 	shared_memory_h handle;
 	return ResultCode::ExpectOk(hid_ipc_get_shared_memory_handle(&handle)).map([&handle](auto const &v) -> KSharedMemory {
-			return KSharedMemory(handle);
+			return KSharedMemory(handle, 0x40000, 1);
 		});
 }
 

@@ -26,13 +26,71 @@ class ProcessMemoryMapping : public MemoryMapping {
 	size_t size;
 };
 
+class SharedMemoryMapping : public MemoryMapping {
+ public:
+	SharedMemoryMapping(uint8_t *local, std::shared_ptr<KSharedMemory> mem) :
+		local(local), mem(mem) {
+	}
+
+	virtual ~SharedMemoryMapping() {
+		ResultCode::AssertOk(svcUnmapSharedMemory(mem->handle, local, mem->size));
+		as_release(local, mem->size);
+	}
+
+	virtual uint8_t *Base() { return local; }
+	virtual size_t Size() { return mem->size; }
+	
+	uint8_t *local;
+	std::shared_ptr<KSharedMemory> mem;
+};
+
+class TransferMemoryMapping : public MemoryMapping {
+ public:
+	TransferMemoryMapping(uint8_t *local, std::shared_ptr<KTransferMemory> mem) :
+		local(local), mem(mem) {
+	}
+
+	virtual ~TransferMemoryMapping() {
+		ResultCode::AssertOk(svcUnmapTransferMemory(mem->handle, local, mem->size));
+		as_release(local, mem->size);
+	}
+
+	virtual uint8_t *Base() { return local; }
+	virtual size_t Size() { return mem->size; }
+	
+	uint8_t *local;
+	std::shared_ptr<KTransferMemory> mem;
+};
+
 MemoryMapping::~MemoryMapping() {
+}
+
+Result<std::shared_ptr<MemoryMapping>> MapSharedMemory(KSharedMemory &mem) {
+	void *local_addr = as_reserve(mem.size);
+	if(local_addr == nullptr) {
+		return tl::make_unexpected(ResultCode(LIBTRANSISTOR_ERR_OUT_OF_MEMORY));
+	}
+	return ResultCode::ExpectOk(svcMapSharedMemory(mem.handle, local_addr, mem.size, mem.foreign_permission)).map([&](auto const &ignored) {
+			return std::static_pointer_cast<MemoryMapping>(
+				std::make_shared<SharedMemoryMapping>((uint8_t*) local_addr, std::make_shared<KSharedMemory>(std::move(mem))));
+		});
+}
+
+Result<std::shared_ptr<MemoryMapping>> MapSharedMemory(std::shared_ptr<KSharedMemory> mem) {
+	void *local_addr = as_reserve(mem->size);
+	if(local_addr == nullptr) {
+		return tl::make_unexpected(ResultCode(LIBTRANSISTOR_ERR_OUT_OF_MEMORY));
+	}
+	return ResultCode::ExpectOk(svcMapSharedMemory(mem->handle, local_addr, mem->size, mem->foreign_permission)).map([&](auto const &ignored) {
+			return std::static_pointer_cast<MemoryMapping>(
+				std::make_shared<SharedMemoryMapping>((uint8_t*) local_addr, mem));
+		});
 }
 
 Result<KTransferMemory> CreateTransferMemory(void *addr, uint64_t size, uint32_t permission) {
 	transfer_memory_h handle;
 	return ResultCode::ExpectOk(svcCreateTransferMemory(&handle, addr, size, permission)).map([&](auto const &ignored) {
-			return KTransferMemory(handle, addr, size);
+			return KTransferMemory(handle, addr, size, permission);
 		});
 }
 
@@ -44,6 +102,28 @@ Result<uint64_t> GetProcessId(handle_t handle) {
 	uint64_t pid;
 	return ResultCode::ExpectOk(svcGetProcessId(&pid, handle)).map([&pid](auto const &ignored) {
 			return pid;
+		});
+}
+
+Result<std::shared_ptr<MemoryMapping>> MapTransferMemory(KTransferMemory &mem) {
+	void *local_addr = as_reserve(mem.size);
+	if(local_addr == nullptr) {
+		return tl::make_unexpected(ResultCode(LIBTRANSISTOR_ERR_OUT_OF_MEMORY));
+	}
+	return ResultCode::ExpectOk(svcMapTransferMemory(mem.handle, local_addr, mem.size, mem.permissions)).map([&](auto const &ignored) {
+			return std::static_pointer_cast<MemoryMapping>(
+				std::make_shared<TransferMemoryMapping>((uint8_t*) local_addr, std::make_shared<KTransferMemory>(std::move(mem))));
+		});
+}
+
+Result<std::shared_ptr<MemoryMapping>> MapTransferMemory(std::shared_ptr<KTransferMemory> mem) {
+	void *local_addr = as_reserve(mem->size);
+	if(local_addr == nullptr) {
+		return tl::make_unexpected(ResultCode(LIBTRANSISTOR_ERR_OUT_OF_MEMORY));
+	}
+	return ResultCode::ExpectOk(svcMapTransferMemory(mem->handle, local_addr, mem->size, mem->permissions)).map([&](auto const &ignored) {
+			return std::static_pointer_cast<MemoryMapping>(
+				std::make_shared<TransferMemoryMapping>((uint8_t*) local_addr, mem));
 		});
 }
 

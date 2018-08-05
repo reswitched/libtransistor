@@ -97,13 +97,13 @@ handle_t KObject::Claim() {
 KWaitable::KWaitable(handle_t handle) : KObject(handle) {
 }
 
-KSharedMemory::KSharedMemory(shared_memory_h handle) : KObject(handle) {
+KSharedMemory::KSharedMemory(shared_memory_h handle, size_t size, uint32_t foreign_permission) : KObject(handle), size(size), foreign_permission(foreign_permission) {
 }
 
-KTransferMemory::KTransferMemory(transfer_memory_h handle) : KObject(handle) {
+KTransferMemory::KTransferMemory(transfer_memory_h handle, size_t size, uint32_t permissions) : KObject(handle), size(size), permissions(permissions) {
 }
 
-KTransferMemory::KTransferMemory(transfer_memory_h handle, void *addr, uint64_t size) : KObject(handle), buffer((uint8_t*) addr), buffer_size(size) {
+KTransferMemory::KTransferMemory(transfer_memory_h handle, void *addr, size_t size, uint32_t permissions) : KObject(handle), buffer((uint8_t*) addr), size(size), permissions(permissions) {
 }
 
 KTransferMemory::KTransferMemory(size_t size, uint32_t permissions) : KTransferMemory(ResultCode::AssertOk(svc::CreateTransferMemory(alloc_pages(size, size, nullptr), size, permissions))) {
@@ -114,13 +114,14 @@ KTransferMemory::KTransferMemory(void *buffer, size_t size, uint32_t permissions
 	this->owns_buffer = owns_buffer;
 }
 
-KTransferMemory::KTransferMemory(KTransferMemory &&other) : KObject(std::move(other)), buffer(other.buffer), buffer_size(other.buffer_size), owns_buffer(other.owns_buffer) {
+KTransferMemory::KTransferMemory(KTransferMemory &&other) : KObject(std::move(other)), buffer(other.buffer), size(other.size), permissions(other.permissions), owns_buffer(other.owns_buffer) {
 	other.owns_buffer = false;
 }
 
 KTransferMemory &KTransferMemory::operator=(KTransferMemory &&other) {
 	buffer = other.buffer;
-	buffer_size = other.buffer_size;
+	size = other.size;
+	permissions = other.permissions;
 	owns_buffer = other.owns_buffer;
 	other.owns_buffer = false;
 	KObject::operator=(std::move(other));

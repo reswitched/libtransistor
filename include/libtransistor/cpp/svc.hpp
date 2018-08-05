@@ -40,11 +40,21 @@ enum class LimitableResource : uint32_t {
 Result<void*> SetHeapSize(uint32_t size);
 Result<std::nullopt_t> SetMemoryPermission(void *addr, uint64_t size, uint32_t permission);
 // etc., etc.
+Result<std::shared_ptr<MemoryMapping>> MapSharedMemory(KSharedMemory &mem); // takes ownership of mem
+Result<std::shared_ptr<MemoryMapping>> MapSharedMemory(std::shared_ptr<KSharedMemory> mem); // extends mem
 Result<KTransferMemory> CreateTransferMemory(void *addr, uint64_t size, uint32_t permission);
 Result<std::nullopt_t> CloseHandle(handle_t handle);
+
 // etc., etc.
 
 Result<uint64_t> GetProcessId(handle_t handle); // thread, process, or debug handle
+
+// etc., etc.
+
+Result<std::shared_ptr<MemoryMapping>> MapTransferMemory(KTransferMemory &mem); // takes ownership of mem
+Result<std::shared_ptr<MemoryMapping>> MapTransferMemory(std::shared_ptr<KTransferMemory> mem); // extends mem
+
+// etc., etc.
 
 Result<KDebug> DebugActiveProcess(uint64_t pid);
 // BreakDebugProcess // requires IsDebugMode

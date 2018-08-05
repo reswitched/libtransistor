@@ -70,22 +70,34 @@ class KWaitable : public KObject {
 class KSharedMemory : public KObject {
  public:
 	KSharedMemory() = default;
-	KSharedMemory(shared_memory_h handle);
+
+	// foreign shared memory
+	KSharedMemory(shared_memory_h handle, size_t size, uint32_t foreign_permission);
+
+	size_t size;
+	uint32_t foreign_permission;
 };
 
 class KTransferMemory : public KObject {
  public:
 	KTransferMemory() = default;
-	KTransferMemory(transfer_memory_h handle);
-	KTransferMemory(transfer_memory_h handle, void *addr, uint64_t size);
+	
+	// foreign transfer memory
+	KTransferMemory(transfer_memory_h handle, size_t size, uint32_t permissions);
+
+	// owned transfer memory
+	KTransferMemory(transfer_memory_h handle, void *backing_buffer, size_t size, uint32_t permissions);
 	KTransferMemory(size_t size, uint32_t permissions);
-	KTransferMemory(void *work_buf, size_t size, uint32_t permissions, bool owns_buffer=false);
+	KTransferMemory(void *backing_buffer, size_t size, uint32_t permissions, bool owns_buffer=false);
+
+	// misc
 	KTransferMemory(KTransferMemory &&other);
 	KTransferMemory &operator=(KTransferMemory &&other);
 	~KTransferMemory();
-	
+
 	uint8_t *buffer = nullptr;
-	size_t buffer_size = 0;
+	size_t size = 0;
+	uint32_t permissions = 0;
  private:
 	bool owns_buffer = false;
 };
