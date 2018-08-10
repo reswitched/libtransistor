@@ -40,6 +40,8 @@ enum class LimitableResource : uint32_t {
 Result<void*> SetHeapSize(uint32_t size);
 Result<std::nullopt_t> SetMemoryPermission(void *addr, uint64_t size, uint32_t permission);
 // etc., etc.
+Result<std::tuple<memory_info_t, uint32_t>> QueryMemory(void *addr);
+// etc., etc.
 Result<std::shared_ptr<MemoryMapping>> MapSharedMemory(KSharedMemory &mem); // takes ownership of mem
 Result<std::shared_ptr<MemoryMapping>> MapSharedMemory(std::shared_ptr<KSharedMemory> mem); // extends mem
 Result<KTransferMemory> CreateTransferMemory(void *addr, uint64_t size, uint32_t permission);

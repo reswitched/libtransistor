@@ -65,6 +65,14 @@ class TransferMemoryMapping : public MemoryMapping {
 MemoryMapping::~MemoryMapping() {
 }
 
+Result<std::tuple<memory_info_t, uint32_t>> QueryMemory(void *addr) {
+	memory_info_t mem_info;
+	uint32_t page_info;
+	return ResultCode::ExpectOk(svcQueryMemory(&mem_info, &page_info, addr)).map([&mem_info, &page_info](auto const &ignored) {
+			return std::make_tuple(mem_info, page_info);
+		});
+}
+
 Result<std::shared_ptr<MemoryMapping>> MapSharedMemory(KSharedMemory &mem) {
 	void *local_addr = as_reserve(mem.size);
 	if(local_addr == nullptr) {
