@@ -38,6 +38,11 @@ result_t twili_open_stdout(twili_pipe_t *pipe);
 result_t twili_open_stderr(twili_pipe_t *pipe);
 
 /**
+ * @brief Open Twili named output pipe
+ */
+result_t twili_create_named_output_pipe(const char *name, twili_pipe_t *pipe);
+
+/**
  * @brief Read from a Twili pipe
  */
 result_t twili_pipe_read(twili_pipe_t *pipe, void *buffer, size_t limit, size_t *bytes_read);

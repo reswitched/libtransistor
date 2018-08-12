@@ -64,6 +64,23 @@ result_t twili_open_stderr(twili_pipe_t *pipe) {
 	return twili_open_pipe(pipe, 2);
 }
 
+result_t twili_create_named_output_pipe(const char *name, twili_pipe_t *pipe) {
+	INITIALIZATION_GUARD(twili);
+	
+	ipc_request_t rq = ipc_make_request(10);
+
+	ipc_buffer_t buffers[] = {
+		ipc_make_buffer((void*) name, strlen(name), 0x5)
+	};
+	ipc_msg_set_buffers(rq, buffers, buffer_ptrs);
+	
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	rs.num_objects = 1;
+	rs.objects = &pipe->object;
+	
+	return ipc_send(its_object, &rq, &rs);
+}
+
 result_t twili_pipe_read(twili_pipe_t *pipe, void *buffer, size_t limit, size_t *bytes_read) {
 	ipc_request_t rq = ipc_make_request(0);
 
