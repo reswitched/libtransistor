@@ -25,6 +25,12 @@ typedef enum {
  */
 kernel_version_t env_get_kernel_version();
 
+
+/**
+ * @brief Gets a pointer to the top of the stack
+ */
+void *env_get_stack_top();
+
 #ifdef __cplusplus
 }
 #endif

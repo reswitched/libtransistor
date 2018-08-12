@@ -48,6 +48,9 @@ int main(int argc, char **argv);
 extern size_t log_length;
 extern char log_buffer[0x20000];
 
+// from environment.c
+extern void *env_stack_top;
+
 typedef struct {
 	void (**init_array)(void);
 	void (**fini_array)(void);
@@ -76,7 +79,7 @@ static result_t setup_fs();
 
 void phal_init();
 
-int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base) {
+int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, void *aslr_base, void *stack_top) {
 	result_t r;
 	LIB_ASSERT_OK(fail, ld_relocate_module_basic(aslr_base));
 
@@ -85,6 +88,9 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 	
 	dbg_printf("aslr base: %p", aslr_base);
 	dbg_printf("config: %p", config);
+	dbg_printf("stack top: %p", stack_top);
+
+	env_stack_top = stack_top;
 
 	// Initialize default behaviour for loader config
 	lconfig_init_default(thread_handle);

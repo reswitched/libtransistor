@@ -44,6 +44,7 @@ run:
         cmp x30, xzr
         csel x30, x3, x30, eq
 
+        mov x3, sp
         sub sp, sp, 0x10
         stp x29, x30, [sp]
         bl _libtransistor_start
