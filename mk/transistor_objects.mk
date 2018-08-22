@@ -11,6 +11,7 @@ libtransistor_OBJECT_NAMES := \
 	display/parcel.o \
 	display/surface.o \
 	environment.o \
+	err.o \
 	fs/blobfd.o \
 	fs/fs.o \
 	fs/fspfs.o \

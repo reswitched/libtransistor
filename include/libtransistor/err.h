@@ -9,7 +9,21 @@
 extern "C" {
 #endif
 
+#include<libtransistor/types.h>
 #include<libtransistor/err/modules.h>
+
+typedef struct {
+	result_t code;
+	const char *module;
+	const char *group;
+	const char *description;
+	int closest_errno;
+} trn_result_description_t;
+
+/**
+ * @brief Look up a result code
+ */
+void trn_lookup_result(result_t code, trn_result_description_t *out);
 
 #define MAKE_RESULT(module, code) (((code) << 9) | (module))
 
