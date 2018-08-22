@@ -76,7 +76,7 @@ typedef struct CAPABILITY("mutex") {
 
 #define TRN_MUTEX_STATIC_INITIALIZER {.lock = 0}
 
-typedef struct CAPABILITY("recursive mutex") {
+typedef struct CAPABILITY("mutex") {
 	trn_mutex_t mutex;
 	thread_h owner;
 	int count;

@@ -64,7 +64,7 @@ ResultError::ResultError(ResultCode code) : std::runtime_error("failed to format
 ResultError::ResultError(result_t code) : ResultError(ResultCode(code)) {
 }
 
-const char *ResultError::what() noexcept {
+const char *ResultError::what() const noexcept {
 	return description.c_str();
 }
 

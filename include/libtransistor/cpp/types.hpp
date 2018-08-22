@@ -31,7 +31,7 @@ class ResultError : public std::runtime_error {
 	ResultError(ResultCode code);
 	ResultError(result_t code);
 	
-	const char *what() noexcept;
+	virtual const char *what() const noexcept override;
 
 	const ResultCode code;
  private:
