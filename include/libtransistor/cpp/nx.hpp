@@ -7,6 +7,7 @@
 
 #include<libtransistor/nx.h>
 
+#include<libtransistor/cpp/address_space.hpp>
 #include<libtransistor/cpp/types.hpp>
 #include<libtransistor/cpp/ipc.hpp>
 #include<libtransistor/cpp/ipcclient.hpp>
