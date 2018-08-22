@@ -33,20 +33,20 @@ $(libtransistor_TARGET_NSO): $(BUILD_DIR)/transistor/crt0.nso.o $(libtransistor_
 # Disable stack protector for crt0_common
 $(BUILD_DIR)/transistor/crt0_common.o $(BUILD_DIR)/transistor/crt0_common.d: $(SOURCE_ROOT)/lib/crt0_common.c $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) -I$(SOURCE_ROOT)/pthread/ -I$(SOURCE_ROOT)/pthread/sys/switch/ $(libtransistor_WARNINGS) -MMD -MP -fno-stack-protector -c -o $(BUILD_DIR)/transistor/crt0_common.o $<
+	$(CC) $(CC_FLAGS) -I$(SOURCE_ROOT)/include/ -I$(SOURCE_ROOT)/pthread/ -I$(SOURCE_ROOT)/pthread/sys/switch/ $(libtransistor_WARNINGS) -MMD -MP -fno-stack-protector -c -o $(BUILD_DIR)/transistor/crt0_common.o $<
 
 # Disable stack protector for ld
 $(BUILD_DIR)/transistor/ld/%.o $(BUILD_DIR)/transistor/ld/%.d: $(SOURCE_ROOT)/lib/ld/%.c $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -fno-stack-protector -c -o $(BUILD_DIR)/transistor/ld/$*.o $<
+	$(CC) $(CC_FLAGS) -I$(SOURCE_ROOT)/include/ $(libtransistor_WARNINGS) -MMD -MP -fno-stack-protector -c -o $(BUILD_DIR)/transistor/ld/$*.o $<
 
 $(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.c $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)
-	$(CC) $(CC_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/transistor/$*.o $<
+	$(CC) $(CC_FLAGS) -I$(SOURCE_ROOT)/include/ $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/transistor/$*.o $<
 
 $(BUILD_DIR)/transistor/%.o $(BUILD_DIR)/transistor/%.d: $(SOURCE_ROOT)/lib/%.cpp $(libtransistor_BUILD_DEPS)
 	mkdir -p $(@D)
-	$(CXX) $(CXX_FLAGS) $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/transistor/$*.o $<
+	$(CXX) $(CXX_FLAGS) -I$(SOURCE_ROOT)/include/ $(libtransistor_WARNINGS) -MMD -MP -c -o $(BUILD_DIR)/transistor/$*.o $<
 
 #include $(libtransistor_OBJECT_FILES:.o=.d)
 
