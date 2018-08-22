@@ -30,12 +30,22 @@ void ResultCode::AssertOk(result_t code) {
 	throw ResultError(code);
 }
 
+trn_result_description_t ResultCode::Lookup() {
+	trn_result_description_t desc;
+	trn_lookup_result(code, &desc);
+	return desc;
+}
+
 ResultError::ResultError(ResultCode code) : std::runtime_error("failed to format result code"), code(code) {
 	std::ostringstream ss;
-	ss << "0x" << std::hex << code.code;
+	trn_result_description_t desc = code.Lookup();
+	ss << "ResultError 0x" << std::hex << code.code << " (";
+	ss << "Module: " << desc.module << ", ";
+	ss << "Group: " << desc.group << ", ";
+	ss << "Description: " << desc.description << ")";
 	description = ss.str();
 
-	if(true) {
+	if(false) {
 		printf("ResultError 0x%x generated. Backtrace:\n", code.code);
 		unw_cursor_t cursor;
 		unw_context_t context;

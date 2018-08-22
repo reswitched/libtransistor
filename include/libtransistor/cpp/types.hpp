@@ -1,6 +1,7 @@
 #pragma once
 
 #include<libtransistor/types.h>
+#include<libtransistor/err.h>
 #include<expected.hpp>
 
 #include<stdexcept>
@@ -19,6 +20,8 @@ struct ResultCode {
 	inline bool IsOk() {
 		return code == RESULT_OK;
 	}
+
+	trn_result_description_t Lookup();
 	
 	result_t code;
 };
