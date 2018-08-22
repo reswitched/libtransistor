@@ -164,6 +164,10 @@ void trn_lookup_result(result_t code, trn_result_description_t *out);
 #define LIBTRANSISTOR_ERR_USB_TRANSFER_FAILED LIBTRANSISTOR_RESULT(14002)
 #define LIBTRANSISTOR_ERR_USB_ALREADY_BOUND_OTHER_COMPLEX LIBTRANSISTOR_RESULT(14003)
 
+/* +----------------------------------------------------------+
+   | Please don't forget to add new error codes to lib/err.c! |
+   +----------------------------------------------------------+ */
+
 // Homebrew ABI
 #define HOMEBREW_ABI_RESULT(code) MAKE_RESULT(MODULE_HOMEBREW_ABI, code)
 #define HOMEBREW_ABI_UNRECOGNIZED_KEY(key) HOMEBREW_ABI_RESULT(100 + key)
