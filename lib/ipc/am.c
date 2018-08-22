@@ -1,3 +1,5 @@
+#include<libtransistor/ipc/am.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/loader_config.h>
 #include<libtransistor/svc.h>
@@ -6,7 +8,6 @@
 #include<libtransistor/util.h>
 #include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/sm.h>
-#include<libtransistor/ipc/am.h>
 
 #include<string.h>
 

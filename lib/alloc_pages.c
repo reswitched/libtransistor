@@ -1,6 +1,7 @@
+#include<libtransistor/alloc_pages.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/loader_config.h>
-#include<libtransistor/alloc_pages.h>
 
 #include<stdlib.h>
 

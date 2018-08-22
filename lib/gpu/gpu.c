@@ -1,8 +1,9 @@
+#include<libtransistor/gpu/gpu.h>
+
 #include<libtransistor/err.h>
 #include<libtransistor/internal_util.h>
 #include<libtransistor/types.h>
 #include<libtransistor/ipc/nv.h>
-#include<libtransistor/gpu/gpu.h>
 #include<libtransistor/gpu/nv_ioc.h>
 
 static int nvas_fd;

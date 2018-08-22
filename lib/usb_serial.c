@@ -1,9 +1,10 @@
+#include<libtransistor/usb_serial.h>
+
 #include<libtransistor/ipc/usb.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/util.h>
 #include<libtransistor/internal_util.h>
-#include<libtransistor/usb_serial.h>
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/environment.h>
 #include<libtransistor/mutex.h>

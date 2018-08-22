@@ -1,3 +1,5 @@
+#include<libtransistor/fs/mountfs.h>
+
 #include<libtransistor/fs/inode.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/err.h>

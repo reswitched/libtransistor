@@ -1,5 +1,6 @@
-#include<libtransistor/cpp/types.hpp>
 #include<libtransistor/cpp/ipc/usb_ds.hpp>
+
+#include<libtransistor/cpp/types.hpp>
 #include<libtransistor/ipc/usb.h>
 
 namespace trn {

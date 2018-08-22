@@ -1,10 +1,11 @@
+#include<libtransistor/display/graphic_buffer_queue.h>
+
 #include<libtransistor/err.h>
 #include<libtransistor/types.h>
 #include<libtransistor/util.h>
 #include<libtransistor/display/binder.h>
 #include<libtransistor/display/graphic_buffer.h>
 #include<libtransistor/display/fence.h>
-#include<libtransistor/display/graphic_buffer_queue.h>
 
 #include<string.h>
 

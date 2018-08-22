@@ -1,8 +1,9 @@
+#include<libtransistor/ipc/bpc.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/internal_util.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/sm.h>
-#include<libtransistor/ipc/bpc.h>
 
 static int bpc_initializations = 0;
 

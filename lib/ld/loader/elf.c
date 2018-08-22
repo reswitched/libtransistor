@@ -1,3 +1,6 @@
+#include<libtransistor/ld/loaders.h>
+#include<libtransistor/ld/elf.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
@@ -7,8 +10,6 @@
 #include<libtransistor/svc.h>
 
 #include<libtransistor/ld/ld.h>
-#include<libtransistor/ld/loaders.h>
-#include<libtransistor/ld/elf.h>
 
 #include<string.h>
 #include<stdlib.h>

@@ -1,3 +1,5 @@
+#include<libtransistor/ipc/fs.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
@@ -5,7 +7,6 @@
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
-#include<libtransistor/ipc/fs.h>
 #include<string.h>
 
 static ipc_object_t fsp_srv_object;

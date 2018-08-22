@@ -1,10 +1,11 @@
+#include<libtransistor/ipc/pm.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 #include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/sm.h>
-#include<libtransistor/ipc/pm.h>
 
 static int pm_initializations = 0;
 

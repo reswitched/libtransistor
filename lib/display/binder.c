@@ -1,6 +1,7 @@
+#include<libtransistor/display/binder.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/display/parcel.h>
-#include<libtransistor/display/binder.h>
 #include<libtransistor/ipc/vi.h>
 
 result_t binder_adjust_refcount(binder_t *binder, int32_t addval, int32_t type) {

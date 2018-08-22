@@ -1,7 +1,8 @@
+#include <libtransistor/fs/fspfs.h>
+
 #include <libtransistor/types.h>
 #include <libtransistor/err.h>
 #include <libtransistor/fd.h>
-#include <libtransistor/fs/fspfs.h>
 #include <libtransistor/ipc/fs/ifilesystem.h>
 #include <libtransistor/ipc/fs/err.h>
 #include <string.h>

@@ -1,7 +1,8 @@
+#include<libtransistor/mutex.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/tls.h>
 #include<libtransistor/svc.h>
-#include<libtransistor/mutex.h>
 #include<libtransistor/util.h>
 
 #include<stdatomic.h>

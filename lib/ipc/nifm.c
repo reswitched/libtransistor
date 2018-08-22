@@ -1,7 +1,8 @@
+#include<libtransistor/ipc/nifm.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/internal_util.h>
 #include<libtransistor/ipc.h>
-#include<libtransistor/ipc/nifm.h>
 #include<libtransistor/ipc/sm.h>
 
 static ipc_object_t nifm_g_object;

@@ -1,8 +1,9 @@
+#include<libtransistor/display/display.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/util.h>
 #include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/vi.h>
-#include<libtransistor/display/display.h>
 #include<libtransistor/loader_config.h>
 
 static display_t display;

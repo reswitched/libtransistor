@@ -1,7 +1,8 @@
+#include<libtransistor/waiter.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
-#include<libtransistor/waiter.h>
 #include<libtransistor/mutex.h>
 
 #include<malloc.h>

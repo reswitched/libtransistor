@@ -1,9 +1,10 @@
+#include<libtransistor/display/surface.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/err.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc/vi.h>
 #include<libtransistor/display/graphic_buffer_queue.h>
-#include<libtransistor/display/surface.h>
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/util.h>
 

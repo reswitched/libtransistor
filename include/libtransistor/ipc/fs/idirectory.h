@@ -9,8 +9,10 @@
 extern "C" {
 #endif
 
-#include <libtransistor/types.h>
-#include <assert.h>
+#include<libtransistor/types.h>
+#include<libtransistor/ipc.h>
+
+#include<assert.h>
 
 typedef ipc_object_t idirectory_t;
 

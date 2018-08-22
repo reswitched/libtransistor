@@ -1,10 +1,11 @@
+#include<libtransistor/ipc/fs/idirectory.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
-#include<libtransistor/ipc/fs/idirectory.h>
 #include<string.h>
 
 result_t idirectory_read(idirectory_t obj, uint64_t *out_unk0, idirectoryentry_t * out_unk1, size_t out_unk1_size) {

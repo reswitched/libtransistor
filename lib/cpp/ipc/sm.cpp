@@ -1,5 +1,6 @@
-#include<libtransistor/cpp/types.hpp>
 #include<libtransistor/cpp/ipc/sm.hpp>
+
+#include<libtransistor/cpp/types.hpp>
 #include<libtransistor/types.h>
 #include<libtransistor/ipc/sm.h>
 

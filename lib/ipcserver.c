@@ -1,9 +1,10 @@
+#include<libtransistor/ipcserver.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/tls.h>
 #include<libtransistor/err.h>
 #include<libtransistor/ipc.h>
-#include<libtransistor/ipcserver.h>
 #include<libtransistor/loader_config.h>
 
 #include<string.h>

@@ -1,3 +1,5 @@
+#include<libtransistor/ipc/twili.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
@@ -6,7 +8,6 @@
 #include<libtransistor/util.h>
 #include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/sm.h>
-#include<libtransistor/ipc/twili.h>
 
 #include<malloc.h>
 

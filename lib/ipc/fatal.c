@@ -1,9 +1,10 @@
+#include<libtransistor/ipc/fatal.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 #include<libtransistor/ipc/sm.h>
-#include<libtransistor/ipc/fatal.h>
 
 static int fatal_initializations = 0;
 

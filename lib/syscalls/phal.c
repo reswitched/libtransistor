@@ -1,3 +1,5 @@
+#include "phal.h"
+
 #include <pthread.h>
 #include <libtransistor/nx.h>
 #include <stdlib.h>
@@ -5,8 +7,6 @@
 #include <stdatomic.h>
 #include <errno.h>
 #include <string.h>
-
-#include "phal.h"
 
 void  _rthread_internal_init(phal_tid tid);
 void phal_init() {

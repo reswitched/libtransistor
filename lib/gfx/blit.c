@@ -1,5 +1,6 @@
-#include<libtransistor/types.h>
 #include<libtransistor/gfx/blit.h>
+
+#include<libtransistor/types.h>
 
 static int pdep(uint32_t mask, uint32_t value) {
 	uint32_t out = 0;

@@ -9,6 +9,8 @@
 extern "C" {
 #endif
 
+#include<stdint.h>
+
 /**
 * @brief Copies pixels from image to framebuffer, swizzling them into the format the GPU expects.
 *

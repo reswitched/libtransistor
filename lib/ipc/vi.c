@@ -1,3 +1,5 @@
+#include<libtransistor/ipc/vi.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
@@ -5,7 +7,6 @@
 #include<libtransistor/util.h>
 #include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/sm.h>
-#include<libtransistor/ipc/vi.h>
 #include<libtransistor/display/parcel.h>
 #include<libtransistor/display/graphic_buffer_queue.h>
 

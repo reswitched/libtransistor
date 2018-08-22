@@ -1,3 +1,5 @@
+#include<libtransistor/ld/loaders.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
@@ -5,7 +7,6 @@
 #include<libtransistor/ipc/ro.h>
 
 #include<libtransistor/ld/ld.h>
-#include<libtransistor/ld/loaders.h>
 
 #include<sha256.h>
 #include<stdlib.h>

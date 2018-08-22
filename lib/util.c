@@ -1,8 +1,9 @@
+#include<libtransistor/util.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/mutex.h>
 #include<libtransistor/err.h>
 #include<libtransistor/svc.h>
-#include<libtransistor/util.h>
 #include<libtransistor/fd.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc/bsd.h>

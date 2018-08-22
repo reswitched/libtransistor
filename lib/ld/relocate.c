@@ -1,3 +1,5 @@
+#include<libtransistor/ld/internal.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
@@ -6,7 +8,6 @@
 #include<libtransistor/ld/ld.h>
 #include<libtransistor/ld/elf.h>
 #include<libtransistor/ld/module.h>
-#include<libtransistor/ld/internal.h>
 
 #include<stdint.h>
 #include<stdlib.h>

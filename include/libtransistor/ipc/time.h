@@ -35,7 +35,7 @@ result_t time_system_clock_set_current_time(system_clock_t *system_clock, uint64
 /**
 * @brief Finalize Time service
 */
-result_t time_finalize();
+void time_finalize();
 
 #ifdef __cplusplus
 }

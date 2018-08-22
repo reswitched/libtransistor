@@ -1,5 +1,6 @@
-#include<libtransistor/cpp/ipc.hpp>
 #include<libtransistor/cpp/ipcclient.hpp>
+
+#include<libtransistor/cpp/ipc.hpp>
 
 namespace trn {
 namespace ipc {

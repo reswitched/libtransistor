@@ -1,10 +1,11 @@
+#include<libtransistor/hid.h>
+
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 #include<libtransistor/internal_util.h>
 #include<libtransistor/ipc/hid.h>
-#include<libtransistor/hid.h>
 #include<libtransistor/address_space.h>
 
 #include<string.h>
