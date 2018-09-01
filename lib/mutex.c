@@ -96,6 +96,15 @@ void trn_recursive_mutex_lock(trn_recursive_mutex_t *recursive) ACQUIRE(recursiv
 	recursive->count++;
 }
 
+void trn_recursive_mutex_interrupt_lock(trn_recursive_mutex_t *recursive) ACQUIRE(recursive) NO_THREAD_SAFETY_ANALYSIS {
+	thread_h self_handle = get_thread_handle();
+	if(recursive->owner != self_handle) {
+		trn_mutex_interrupt_lock(&recursive->mutex);
+		recursive->owner = self_handle;
+	}
+	recursive->count++;
+}
+
 bool trn_recursive_mutex_try_lock(trn_recursive_mutex_t *recursive) TRY_ACQUIRE(true, recursive) NO_THREAD_SAFETY_ANALYSIS {
 	thread_h self_handle = get_thread_handle();
 	if(recursive->owner != self_handle) {

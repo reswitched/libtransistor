@@ -96,6 +96,11 @@ bool trn_mutex_try_lock(trn_mutex_t *mutex) TRY_ACQUIRE(true, mutex); // true on
 void trn_mutex_unlock(trn_mutex_t *mutex) RELEASE(mutex);
 void trn_recursive_mutex_create(trn_recursive_mutex_t *recursive);
 void trn_recursive_mutex_lock(trn_recursive_mutex_t *recursive) ACQUIRE(recursive);
+
+/**
+ * @brief Locks the mutex. If it is currently being held by another thread, that thread will be interrupted via \ref svcCancelSynchronization.
+ */
+void trn_recursive_mutex_interrupt_lock(trn_recursive_mutex_t *recursive) ACQUIRE(recursive);
 bool trn_recursive_mutex_try_lock(trn_recursive_mutex_t *recursive) TRY_ACQUIRE(true, recursive); // true on success
 void trn_recursive_mutex_unlock(trn_recursive_mutex_t *recursive) RELEASE(recursive);
 
