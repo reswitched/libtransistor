@@ -127,7 +127,7 @@ class KEvent : public KWaitable {
 	Result<std::nullopt_t> WaitSignal(uint64_t timeout);
 };
 
-class KDebug : public KObject {
+class KDebug : public KWaitable {
  public:
 	KDebug() = default;
 	KDebug(debug_h handle);

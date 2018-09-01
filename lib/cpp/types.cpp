@@ -153,7 +153,7 @@ KProcess::KProcess(process_h handle) : KWaitable(handle) {
 KEvent::KEvent(revent_h handle) : KWaitable(handle) {
 }
 
-KDebug::KDebug(debug_h handle) : KObject(handle) {
+KDebug::KDebug(debug_h handle) : KWaitable(handle) {
 }
 
 KResourceLimit::KResourceLimit(resource_limit_h handle) : KObject(handle) {
