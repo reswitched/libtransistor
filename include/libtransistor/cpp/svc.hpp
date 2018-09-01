@@ -37,6 +37,8 @@ enum class LimitableResource : uint32_t {
 	Sessions = 4,
 };
 
+using ThreadId = uint64_t;
+
 Result<void*> SetHeapSize(uint32_t size);
 Result<std::nullopt_t> SetMemoryPermission(void *addr, uint64_t size, uint32_t permission);
 // etc., etc.
@@ -59,16 +61,16 @@ Result<std::shared_ptr<MemoryMapping>> MapTransferMemory(std::shared_ptr<KTransf
 // etc., etc.
 
 Result<KDebug> DebugActiveProcess(uint64_t pid);
-// BreakDebugProcess // requires IsDebugMode
-// TerminateDebugProcess // requires IsDebugMode
+Result<std::nullopt_t> BreakDebugProcess(KDebug &debug); // requires IsDebugMode
+Result<std::nullopt_t> TerminateDebugProcess(KDebug &debug); // requires IsDebugMode
 Result<debug_event_info_t> GetDebugEvent(KDebug &debug);
-// Result<std::nullopt_t> ContinueDebugEvent(KDebug &debug, uint32_t continue_debug_flags, uint64_t thread_id); // requires IsDebugMode
-Result<std::vector<uint64_t>> GetThreadList(uint32_t max, KDebug &debug);
+Result<std::nullopt_t> ContinueDebugEvent(KDebug &debug, uint32_t continue_debug_flags, ThreadId *thread_ids, uint32_t num_threads); // requires IsDebugMode
+Result<std::vector<ThreadId>> GetThreadList(uint32_t max, KDebug &debug);
 Result<thread_context_t> GetDebugThreadContext(KDebug &debug, uint64_t thread_id, uint32_t thread_context_flags);
-// SetDebugThreadContext // requires IsDebugMode
+Result<std::nullopt_t> SetDebugThreadContext(KDebug &debug, uint32_t flags, thread_context_t *context, ThreadId thread_id); // requires IsDebugMode
 Result<std::tuple<memory_info_t, uint32_t>> QueryDebugProcessMemory(KDebug &debug, uint64_t addr);
 Result<std::nullopt_t> ReadDebugProcessMemory(uint8_t *buffer, KDebug &debug, uint64_t addr, size_t size);
-// WriteDebugProcessMemory // requires IsDebugMode
+Result<std::nullopt_t> WriteDebugProcessMemory(KDebug &debug, uint8_t *buffer, uint64_t addr, size_t size); // requires IsDebugMode
 // GetDebugThreadParam
 
 

@@ -25,6 +25,12 @@ typedef struct PACKED {
 	uint32_t padding;
 } memory_info_t;
 
+typedef struct PACKED {
+	uint64_t physical_addr;
+	uint64_t kernel_addr;
+	uint64_t size;
+} physical_memory_info_t;
+
 typedef struct {
 	uint32_t event_type;
 	uint32_t flags;
@@ -96,7 +102,13 @@ enum {
 };
 
 typedef struct {
-	uint64_t regs[100];
+	union {
+		uint64_t regs[100];
+		struct {
+			uint64_t x[31];
+			uint64_t sp, pc;
+		};
+	};
 } thread_context_t;
 
 /**
@@ -335,7 +347,8 @@ uint64_t svcGetSystemTick();
  * @param name Description
  */
 result_t svcConnectToNamedPort(session_h *out, char name[8]);
-// sendSyncRequestLight
+
+result_t svcSendSyncRequestLight(handle_t handle);
 
 /**
  * @brief Send sync request
@@ -352,7 +365,16 @@ result_t svcSendSyncRequest(session_h session);
  * @param session Description
  */
 result_t svcSendSyncRequestWithUserBuffer(void *buffer, uint64_t size, session_h session);
-// sendAsyncRequestWithUserBuffer
+
+/**
+ * @brief Send an IPC request asynchronously
+ *
+ * @param event_handle Output for event handle
+ * @param buffer Command buffer
+ * @param size Size of command buffer
+ * @param session Session to send request to
+ */
+result_t svcSendAsyncRequestWithUserBuffer(revent_h *event_handle, void *buffer, uint64_t size, session_h session);
 
 /**
  * @brief Get a process's ID
@@ -370,6 +392,9 @@ result_t svcGetProcessId(uint64_t *pid, handle_t thread_or_process_handle);
  */
 result_t svcGetThreadId(thread_h *handle_out, thread_h handle_in);
 
+/**
+ * @brief Break to debugger
+ */
 result_t svcBreak(uint64_t reason, uint64_t unknown, uint64_t info);
 
 /**
@@ -396,8 +421,16 @@ void svcReturnFromException(uint64_t result);
  * @param info_sub_id Description
  */
 result_t svcGetInfo(void *info, uint64_t info_id, handle_t handle, uint64_t info_sub_id);
-// flushEntireDataCache
-// flushDataCache
+
+/**
+ * @brief Flushes the entire data cache
+ */
+void svcFlushEntireDataCache();
+
+/**
+ * @brief Flushes data cache for a certain memory region
+ */
+result_t svcFlushDataCache(void *addr, size_t size);
 
 /**
  * @brief Maps size bytes of type-5 memory at addr
@@ -414,52 +447,92 @@ result_t svcMapPhysicalMemory(void *addr, size_t size);
 result_t svcUnmapPhysicalMemory(void *addr, size_t size);
 
 // 0x2E?
-// getLastThreadInfo
-// getResourceLimitLimitValue
-// getResourceLimitCurrentValue
-// setThreadActivity
-// getThreadContext3
+
+result_t svcGetLastThreadInfo(void *last_thread_context, uint64_t *unknown1, uint64_t *unknown2);
+
+/**
+ * @brief Gets the limit value for a resource limit
+ *
+ * @param value Output
+ * @param limit_handle Handle for the resource limit object
+ * @param limitable_resource Type of resource to query
+ */
+result_t svcGetResourceLimitLimitValue(uint64_t *value, handle_t limit_handle, uint32_t limitable_resource);
+
+/**
+ * @brief Gets the current value for a resource limit
+ *
+ * @param value Output
+ * @param limit_handle Handle for the resource limit object
+ * @param limitable_resource Type of resource to query
+ */
+result_t svcGetResourceLimitCurrentValue(uint64_t *value, handle_t limit_handle, uint32_t limitable_resource);
+
+/**
+ * @brief Allows or disallows scheduling of a thread
+ */
+result_t svcSetThreadActivity(thread_h thread_handle, bool active);
+
+result_t svcGetThreadContext3(thread_context_t *thread_context, thread_h thread_handle);
+
 // 0x34-0x3B?
 // dumpInfo
 // 0x3D-0x3F?
-result_t svcCreateSession(session_h *server, session_h *client, bool is_light, uint32_t unknown);
-// createSession
 
 /**
- * @brief Accept session
+ * @brief Creates an IPC session
  *
- * @param out Description
- * @param port Description
+ * @param server Server side of pipe
+ * @param client Client side of pipe
+ * @param is_light Whether to make a light session or not
+ */
+result_t svcCreateSession(session_h *server, session_h *client, bool is_light, uint32_t unknown);
+
+/**
+ * @brief Accepts an IPC session on the given port
+ *
+ * @param out Server side of new connection
+ * @param port Port to accept connection on
  */
 result_t svcAcceptSession(session_h *out, port_h port);
+
 // replyAndReceiveLight
 
 /**
- * @brief Reply and recieve
+ * @brief Sends a reply to the given session, then receives a request
  *
- * @param handle_idx Description
- * @param handles Description
- * @param num_handles Description
- * @param reply_session Description
- * @param timeout Description
+ * @param handle_idx Output for index of signalled handle
+ * @param handles Handles to try to receive from
+ * @param num_handles Number of handles to try to receive from
+ * @param reply_session Session to reply to
+ * @param timeout How long to wait for an incoming message
  */
 result_t svcReplyAndReceive(uint32_t *handle_idx, session_h *handles, uint32_t num_handles, session_h reply_session, uint64_t timeout);
 
 /**
- * @brief Reply and recieve with user buffer
+ * @brief See \ref svcReplyAndReceive
  *
- * @param handle_idx Description
- * @param buffer Description
- * @param size Description
- * @param handles Description
- * @param num_handles Description
- * @param reply_session Description
- * @param timeout Description
+ * @param handle_idx Output for index of signalled handle
+ * @param buffer Command buffer
+ * @param size Size of command buffer
+ * @param handles Handles to try to receive from
+ * @param num_handles Number of handles to try to receive from
+ * @param reply_session Session to reply to
+ * @param timeout How long to wait for an incoming message
  */
 result_t svcReplyAndReceiveWithUserBuffer(uint32_t *handle_idx, void *buffer, uint64_t size, session_h *handles, uint32_t num_handles, session_h reply_session, uint64_t timeout);
-// createEvent
+
+/**
+ * @brief Creates an event object
+ *
+ * @param wevent Output for write end of event
+ * @param revent Output for read end of event
+ */
+result_t svcCreateEvent(wevent_h *wevent, revent_h *revent);
+
 // 0x46-0x4E?
-// sleepSystem
+
+void svcSleepSystem();
 
 /**
  * @brief Read/Write register
@@ -470,7 +543,8 @@ result_t svcReplyAndReceiveWithUserBuffer(uint32_t *handle_idx, void *buffer, ui
  * @param in_value Description
  */
 result_t svcReadWriteRegister(uint32_t *out_value, uint64_t addr, uint32_t rw_mask, uint32_t in_value);
-// setProcessActivity
+
+result_t svcSetProcessActivity(process_h process, bool active);
 
 /**
  * @brief Create a block of shared memory
@@ -500,8 +574,10 @@ result_t svcMapTransferMemory(transfer_memory_h handle, void *addr, uint64_t siz
  * @param size Description
  */
 result_t svcUnmapTransferMemory(transfer_memory_h handle, void *addr, uint64_t size);
-// createInterruptEvent
-// queryPhysicalAddress
+
+result_t svcCreateInterruptEvent(revent_h *event, uint64_t interrupt, uint32_t interrupt_type);
+
+result_t svcQueryPhysicalAddress(physical_memory_info_t *info, void *addr);
 
 /**
  * @brief Query IO mapping
@@ -511,15 +587,16 @@ result_t svcUnmapTransferMemory(transfer_memory_h handle, void *addr, uint64_t s
  * @param size Description
  */
 result_t svcQueryIoMapping(void *virt_addr, uint64_t phys_addr, uint64_t size);
-// createDeviceAddressSpace
+
+result_t svcCreateDeviceAddressSpace(dev_addr_space_h *out, uint64_t start_addr, uint64_t end_addr);
 
 /**
  * @brief Attach device address space
  *
- * @param device Description
- * @param space Description
+ * @param device Device to attach address space to
+ * @param space Address space to attach
  */
-result_t svcAttachDeviceAddressSpace(uint32_t device, dev_addr_space_h space);
+result_t svcAttachDeviceAddressSpace(uint32_t device_name, dev_addr_space_h space);
 
 /**
  * @brief Detach device address space
@@ -527,7 +604,7 @@ result_t svcAttachDeviceAddressSpace(uint32_t device, dev_addr_space_h space);
  * @param device Description
  * @param space Description
  */
-result_t svcDetachDeviceAddressSpace(uint32_t device, dev_addr_space_h space);
+result_t svcDetachDeviceAddressSpace(uint32_t device_name, dev_addr_space_h space);
 
 /**
  * @brief Map device address space by force
@@ -552,7 +629,8 @@ result_t svcMapDeviceAddressSpaceByForce(dev_addr_space_h space, process_h proce
  * @param perm Description
  */
 result_t svcMapDeviceAddressSpaceAligned(dev_addr_space_h space, process_h process, uint64_t dev_addr, uint64_t dev_size, uint64_t map_addr, uint32_t perm);
-// mapDeviceAddressSpace
+
+result_t svcMapDeviceAddressSpace(uint64_t *unknown1, handle_t unknown2, handle_t unknown3, uint64_t dev_addr, uint64_t dev_size, uint64_t map_addr, uint32_t perm);
 
 /**
  * @brief Unmap device address space
@@ -564,9 +642,10 @@ result_t svcMapDeviceAddressSpaceAligned(dev_addr_space_h space, process_h proce
  * @param perm Description
  */
 result_t svcUnmapDeviceAddressSpace(dev_addr_space_h space, process_h process, uint64_t map_addr, uint64_t map_size, uint32_t perm);
-// invalidateProcessDataCache
-// storeProcessDataCache
-// flushProcessDataCache
+
+result_t svcInvalidateProcessDataCache(process_h process, uint64_t addr, size_t size);
+result_t svcStoreProcessDataCache(process_h process, uint64_t addr, size_t size);
+result_t svcFlushProcessDataCache(process_h process, uint64_t addr, size_t size);
 
 /**
  * @brief Debug active process
@@ -576,12 +655,13 @@ result_t svcUnmapDeviceAddressSpace(dev_addr_space_h space, process_h process, u
  */
 result_t svcDebugActiveProcess(debug_h *out, uint64_t process_id);
 
-// breakDebugProcess
-// terminateDebugProcess
+result_t svcBreakDebugProcess(debug_h debug);
+result_t svcTerminateDebugProcess(debug_h debug);
 
 result_t svcGetDebugEvent(debug_event_info_t *info, debug_h debug);
 
-// continueDebugEvent
+result_t svcContinueDebugEventOld(debug_h debug, uint32_t continue_debug_flags_old, uint64_t thread_id);
+result_t svcContinueDebugEvent(debug_h debug, uint32_t continue_debug_flags, uint64_t *thread_id_list, uint32_t num_threads);
 
 result_t svcGetProcessList(uint32_t *num_out, uint64_t *pids_out, uint32_t max_out);
 
@@ -589,7 +669,7 @@ result_t svcGetThreadList(uint32_t *num_out, uint64_t *tids_out, uint32_t max_ou
 
 result_t svcGetDebugThreadContext(thread_context_t *context, debug_h handle, uint64_t thread_id, uint32_t thread_context_flags);
 
-// setDebugThreadContext
+result_t svcSetDebugThreadContext(debug_h handle, uint32_t thread_context_flags, thread_context_t *context, uint64_t thread_id);
 
 /**
  * @brief Query debug process memory
@@ -621,9 +701,11 @@ result_t svcReadDebugProcessMemory(void *buffer, debug_h debug, uint64_t addr, u
  */
 result_t svcWriteDebugProcessMemory(debug_h debug, void *buffer, uint64_t addr, uint64_t size);
 
-// setHardwareBreakPoint
-// getDebugThreadParam
-// 0x6D-0x6F?
+result_t svcSetHardwareBreakPoint(uint32_t hw_bkpt_id, uint64_t flags, uint64_t value_or_debug_handle);
+
+result_t svcGetDebugThreadParam(uint64_t *param1, uint32_t *param2, debug_h handle, uint64_t thread_id, uint32_t debug_thread_param);
+
+// 0x6E-0x6F?
 // createPort
 // manageNamedPort
 // connectToPort
@@ -649,7 +731,7 @@ result_t svcMapProcessMemory(void *src, process_h process, uint64_t dst, uint64_
  */
 result_t svcUnmapProcessMemory(void *src, process_h process, uint64_t dst, uint64_t size);
 
-// queryProcessmemory
+result_t svcQueryProcessMemory(memory_info_t *memory_info, uint32_t *page_info, process_h proc, uint64_t addr);
 
 /**
  * @brief Map process code memory

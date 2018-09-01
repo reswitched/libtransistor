@@ -3,6 +3,7 @@
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/address_space.h>
+#include<libtransistor/environment.h>
 
 namespace trn {
 namespace svc {
@@ -143,11 +144,27 @@ Result<KDebug> DebugActiveProcess(uint64_t pid) {
 		});
 }
 
+Result<std::nullopt_t> BreakDebugProcess(KDebug &debug) {
+	return ResultCode::ExpectOk(svcBreakDebugProcess(debug.handle));
+}
+
+Result<std::nullopt_t> TerminateDebugProcess(KDebug &debug) {
+	return ResultCode::ExpectOk(svcTerminateDebugProcess(debug.handle));
+}
+
 Result<debug_event_info_t> GetDebugEvent(KDebug &debug) {
 	debug_event_info_t info;
 	return ResultCode::ExpectOk(svcGetDebugEvent(&info, debug.handle)).map([&info](auto const &ignored) {
 			return info;
 		});
+}
+
+Result<std::nullopt_t> ContinueDebugEvent(KDebug &debug, uint32_t continue_debug_flags, ThreadId *thread_ids, uint32_t num_thread_ids) {
+	if(env_get_kernel_version() >= KERNEL_VERSION_300) {
+		return ResultCode::ExpectOk(svcContinueDebugEvent(debug.handle, continue_debug_flags, thread_ids, num_thread_ids));
+	} else {
+		return ResultCode::ExpectOk(svcContinueDebugEventOld(debug.handle, continue_debug_flags, thread_ids[0]));
+	}
 }
 
 Result<std::vector<uint64_t>> GetThreadList(uint32_t max, KDebug &debug) {
@@ -166,6 +183,10 @@ Result<thread_context_t> GetDebugThreadContext(KDebug &debug, uint64_t thread_id
 		});
 }
 
+Result<std::nullopt_t> SetDebugThreadContext(KDebug &debug, uint32_t flags, thread_context_t *context, ThreadId thread_id) {
+	return ResultCode::ExpectOk(svcSetDebugThreadContext(debug.handle, flags, context, thread_id));
+}
+
 Result<std::tuple<memory_info_t, uint32_t>> QueryDebugProcessMemory(KDebug &debug, uint64_t addr) {
 	memory_info_t mem_info;
 	uint32_t page_info;
@@ -176,6 +197,10 @@ Result<std::tuple<memory_info_t, uint32_t>> QueryDebugProcessMemory(KDebug &debu
 
 Result<std::nullopt_t> ReadDebugProcessMemory(uint8_t *buffer, KDebug &debug, uint64_t addr, size_t size) {
 	return ResultCode::ExpectOk(svcReadDebugProcessMemory(buffer, debug.handle, addr, size));
+}
+
+Result<std::nullopt_t> WriteDebugProcessMemory(KDebug &debug, uint8_t *buffer, uint64_t addr, size_t size) {
+	return ResultCode::ExpectOk(svcWriteDebugProcessMemory(debug.handle, buffer, addr, size));
 }
 
 Result<std::nullopt_t> SetProcessMemoryPermission(KProcess &process, uint64_t addr, size_t size, uint32_t perm) {

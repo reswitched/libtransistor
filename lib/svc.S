@@ -199,6 +199,7 @@ DEFINE_OUT32_SVC 0x60, DebugActiveProcess
 DEFINE_OUT00_SVC 0x61, BreakDebugProcess
 DEFINE_OUT00_SVC 0x62, TerminateDebugProcess
 DEFINE_OUT00_SVC 0x63, GetDebugEvent
+DEFINE_OUT00_SVC 0x64, ContinueDebugEventOld
 DEFINE_OUT00_SVC 0x64, ContinueDebugEvent
 DEFINE_OUT32_SVC 0x65, GetProcessList
 DEFINE_OUT32_SVC 0x66, GetThreadList
