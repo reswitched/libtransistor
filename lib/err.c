@@ -404,7 +404,7 @@ typedef struct {
 static module_lookup_t module_lookups[] = {
 	{ MODULE_FS, "FS", lookup_group, &err_g_official_fs },
 	{ MODULE_LIBTRANSISTOR, "libtransistor", lookup_transistor, NULL },
-	{ 0, NULL, NULL },
+	{ 0, NULL, NULL, NULL },
 };
 
 static const trn_result_description_t err_d_ok = { 0, "OK", "OK", "OK", 0};
