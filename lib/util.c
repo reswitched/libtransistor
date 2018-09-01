@@ -229,36 +229,7 @@ int dbg_printf(char const *fmt, ...) {
 }
 
 int trn_result_to_errno(result_t r) {
-	switch (r) {
-		case RESULT_OK:
-			return 0;
-		case LIBTRANSISTOR_ERR_OUT_OF_MEMORY:
-			return ENOMEM;
-		case LIBTRANSISTOR_ERR_INVALID_ARGUMENT:
-			return EINVAL;
-		case FSPSRV_ERR_NOT_FOUND:
-		case LIBTRANSISTOR_ERR_FS_NOT_FOUND:
-		case LIBTRANSISTOR_ERR_FS_INVALID_PATH:
-			return ENOENT;
-		case FSPSRV_ERR_EXISTS:
-		case LIBTRANSISTOR_ERR_FS_PATH_EXISTS:
-			return EEXIST;
-		case LIBTRANSISTOR_ERR_FS_NOT_A_DIRECTORY:
-			return ENOTDIR;
-		case LIBTRANSISTOR_ERR_FS_NAME_TOO_LONG:
-			return ENAMETOOLONG;
-		case FSPSRV_ERR_DIRECTORY_NOT_EMPTY:
-			return ENOTEMPTY;
-		case LIBTRANSISTOR_ERR_FS_READ_ONLY:
-			return EROFS;
-		case LIBTRANSISTOR_ERR_FS_ACCESS_DENIED:
-			return EACCES;
-		case LIBTRANSISTOR_ERR_FS_IO_ERROR:
-			return EIO;
-		default:
-			// Make the debugger's life easy: print his error before turning it
-			// into a useless code...
-			dbg_printf("UNSUPPORTED ERROR: %x\n", r);
-			return ENOSYS;
-	}
+	trn_result_description_t d;
+	trn_lookup_result(r, &d);
+	return d.closest_errno;
 }
