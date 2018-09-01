@@ -15,7 +15,7 @@ namespace trn {
 
 class Waiter;
 
-class WaitHandle {
+class WaitHandle : public std::enable_shared_from_this<WaitHandle> {
  public:
 	WaitHandle(Waiter *waiter, std::function<bool()> *callback);
 	~WaitHandle();

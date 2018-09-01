@@ -21,9 +21,13 @@ void WaitHandle::Cancel() {
 }
 
 bool WaitHandle::InvokeCallback() {
+	// make sure we don't get destroyed before this function returns
+	std::shared_ptr<WaitHandle> self = shared_from_this();
+	
 	if((*callback)()) {
 		return true;
 	} else {
+		// this is why we need to extend our lifetime
 		is_cancelled = true;
 		return false;
 	}
