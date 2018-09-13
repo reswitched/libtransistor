@@ -28,7 +28,7 @@ typedef struct {
  * @param thread Structure to initialize
  * @param entry Entry function for thread
  * @param arg Second argument to thread entry function
- * @param priority Priority of the newly created thread. Must be between 0x00 and 0x3F.
+ * @param priority Priority of the newly created thread. Must be between 0x00 and 0x3F. Use -1 for same as current thread.
  * @param processor_id Which processor the newly created thread will run on. Use -2 for don't care.
  * @param stack_size Size of the stack.
  * @param stack_bottom Bottom of a pre-allocated stack. If this is NULL, a new stack will be allocated via \ref alloc_pages.

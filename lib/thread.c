@@ -24,6 +24,11 @@ result_t trn_thread_create(trn_thread_t *thread,
                            int32_t processor_id,
                            size_t stack_size,
                            void *stack_bottom) {
+	result_t r;
+	if(priority == -1) {
+		LIB_ASSERT_OK(fail, svcGetThreadPriority(&priority, 0xffff8000));
+	}
+
 	if(stack_bottom == NULL) {
 		thread->owns_stack = true;
 		thread->stack_bottom = alloc_pages(stack_size, stack_size, &thread->stack_size);
@@ -35,12 +40,11 @@ result_t trn_thread_create(trn_thread_t *thread,
 		thread->stack_bottom = stack_bottom;
 		thread->stack_size = stack_size;
 	}
-
+	
 	thread->entry = entry;
 	thread->arg = arg;
 	thread->pthread = NULL;
 
-	result_t r;
 	LIB_ASSERT_OK(fail_stack, svcCreateThread(&thread->handle, &trn_thread_entry, thread, thread->stack_bottom + thread->stack_size, priority, processor_id));
 
 	return RESULT_OK;
@@ -49,6 +53,7 @@ fail_stack:
 	if(thread->owns_stack) {
 		free_pages(thread->stack_bottom);
 	}
+fail:
 	return r;
 }
 
