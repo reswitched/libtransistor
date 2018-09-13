@@ -5,6 +5,7 @@ libtransistor_HEADER_NAMES := \
 	alloc_pages.h \
 	audio.h \
 	collections/list.h \
+	condvar.h \
 	display/binder.h \
 	display/display.h \
 	display/fence.h \

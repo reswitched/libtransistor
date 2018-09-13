@@ -4,6 +4,7 @@
 libtransistor_OBJECT_NAMES := \
 	address_space.o \
 	alloc_pages.o \
+	condvar.o \
 	crt0_common.o \
 	display/binder.o \
 	display/display.o \

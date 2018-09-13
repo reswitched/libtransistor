@@ -1,6 +1,6 @@
 # LIBTRANSISTOR TESTS
 
-libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin vi gpu display am sqfs_img audio_output init_fini_arrays ipc_server pthread ipc_fs fs_stress cpp unwind cpp_exceptions cpp_dynamic_memory hid_init_stress usb usb_serial thread mutex override_heap # fs_release_inodes
+libtransistor_TESTS := malloc bsd_ai_packing bsd sfdnsres nv helloworld hid hexdump args ssp stdin vi gpu display am sqfs_img audio_output init_fini_arrays ipc_server pthread ipc_fs fs_stress cpp unwind cpp_exceptions cpp_dynamic_memory hid_init_stress usb usb_serial thread mutex override_heap condvar # fs_release_inodes
 libtransistor_DYNAMIC_TESTS := simple dlfcn bad_resolution preemption elf
 
 # RUN RULES

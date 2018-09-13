@@ -24,6 +24,7 @@ extern "C" {
 #include<libtransistor/tls.h>
 #include<libtransistor/util.h>
 #include<libtransistor/mutex.h>
+#include<libtransistor/condvar.h>
 #include<libtransistor/thread.h>
 
 // filesystem
