@@ -332,6 +332,16 @@ int bsd_accept(int socket, struct sockaddr *restrict address, socklen_t *restric
 
 	uint32_t raw[] = {socket};
 
+	struct sockaddr_storage storage;
+	socklen_t storage_length;
+	if(address_len == NULL) {
+		address_len = &storage_length;
+	}
+	if(address == NULL) {
+		address = (struct sockaddr*) &storage;
+		*address_len = sizeof(storage);
+	}
+	
 	ipc_buffer_t addr_buffer;
 	addr_buffer.addr = (void*) address;
 	addr_buffer.size = *address_len;
