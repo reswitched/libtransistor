@@ -7,7 +7,7 @@
 
 #include<stdatomic.h>
 
-#define HAS_LISTENERS ((uint64_t) 1 << 32)
+#define HAS_LISTENERS 0x40000000
 
 void trn_mutex_create(trn_mutex_t *mutex) {
 	mutex->lock = 0;
@@ -16,7 +16,7 @@ void trn_mutex_create(trn_mutex_t *mutex) {
 void trn_mutex_lock(trn_mutex_t *mutex) ACQUIRE(mutex) NO_THREAD_SAFETY_ANALYSIS {
 	thread_h self_handle = get_thread_handle();
 	while(1) {
-		uint64_t cur = 0;
+		uint32_t cur = 0;
 		if(atomic_compare_exchange_strong(&mutex->lock, &cur, self_handle)) { // uncontended
 			return;
 		}
@@ -25,21 +25,23 @@ void trn_mutex_lock(trn_mutex_t *mutex) ACQUIRE(mutex) NO_THREAD_SAFETY_ANALYSIS
 			return;
 		}
 
-		if(!(cur & HAS_LISTENERS)) {
+		if(cur & HAS_LISTENERS) {
+			svcArbitrateLock(cur & ~HAS_LISTENERS, (void*) &mutex->lock, self_handle);
+		} else {
 			// flag it so that the unlock gets arbitrated
 			if(!atomic_compare_exchange_strong(&mutex->lock, &cur, cur | HAS_LISTENERS)) {
 				continue; // handles the case where it was unlocked right after we checked HAS_LISTENERS
+			} else {
+				svcArbitrateLock(cur, (void*) &mutex->lock, self_handle);
 			}
 		}
-
-		svcArbitrateLock(cur & ~HAS_LISTENERS, (void*) &mutex->lock, self_handle);
 	}
 }
 
 void trn_mutex_interrupt_lock(trn_mutex_t *mutex) ACQUIRE(mutex) NO_THREAD_SAFETY_ANALYSIS {
 	thread_h self_handle = get_thread_handle();
 	while(1) {
-		uint64_t cur = 0;
+		uint32_t cur = 0;
 		if(atomic_compare_exchange_strong(&mutex->lock, &cur, self_handle)) { // uncontended
 			return;
 		}
@@ -48,20 +50,23 @@ void trn_mutex_interrupt_lock(trn_mutex_t *mutex) ACQUIRE(mutex) NO_THREAD_SAFET
 			return;
 		}
 
-		if(!(cur & HAS_LISTENERS)) {
+		if(cur & HAS_LISTENERS) {
+			svcCancelSynchronization(cur & ~HAS_LISTENERS); // interrupt the thread that holds the mutex
+			svcArbitrateLock(cur & ~HAS_LISTENERS, (void*) &mutex->lock, self_handle);
+		} else {
 			// flag it so that the unlock gets arbitrated
 			if(!atomic_compare_exchange_strong(&mutex->lock, &cur, cur | HAS_LISTENERS)) {
 				continue; // handles the case where it was unlocked right after we checked HAS_LISTENERS
+			} else {
+				svcCancelSynchronization(cur); // interrupt the thread that holds the mutex
+				svcArbitrateLock(cur, (void*) &mutex->lock, self_handle);
 			}
 		}
-
-		svcCancelSynchronization(cur & ~HAS_LISTENERS); // interrupt the thread that holds the mutex
-		svcArbitrateLock(cur & ~HAS_LISTENERS, (void*) &mutex->lock, self_handle);
 	}
 }
 
 bool trn_mutex_try_lock(trn_mutex_t *mutex) TRY_ACQUIRE(true, mutex) NO_THREAD_SAFETY_ANALYSIS {
-	uint64_t cur = 0;
+	uint32_t cur = 0;
 	thread_h self_handle = get_thread_handle();
 	if(atomic_compare_exchange_strong(&mutex->lock, &cur, self_handle)) {
 		return true;
@@ -75,9 +80,11 @@ bool trn_mutex_try_lock(trn_mutex_t *mutex) TRY_ACQUIRE(true, mutex) NO_THREAD_S
 }
 
 void trn_mutex_unlock(trn_mutex_t *mutex) RELEASE(mutex) NO_THREAD_SAFETY_ANALYSIS {
-	uint64_t old = atomic_exchange(&mutex->lock, 0);
-	if(old & HAS_LISTENERS) {
-		svcArbitrateUnlock((void*) &mutex->lock);
+	uint32_t cur = get_thread_handle();
+	if(!atomic_compare_exchange_strong(&mutex->lock, &cur, 0)) {
+		if(cur & HAS_LISTENERS) {
+			svcArbitrateUnlock((void*) &mutex->lock);
+		}
 	}
 }
 

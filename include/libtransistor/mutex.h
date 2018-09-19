@@ -71,10 +71,10 @@ extern "C" {
 	THREAD_ANNOTATION_ATTRIBUTE__(no_thread_safety_analysis)
 
 typedef struct CAPABILITY("mutex") {
-	volatile _Atomic(uint_fast64_t) lock;
+	volatile _Atomic(uint_fast32_t) lock;
 } trn_mutex_t;
 
-#define TRN_MUTEX_STATIC_INITIALIZER {.lock = 0}
+#define TRN_MUTEX_STATIC_INITIALIZER {.lock = 0U}
 
 typedef struct CAPABILITY("mutex") {
 	trn_mutex_t mutex;
