@@ -3,6 +3,7 @@
 #include<libtransistor/types.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
+#include<libtransistor/ipc_helpers.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 #include<libtransistor/internal_util.h>
@@ -572,6 +573,49 @@ int bsd_select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds, fd
 	rq.request_id = 5;
 	rq.raw_data = raw;
 	rq.raw_data_size = sizeof(raw);
+
+	int32_t response[2];
+
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	rs.raw_data_size = sizeof(response);
+	rs.raw_data = (uint32_t*) response;
+
+	r = ipc_send(bsd_object, &rq, &rs);
+	if(r) {
+		bsd_result = r;
+		return -1;
+	}
+
+	if(response[0] < 0) {
+		bsd_result = LIBTRANSISTOR_ERR_BSD_ERRNO_SET;
+		bsd_errno = response[1];
+		return -1;
+	}
+
+	return response[0];
+}
+
+int bsd_poll(struct pollfd *fds, int nfds, int timeout) {
+	BSD_INITIALIZATION_GUARD(-1);
+
+	result_t r;
+
+	struct {
+		uint32_t nfds;
+		uint32_t timeout;
+	} raw;
+
+	raw.nfds = nfds;
+	raw.timeout = timeout;
+
+	ipc_buffer_t buffers[] = {
+		ipc_make_buffer(fds, sizeof(*fds) * nfds, 0x21),
+		ipc_make_buffer(fds, sizeof(*fds) * nfds, 0x22)
+	};
+
+	ipc_request_t rq = ipc_make_request(6);
+	ipc_msg_set_buffers(rq, buffers, buffer_ptrs);
+	ipc_msg_raw_data_from_value(rq, raw);
 
 	int32_t response[2];
 

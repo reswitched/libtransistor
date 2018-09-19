@@ -15,6 +15,7 @@ extern "C" {
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include<netdb.h>
+#include<poll.h>
 
 extern result_t bsd_result;
 extern int      bsd_errno;
@@ -44,6 +45,7 @@ int bsd_listen(int socket, int backlog);
 int bsd_setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);
 int bsd_shutdown(int socket, int how);
 int bsd_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
+int bsd_poll(struct pollfd *fds, int nfds, int timeout);
 int bsd_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
 int bsd_getaddrinfo_fixed(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo_fixed *res, int num_addrinfos);
 void bsd_freeaddrinfo(struct addrinfo *res);
