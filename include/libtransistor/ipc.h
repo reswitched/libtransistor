@@ -38,6 +38,23 @@ typedef struct {
 	bool is_borrowed; ///< whether or not this object is being borrowed from a loader or not
 } ipc_object_t;
 
+typedef struct ipc_multi_session_node_t ipc_multi_session_node_t;
+struct ipc_multi_session_node_t {
+	ipc_multi_session_node_t *prev;
+	ipc_multi_session_node_t *_Atomic next;
+	ipc_object_t object;
+	_Atomic _Bool is_busy;
+};
+
+/**
+ * @struct ipc_multi_session_t
+ * @brief A wrapper around a session that will clone it for use from multiple threads when necessary
+ */
+typedef struct {
+	ipc_object_t original;
+	ipc_multi_session_node_t first;
+} ipc_multi_session_t;
+
 /**
 * @struct ipc_buffer_t
 * @brief Buffer for transfer over IPC
@@ -300,6 +317,13 @@ result_t ipc_unflatten_response(ipc_message_t *msg, ipc_response_fmt_t *rs, ipc_
 result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs);
 
 /**
+ * @brief Send a requst described by `rq` to `multi` and then unpack the response
+ * See \ref ipc_send.
+ * NOTE: may call malloc if multiple threads are used.
+ */
+result_t ipc_send_multi(ipc_multi_session_t *multi, ipc_request_t *rq, ipc_response_fmt_t *rs);
+
+/**
 * @brief Converts `session` to a domain object and initializes `domain`.
 *  `domain` is only initialized if RESULT_OK is returned.
 *
@@ -307,6 +331,16 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
 * @param domain Domain to initialize
 */
 result_t ipc_convert_to_domain(ipc_object_t *session, ipc_domain_t *domain);
+
+/**
+ * @brief Converts a session to a multi session
+ */
+result_t ipc_convert_to_multi(ipc_multi_session_t *multi, ipc_object_t *object);
+
+/**
+ * @brief Clones a session
+ */
+result_t ipc_clone_current_object(ipc_object_t source, ipc_object_t *clone);
 
 /**
  * @brief Closes the `object`
@@ -321,6 +355,13 @@ result_t ipc_close(ipc_object_t object);
 * @param domain Domain to close
 */
 result_t ipc_close_domain(ipc_domain_t domain);
+
+/**
+ * @brief Closes a multi session.
+ *
+ * It is illegal to call this while any threads are still using the multi session.
+ */
+result_t ipc_close_multi(ipc_multi_session_t *multi);
 
 #ifdef __cplusplus
 }

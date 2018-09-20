@@ -1,13 +1,16 @@
 #include<libtransistor/ipc.h>
 
+#include<libtransistor/ipc_helpers.h>
 #include<libtransistor/ipcserver.h>
 #include<libtransistor/tls.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/util.h>
 
+#include<stdatomic.h>
 #include<string.h>
 #include<stdio.h>
+#include<stdlib.h>
 
 ipc_debug_level_t ipc_debug_level = IPC_DEBUG_LEVEL_NONE;
 
@@ -992,6 +995,28 @@ result_t ipc_convert_to_domain(ipc_object_t *object, ipc_domain_t *domain) {
 	return ipc_send(session, &rq, &rs);
 }
 
+result_t ipc_convert_to_multi(ipc_multi_session_t *multi, ipc_object_t *object) {
+	multi->original = *object;
+	multi->first.prev = NULL;
+	multi->first.next = NULL;
+	multi->first.is_busy = false;
+	return ipc_clone_current_object(*object, &multi->first.object);
+}
+
+result_t ipc_clone_current_object(ipc_object_t source, ipc_object_t *clone) {
+	clone->object_id = -1;
+	clone->is_borrowed = false;
+	
+	ipc_request_t rq = ipc_make_request(2);
+	rq.type = 5;
+
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	rs.num_move_handles = 1;
+	rs.move_handles = &(clone->session);
+
+	return ipc_send(source, &rq, &rs);
+}
+
 static inline void ipc_debug_message(ipc_debug_level_t min, const char *label, result_t code) {
 	if(ipc_debug_level >= min) {
 		uint32_t *tls = get_tls()->ipc_buffer;
@@ -1044,6 +1069,46 @@ result_t ipc_send(ipc_object_t object, ipc_request_t *rq, ipc_response_fmt_t *rs
 	return RESULT_OK;
 }
 
+result_t ipc_send_multi(ipc_multi_session_t *multi, ipc_request_t *rq, ipc_response_fmt_t *rs) {
+	result_t r;
+	
+	ipc_multi_session_node_t *node = &multi->first;
+	// mark nodes as busy until we hit one that wasn't
+	// already marked busy or we reach the end of the list
+	bool old;
+	while((old = atomic_exchange(&node->is_busy, true)) && node->next) {
+		node = node->next;
+	}
+	if(old) {
+		// if we reached the end of the list and every node
+		// was busy, clone a new session
+		ipc_multi_session_node_t *new_node = malloc(sizeof(*new_node));
+		if(new_node == NULL) {
+			return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+		}
+		memset(new_node, 0, sizeof(*new_node));
+		if((r = ipc_clone_current_object(multi->original, &new_node->object)) != RESULT_OK) {
+			free(new_node);
+			return r;
+		}
+		new_node->is_busy = true; // this thread is about to use this node, so don't let anyone steal it
+		new_node->prev = node;
+
+		// append this session to the end of the list
+		ipc_multi_session_node_t *expected = NULL;
+		while(!atomic_compare_exchange_weak(&node->next, &expected, new_node)) {
+			// another thread just added a new node to the list while we were busy,
+			// so adjust our prev and try again with the new end.
+			node = node->next;
+			new_node->prev = node;
+		}
+		node = new_node;
+	}
+	r = ipc_send(node->object, rq, rs);
+	atomic_store(&node->is_busy, false);
+	return r;
+}
+
 static result_t ipc_close_session(session_h session) {
 	result_t r;
 	
@@ -1092,4 +1157,25 @@ result_t ipc_close(ipc_object_t object) {
 
 result_t ipc_close_domain(ipc_domain_t domain) {
 	return ipc_close_session(domain.session);
+}
+
+result_t ipc_close_multi(ipc_multi_session_t *multi) {
+	ipc_multi_session_node_t *node = &multi->first;
+	result_t r, r2;
+	if((r2 = ipc_close(node->object)) != RESULT_OK) { r = r2; }
+
+	// don't free the first node, since it's embedded in multi
+	// and we don't manage multi
+	ipc_multi_session_node_t *next = node->next;
+	while(next != NULL) {
+		node = next;
+		if((r2 = ipc_close(node->object)) != RESULT_OK) { r = r2; }
+		next = node->next;
+		free(node);
+	}
+
+	if(!multi->original.is_borrowed) {
+		if((r2 = ipc_close(multi->original)) != RESULT_OK) { r = r2; }
+	}
+	return r;
 }
