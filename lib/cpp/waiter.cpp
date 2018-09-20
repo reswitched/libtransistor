@@ -5,14 +5,21 @@
 
 namespace trn {
 
-WaitHandle::WaitHandle(Waiter *waiter, std::function<bool()> *callback) : callback(callback), waiter(waiter) {
+WaitHandle::WaitHandle(Waiter *waiter, std::variant<std::unique_ptr<std::function<bool()>>, std::unique_ptr<std::function<uint64_t()>>> callback) : callback(std::move(callback)), waiter(waiter) {
 }
 
 WaitHandle::~WaitHandle() {
 	if(!is_cancelled) {
 		Cancel();
 	}
-	delete callback;
+}
+
+void WaitHandle::Signal() {
+	waiter_signal(waiter->waiter, record);
+}
+
+void WaitHandle::ResetSignal() {
+	waiter_reset_signal(waiter->waiter, record);
 }
 
 void WaitHandle::Cancel() {
@@ -20,17 +27,16 @@ void WaitHandle::Cancel() {
 	waiter_cancel(waiter->waiter, record);
 }
 
-bool WaitHandle::InvokeCallback() {
-	// make sure we don't get destroyed before this function returns
-	std::shared_ptr<WaitHandle> self = shared_from_this();
-	
-	if((*callback)()) {
-		return true;
-	} else {
-		// this is why we need to extend our lifetime
-		is_cancelled = true;
-		return false;
-	}
+bool WaitHandle::EventShim(void *data, handle_t handle) {
+	return ((WaitHandle*) data)->InvokeCallback<bool>();
+}
+
+uint64_t WaitHandle::DeadlineShim(void *data) {
+	return ((WaitHandle*) data)->InvokeCallback<uint64_t>();
+}
+
+bool WaitHandle::SignalShim(void *data) {
+	return ((WaitHandle*) data)->InvokeCallback<bool>();
 }
 
 Waiter::Waiter() {
@@ -44,15 +50,21 @@ Waiter::~Waiter() {
 	waiter_destroy(waiter);
 }
 
-static bool signal_shim(void *data, handle_t handle) {
-	WaitHandle *wh = (WaitHandle*) data;
-	return wh->InvokeCallback();
+std::shared_ptr<WaitHandle> Waiter::Add(KWaitable &waitable, std::function<bool()> callback) {
+	std::shared_ptr<WaitHandle> wh = std::make_shared<WaitHandle>(this, std::make_unique<std::function<bool()>>(callback));
+	wh->record = waiter_add(waiter, waitable.handle, &WaitHandle::EventShim, (void*) wh.get());
+	return wh;
 }
 
-std::shared_ptr<WaitHandle> Waiter::Add(KWaitable &waitable, std::function<bool()> callback) {
-	std::function<bool()> *callback_copy = new std::function<bool()>(callback);
-	std::shared_ptr<WaitHandle> wh = std::make_shared<WaitHandle>(this, callback_copy);
-	wh->record = waiter_add(waiter, waitable.handle, signal_shim, (void*) wh.get());
+std::shared_ptr<WaitHandle> Waiter::AddDeadline(uint64_t deadline, std::function<uint64_t()> callback) {
+	std::shared_ptr<WaitHandle> wh = std::make_shared<WaitHandle>(this, std::make_unique<std::function<uint64_t()>>(callback));
+	wh->record = waiter_add_deadline(waiter, deadline, &WaitHandle::DeadlineShim, (void*) wh.get());
+	return wh;
+}
+
+std::shared_ptr<WaitHandle> Waiter::AddSignal(std::function<bool()> callback) {
+	std::shared_ptr<WaitHandle> wh = std::make_shared<WaitHandle>(this, std::make_unique<std::function<bool()>>(callback));
+	wh->record = waiter_add_signal(waiter, &WaitHandle::SignalShim, (void*) wh.get());
 	return wh;
 }
 
