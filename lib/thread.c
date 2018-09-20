@@ -63,6 +63,10 @@ result_t trn_thread_start(trn_thread_t *thread) {
 	return svcStartThread(thread->handle);
 }
 
+result_t trn_thread_cancel_synchronization(trn_thread_t *thread) {
+	return svcCancelSynchronization(thread->handle);
+}
+
 result_t trn_thread_join(trn_thread_t *thread, int64_t timeout) {
 	result_t r;
 	do {

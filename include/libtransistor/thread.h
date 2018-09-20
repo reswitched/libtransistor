@@ -49,6 +49,16 @@ result_t trn_thread_create(trn_thread_t *thread,
 result_t trn_thread_start(trn_thread_t *thread);
 
 /**
+ * @brief Cancels synchronization on a thread
+ *
+ * If the given thread is currently in a \ref svcWaitSynchronization
+ * call, the \ref svcWaitSynchronization call will return 0xec01.
+ *
+ * @param thread Thread to cancel synchronization on
+ */
+result_t trn_thread_cancel_synchronization(trn_thread_t *thread);
+
+/**
  * @brief Waits for the given thread to exit
  * @param timeout How long to wait for the thread to exit, in nanoseconds. Use negative value for no timeout.
  * @returns RESULT_OK on successful join, 0xea01 on timeout.
