@@ -20,7 +20,7 @@ result_t bsd_result;
 int      bsd_errno;
 
 static loader_config_socket_service_t bsd_service;
-static ipc_object_t bsd_object;
+static ipc_multi_session_t bsd_multi;
 static ipc_object_t iresolver_object;
 
 static uint8_t __attribute__((aligned(0x1000))) transfer_buffer[TRANSFER_MEM_SIZE];
@@ -44,17 +44,24 @@ result_t bsd_init_ex(bool require_override, loader_config_socket_service_t servi
 		goto fail;
 	}
 
+	ipc_object_t object;
 	r = LIBTRANSISTOR_ERR_BSD_UNRECOGNIZED_SOCKET_SERVICE;
 	if(service == LCONFIG_SOCKET_SERVICE_BSD_U || service == LCONFIG_SOCKET_SERVICE_UNSPECIFIED) {
 		bsd_service = LCONFIG_SOCKET_SERVICE_BSD_U;
-		r = sm_get_service_ex(&bsd_object, "bsd:u", require_override);
+		r = sm_get_service_ex(&object, "bsd:u", require_override);
 	}
 	if(service == LCONFIG_SOCKET_SERVICE_BSD_S || (r != RESULT_OK && service == LCONFIG_SOCKET_SERVICE_UNSPECIFIED)) {
 		bsd_service = LCONFIG_SOCKET_SERVICE_BSD_S;
-		r = sm_get_service_ex(&bsd_object, "bsd:s", require_override);
+		r = sm_get_service_ex(&object, "bsd:s", require_override);
 	}
 	if(r != RESULT_OK) {
 		bsd_service = LCONFIG_SOCKET_SERVICE_UNSPECIFIED;
+		goto fail_sm;
+	}
+
+	r = ipc_convert_to_multi(&bsd_multi, &object);
+	if(r != RESULT_OK) {
+		ipc_close(object);
 		goto fail_sm;
 	}
 	
@@ -63,7 +70,7 @@ result_t bsd_init_ex(bool require_override, loader_config_socket_service_t servi
 		goto fail_bsd;
 	}
 
-	if(!bsd_object.is_borrowed) {
+	if(!bsd_multi.original.is_borrowed) {
 		r = svcCreateTransferMemory(&transfer_mem, transfer_buffer, TRANSFER_MEM_SIZE, 0);
 		if(r) {
 			goto fail_iresolver;
@@ -100,7 +107,7 @@ result_t bsd_init_ex(bool require_override, loader_config_socket_service_t servi
 		rs.raw_data_size = sizeof(response);
 		rs.raw_data = response;
     
-		r = ipc_send(bsd_object, &rq, &rs);
+		r = ipc_send_multi(&bsd_multi, &rq, &rs);
     
 		if(r) {
 			goto fail_transfer_memory;
@@ -122,7 +129,7 @@ fail_transfer_memory:
 fail_iresolver:
 	ipc_close(iresolver_object);
 fail_bsd:
-	ipc_close(bsd_object);
+	ipc_close_multi(&bsd_multi);
 fail_sm:
 	sm_finalize();
 fail:
@@ -142,7 +149,7 @@ const char *bsd_get_socket_service_name() {
 }
 
 handle_t bsd_get_socket_service_handle() {
-	return bsd_object.session;
+	return bsd_multi.original.session;
 }
 
 loader_config_socket_service_t bsd_get_socket_service() {
@@ -171,7 +178,7 @@ int bsd_socket(int domain, int type, int protocol) {
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
   
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -215,7 +222,7 @@ int bsd_recv(int socket, void *message, size_t length, int flags) {
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
 
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -259,7 +266,7 @@ int bsd_send(int socket, const void *data, size_t length, int flags) {
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
 
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -308,7 +315,7 @@ int bsd_sendto(int socket, const void *message, size_t length, int flags, const 
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
 
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -362,7 +369,7 @@ int bsd_accept(int socket, struct sockaddr *restrict address, socklen_t *restric
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
 
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -408,7 +415,7 @@ int bsd_bind(int socket, const struct sockaddr *address, socklen_t address_len) 
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
 
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -452,7 +459,7 @@ int bsd_connect(int socket, const struct sockaddr *address, socklen_t address_le
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = response;
 
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -491,7 +498,7 @@ int bsd_listen(int socket, int backlog) {
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
   
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -590,7 +597,7 @@ int bsd_select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds, fd
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
 
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -633,7 +640,7 @@ int bsd_poll(struct pollfd *fds, int nfds, int timeout) {
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
 
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -788,7 +795,7 @@ int bsd_close(int socket) {
 	rs.raw_data_size = sizeof(response);
 	rs.raw_data = (uint32_t*) response;
   
-	r = ipc_send(bsd_object, &rq, &rs);
+	r = ipc_send_multi(&bsd_multi, &rq, &rs);
 	if(r) {
 		bsd_result = r;
 		return -1;
@@ -805,10 +812,10 @@ int bsd_close(int socket) {
 
 static void bsd_force_finalize() {
 	ipc_close(iresolver_object);
-	if(!bsd_object.is_borrowed) {
+	if(!bsd_multi.original.is_borrowed) {
 		svcCloseHandle(transfer_mem);
 	}
-	ipc_close(bsd_object);
+	ipc_close_multi(&bsd_multi);
 
 	bsd_initializations = 0;
 }
