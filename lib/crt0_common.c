@@ -133,6 +133,7 @@ int _libtransistor_start(loader_config_entry_t *config, uint64_t thread_handle, 
 
 	// prepare reent
 	memset(get_tls(), 0, 0x200);
+	memset(&main_thread, 0, sizeof(main_thread));
 	main_thread.handle = loader_config.main_thread;
 	main_thread.owns_stack = false;
 	main_thread.arg = NULL;

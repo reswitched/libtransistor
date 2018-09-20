@@ -24,6 +24,8 @@ result_t trn_thread_create(trn_thread_t *thread,
                            int32_t processor_id,
                            size_t stack_size,
                            void *stack_bottom) {
+	memset(thread, 0, sizeof(*thread));
+	
 	result_t r;
 	if(priority == -1) {
 		LIB_ASSERT_OK(fail, svcGetThreadPriority(&priority, 0xffff8000));
