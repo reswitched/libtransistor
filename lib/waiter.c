@@ -4,6 +4,9 @@
 #include<libtransistor/svc.h>
 #include<libtransistor/err.h>
 #include<libtransistor/mutex.h>
+#include<libtransistor/condvar.h>
+#include<libtransistor/thread.h>
+#include<libtransistor/tls.h>
 
 #include<malloc.h>
 #include<stdlib.h>
@@ -42,6 +45,10 @@ struct wait_record_t {
 };
 
 struct waiter_t {
+	trn_recursive_mutex_t waiting_mutex;
+	trn_mutex_t interrupt_mutex;
+	trn_thread_t *waiting_thread;
+	
 	trn_recursive_mutex_t mutex;
 	wait_record_t list;
 	
@@ -59,8 +66,40 @@ waiter_t *waiter_create() {
 	}
 	
 	memset(waiter, 0, sizeof(*waiter));
+	trn_recursive_mutex_create(&waiter->waiting_mutex);
+	trn_mutex_create(&waiter->interrupt_mutex);
 	trn_recursive_mutex_create(&waiter->mutex);
 	return waiter;
+}
+
+#define threading_debug_printf(...)
+
+static void waiter_interrupt_lock(waiter_t *waiter) ACQUIRE(waiter->mutex) NO_THREAD_SAFETY_ANALYSIS {
+	threading_debug_printf("waiter interrupt lock\n");
+
+	if(trn_recursive_mutex_try_lock(&waiter->mutex)) {
+		threading_debug_printf("  fast path!\n");
+	} else {
+		// waiter->waiting_mutex prevents the event thread from locking
+		// waiter->mutex
+		trn_recursive_mutex_lock(&waiter->waiting_mutex);
+		threading_debug_printf("  acquired waiting mutex\n");
+		
+		// interrupt_mutex is used to block the event thread in a place
+		// where it's safe to cancel its synchronization
+		trn_mutex_lock(&waiter->interrupt_mutex);
+		threading_debug_printf("  acquired interrupt mutex\n");
+		if(waiter->waiting_thread != NULL) {
+			result_t r = trn_thread_cancel_synchronization(waiter->waiting_thread);
+			threading_debug_printf("  interrupted event thread: 0x%x\n", r);
+		}
+		trn_mutex_unlock(&waiter->interrupt_mutex);
+		
+		threading_debug_printf("  acquiring main mutex\n");
+		trn_recursive_mutex_lock(&waiter->mutex);
+		threading_debug_printf("  acquired main mutex\n");
+		trn_recursive_mutex_unlock(&waiter->waiting_mutex);
+	}
 }
 
 wait_record_t *waiter_add(waiter_t *waiter, handle_t handle, bool (*callback)(void *data, handle_t handle), void *data) {
@@ -77,7 +116,7 @@ wait_record_t *waiter_add(waiter_t *waiter, handle_t handle, bool (*callback)(vo
 	record->event.handle = handle;
 	record->event.age = 0;
 
-	trn_recursive_mutex_interrupt_lock(&waiter->mutex);
+	waiter_interrupt_lock(waiter);
 	record->prev = &waiter->list;
 	record->next = waiter->list.next;
 	if(record->next) {
@@ -103,7 +142,7 @@ wait_record_t *waiter_add_deadline(waiter_t *waiter, uint64_t deadline, uint64_t
 	record->deadline.callback = callback;
 	record->deadline.deadline = deadline;
 
-	trn_recursive_mutex_interrupt_lock(&waiter->mutex);
+	waiter_interrupt_lock(waiter);
 	record->prev = &waiter->list;
 	record->next = waiter->list.next;
 	if(record->next) {
@@ -128,7 +167,7 @@ wait_record_t *waiter_add_signal(waiter_t *waiter, bool (*callback)(void *data),
 	record->type = WAIT_RECORD_TYPE_SIGNAL;
 	record->signal.callback = callback;
 
-	trn_recursive_mutex_interrupt_lock(&waiter->mutex);
+	waiter_interrupt_lock(waiter);
 	record->prev = &waiter->list;
 	record->next = waiter->list.next;
 	if(record->next) {
@@ -143,7 +182,7 @@ wait_record_t *waiter_add_signal(waiter_t *waiter, bool (*callback)(void *data),
 
 void waiter_signal(waiter_t *waiter, wait_record_t *record) {
 	if(record->type == WAIT_RECORD_TYPE_SIGNAL) {
-		trn_recursive_mutex_interrupt_lock(&waiter->mutex);
+		waiter_interrupt_lock(waiter);
 		record->signal.is_signalled = true;
 		trn_recursive_mutex_unlock(&waiter->mutex);
 	}
@@ -181,6 +220,13 @@ result_t waiter_wait(waiter_t *waiter, uint64_t timeout) {
 	uint64_t now = svcGetSystemTick();
 	uint64_t next_deadline = 0;
 	size_t num_event_records = 0;
+
+	// used by other threads to prevent us from acquiring
+	// waiter->mutex, and used by us to prevent other threads
+	// from checking whether there's a waiting thread at
+	// a bad time.
+	trn_recursive_mutex_lock(&waiter->waiting_mutex);
+	
 	trn_recursive_mutex_lock(&waiter->mutex);
 	for(wait_record_t *record = waiter->list.next; record != NULL; record = record->next) {
 		if(record->type == WAIT_RECORD_TYPE_EVENT) {
@@ -190,6 +236,7 @@ result_t waiter_wait(waiter_t *waiter, uint64_t timeout) {
 				void *new_event_record_buffer = realloc(waiter->event_record_buffer, target_event_record_buffer_length * sizeof(*waiter->event_record_buffer));
 				if(new_event_record_buffer == NULL) {
 					trn_recursive_mutex_unlock(&waiter->mutex);
+					trn_recursive_mutex_unlock(&waiter->waiting_mutex);
 					return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 				}
 				waiter->event_record_buffer_length = target_event_record_buffer_length;
@@ -244,6 +291,7 @@ result_t waiter_wait(waiter_t *waiter, uint64_t timeout) {
 		void *new_handle_buffer = realloc(waiter->handle_buffer, num_event_records * sizeof(*waiter->handle_buffer));
 		if(new_handle_buffer == NULL) {
 			trn_recursive_mutex_unlock(&waiter->mutex);
+			trn_recursive_mutex_unlock(&waiter->waiting_mutex);
 			return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
 		}
 		waiter->handle_buffer_length = num_event_records;
@@ -261,10 +309,26 @@ result_t waiter_wait(waiter_t *waiter, uint64_t timeout) {
 	if(deadline_timeout < timeout) {
 		timeout = deadline_timeout;
 	}
+
+	trn_mutex_lock(&waiter->interrupt_mutex);
+	waiter->waiting_thread = trn_get_thread();
+	trn_mutex_unlock(&waiter->interrupt_mutex);
+
+	// now that we've set waiting_thread, it's safe to let
+	// a thread in waiter_interrupt_lock proceed to read
+	// waiting_thread
+	trn_recursive_mutex_unlock(&waiter->waiting_mutex);
 	
 	result_t r;
 	uint32_t index;
 	r = svcWaitSynchronization(&index, waiter->handle_buffer, num_event_records, timeout);
+
+	// make sure that if another thread is going to interrupt us,
+	// it does it now.
+	trn_mutex_lock(&waiter->interrupt_mutex);
+	waiter->waiting_thread = NULL;
+	trn_mutex_unlock(&waiter->interrupt_mutex);
+
 	if(r == RESULT_OK) {
 		// touch handles that did not signal
 		for(size_t i = 0; i <= index; i++) {
@@ -281,7 +345,7 @@ result_t waiter_wait(waiter_t *waiter, uint64_t timeout) {
 		signalled_record->is_running_callback = true;
 		bool r = signalled_record->event.callback(signalled_record->data, signalled_record->event.handle);
 		signalled_record->is_running_callback = false;
-		if(r || signalled_record->destroy_flag) { // destroy_flag is set when callback calls waiter_cancel
+		if(!r || signalled_record->destroy_flag) { // destroy_flag is set when callback calls waiter_cancel
 			record_unregister(signalled_record);
 		}
 		trn_recursive_mutex_unlock(&waiter->mutex);
@@ -300,7 +364,8 @@ result_t waiter_wait(waiter_t *waiter, uint64_t timeout) {
 }
 
 void waiter_cancel(waiter_t *waiter, wait_record_t *record) {
-	trn_recursive_mutex_interrupt_lock(&waiter->mutex);
+	waiter_interrupt_lock(waiter);
+
 	record->is_externally_referenced = false; // user is no longer interested in keeping this alive
 	if(record->is_running_callback) {
 		// defer unlink+free until after callback exits
@@ -318,7 +383,8 @@ void waiter_cancel(waiter_t *waiter, wait_record_t *record) {
 }
 
 void waiter_destroy(waiter_t *waiter) {
-	trn_recursive_mutex_interrupt_lock(&waiter->mutex);
+	waiter_interrupt_lock(waiter);
+
 	for(wait_record_t *record = waiter->list.next; record != NULL;) {
 		wait_record_t *next = record->next;
 		free(record);
