@@ -212,6 +212,14 @@ result_t svcSleepThread(uint64_t nanos);
 result_t svcGetThreadPriority(uint32_t *priority, thread_h thread);
 
 /**
+ * @brief Set a thread's priority
+ *
+ * @param priority Description
+ * @param thread Description
+ */
+result_t svcSetThreadPriority(thread_h thread, uint32_t priority);
+
+/**
  * @brief Set thread core mask
  *
  * @param thread Description
