@@ -306,7 +306,7 @@ result_t waiter_wait(waiter_t *waiter, uint64_t timeout) {
 	// calculate our maximum timeout based on the next deadline
 	uint64_t ticks_until_deadline = next_deadline - svcGetSystemTick();
 	uint64_t deadline_timeout = ticks_until_deadline * 10000 / 192; // convert ticks to nanoseconds
-	if(deadline_timeout < timeout) {
+	if(next_deadline > 0 && deadline_timeout < timeout) {
 		timeout = deadline_timeout;
 	}
 
