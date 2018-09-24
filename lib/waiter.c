@@ -323,12 +323,22 @@ result_t waiter_wait(waiter_t *waiter, uint64_t timeout) {
 	uint32_t index;
 	r = svcWaitSynchronization(&index, waiter->handle_buffer, num_event_records, timeout);
 
-	// make sure that if another thread is going to interrupt us,
-	// it does it now.
-	trn_mutex_lock(&waiter->interrupt_mutex);
-	waiter->waiting_thread = NULL;
-	trn_mutex_unlock(&waiter->interrupt_mutex);
-
+	{
+		trn_mutex_lock(&waiter->interrupt_mutex);
+		waiter->waiting_thread = NULL;
+		uint32_t throwaway_index;
+		// Clear interrupt flag, in case another thread set it after we exited svcWaitSync
+		// but before we cleared waiting_thread.
+		//
+		// We do this to leave the thread clean in case anything else uses svcWaitSync
+		// and doesn't expect to be interrupted.
+		while(svcWaitSynchronization(&throwaway_index, &throwaway_index, 0, 0) == 0xec01) {
+			threading_debug_printf("interrupt flag was set. clearing...\n");
+			r = 0xec01;
+		}
+		trn_mutex_unlock(&waiter->interrupt_mutex);
+	}
+	
 	if(r == RESULT_OK) {
 		// touch handles that did not signal
 		for(size_t i = 0; i <= index; i++) {
