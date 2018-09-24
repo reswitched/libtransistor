@@ -110,6 +110,11 @@ result_t vi_adjust_refcount(int32_t handle, int32_t addval, int32_t type);
 result_t vi_transact_parcel(int32_t handle, uint32_t transaction, uint32_t flags, void *in_parcel, size_t in_parcel_size, void *out_parcel, size_t out_parcel_size);
 
 /**
+ * @brief Get a native handle from a binder
+ */
+result_t vi_get_native_handle(int32_t handle, uint32_t native_id, revent_h *out);
+
+/**
 * @brief IManagerDisplayServices - Set layer visibility
 *
 * @param visible Visible

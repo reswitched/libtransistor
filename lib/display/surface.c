@@ -181,6 +181,10 @@ result_t surface_queue_buffer(surface_t *surface) {
 	return RESULT_OK;
 }
 
+result_t surface_get_buffer_event(surface_t *surface, revent_h *out) {
+	return binder_get_native_handle(&surface->igbp.igbp_binder, 0xf, out);
+}
+
 result_t surface_wait_buffer(surface_t *surface) {
 	if(surface->state != SURFACE_STATE_DEQUEUED) {
 		return LIBTRANSISTOR_ERR_SURFACE_INVALID_STATE;

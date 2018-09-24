@@ -26,8 +26,8 @@ int main() {
 	surface_t surf;
 	ASSERT_OK(fail_display, display_open_layer(&surf));
 
-	revent_h vsync;
-	ASSERT_OK(fail_display_layer, display_get_vsync_event(&vsync));
+	revent_h event;
+	ASSERT_OK(fail_display_layer, surface_get_buffer_event(&surf, &event));
 
 	uint32_t *reswitched_logo_pixels = (uint32_t*) reswitched_logo_data;
 	for(size_t i = 0; i < sizeof(reswitched_logo_data)/4; i++) {
@@ -35,6 +35,14 @@ int main() {
 	}
 	
 	for(int i = 0; i < 600; i++) {
+		uint32_t handle_idx;
+		r = svcWaitSynchronization(&handle_idx, &event, 1, 33333333);
+		if(r != RESULT_OK) {
+			printf("event timed out\n");
+			goto fail_display_event;
+		}
+		ASSERT_OK(fail_display_event, svcResetSignal(event));
+		
 		printf("begin frame %d\n", i);
 		uint32_t *out_buffer;
 		ASSERT_OK(fail_display_event, surface_dequeue_buffer(&surf, &out_buffer));
@@ -50,18 +58,10 @@ int main() {
 		gfx_slow_swizzling_blit(out_buffer, reswitched_logo_pixels, 64, 64, x, y);
 		
 		ASSERT_OK(fail_display_event, surface_queue_buffer(&surf));
-
-		uint32_t handle_idx;
-		r = svcWaitSynchronization(&handle_idx, &vsync, 1, 33333333);
-		if(r != RESULT_OK) {
-			printf("vsync timed out\n");
-			goto fail_display_event;
-		}
-		ASSERT_OK(fail_display_event, svcResetSignal(vsync));
 	}
 
 fail_display_event:
-	svcCloseHandle(vsync);
+	svcCloseHandle(event);
 fail_display_layer:
 	display_close_layer(&surf);
 fail_display:

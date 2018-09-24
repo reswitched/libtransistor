@@ -64,6 +64,11 @@ result_t surface_create(surface_t *surface, uint64_t layer_id, igbp_t igbp);
 result_t surface_dequeue_buffer(surface_t *surface, uint32_t **image);
 
 /**
+ * @brief Gets a copy of the buffer event
+ */
+result_t surface_get_buffer_event(surface_t *surface, revent_h *out);
+
+/**
  * @brief Wait for any asynchronous operations on the current buffer to complete
  *
  * @param surface Surface

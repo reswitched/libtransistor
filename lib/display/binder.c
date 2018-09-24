@@ -21,3 +21,7 @@ result_t binder_transact_parcel(binder_t *binder, uint32_t transaction, uint32_t
 
 	return parcel_load(out, out_buffer);
 }
+
+result_t binder_get_native_handle(binder_t *binder, uint32_t native_id, revent_h *out) {
+	return vi_get_native_handle(binder->handle, native_id, out);
+}

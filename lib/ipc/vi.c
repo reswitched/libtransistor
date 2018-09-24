@@ -355,6 +355,23 @@ result_t vi_transact_parcel(int32_t handle, uint32_t transaction, uint32_t flags
 	return ipc_send(ihosbd_object, &rq, &rs);
 }
 
+result_t vi_get_native_handle(int32_t handle, uint32_t native_id, revent_h *out) {
+	INITIALIZATION_GUARD(vi);
+
+	uint32_t raw[] = {handle, native_id};
+
+	ipc_request_t rq = ipc_default_request;
+	rq.request_id = 2;
+	rq.raw_data_size = sizeof(raw);
+	rq.raw_data = raw;
+
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	rs.copy_handles = out;
+	rs.num_copy_handles = 1;
+
+	return ipc_send(ihosbd_object, &rq, &rs);
+}
+
 static result_t ipc_simple_helper(ipc_object_t *object, uint32_t rqid, void* in, size_t in_size, void* out, size_t out_size) {
 	INITIALIZATION_GUARD(vi);
 

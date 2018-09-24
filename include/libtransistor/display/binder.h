@@ -56,6 +56,11 @@ result_t binder_adjust_refcount(binder_t *binder, int32_t addval, int32_t type);
 */
 result_t binder_transact_parcel(binder_t *binder, uint32_t transaction, uint32_t flags, parcel_t *in, parcel_t *out);
 
+/**
+ * @brief Gets a native handle from a binder
+ */
+result_t binder_get_native_handle(binder_t *binder, uint32_t id, revent_h *out);
+
 #ifdef __cplusplus
 }
 #endif
