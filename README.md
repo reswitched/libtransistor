@@ -1,7 +1,7 @@
 # libtransistor
 [![Build Status](https://travis-ci.org/reswitched/libtransistor.svg?branch=development)](https://travis-ci.org/reswitched/libtransistor) [![Chat on Discord](https://img.shields.io/badge/chat-Discord-brightgreen.svg)](https://discordapp.com/invite/ZdqEhed)
 
-Libtransistor is a userland library for the Nintendo Switch. Binaries should run under Mephisto, Yuzu, Ryujinx, and on 3.0.0 consoles via ROhan or nsphax (Homebrew Launcher).
+Libtransistor is a userland library for the Nintendo Switch. Binaries should run under Mephisto, Yuzu, Ryujinx, or on hardware with any firmware version via [Atmosphère](https://github.com/Atmosphere-NX/Atmosphere).
 
 ## Documentation
 The documentation is automatically built and can be found here: https://reswitched.github.io/libtransistor
