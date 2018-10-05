@@ -13,6 +13,7 @@ extern "C" {
 #include<libtransistor/types.h>
 #include<libtransistor/loader_config.h>
 #include<libtransistor/runtime_config.h>
+#include<libtransistor/encoding.h>
 #include<libtransistor/environment.h>
 #include<libtransistor/alloc_pages.h>
 #include<libtransistor/address_space.h>

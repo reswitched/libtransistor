@@ -14,6 +14,7 @@ libtransistor_HEADER_NAMES := \
 	display/parcel.h \
 	display/rect.h \
 	display/surface.h \
+	encoding.h \
 	environment.h \
 	err.h \
 	err/modules.h \

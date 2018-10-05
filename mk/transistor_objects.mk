@@ -11,6 +11,7 @@ libtransistor_OBJECT_NAMES := \
 	display/graphic_buffer_queue.o \
 	display/parcel.o \
 	display/surface.o \
+	encoding.o \
 	environment.o \
 	err.o \
 	fs/blobfd.o \
