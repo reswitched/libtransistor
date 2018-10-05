@@ -17,15 +17,6 @@ const size_t USB_SERIAL_TRANSFER_BUFFER_SIZE = 0x4000;
 
 #define usb_serial_debug(...) if(USB_SERIAL_DEBUG_ENABLED) printf(__VA_ARGS__)
 
-static usb_descriptor_data_t descriptor_data = {
-	.id_vendor = 0x1209, // https://github.com/pidcodes/pidcodes.github.com/pull/313
-	.id_product = 0x8b00,
-	.bcd_device = 0x0100,
-	.manufacturer = "ReSwitched",
-	.product = "TransistorUSBSerial",
-	.serial_number = "SerialNumber",
-};
-
 static usb_endpoint_descriptor_t endpoint_in_descriptor = {
 	.bLength = sizeof(usb_endpoint_descriptor_t),
 	.bDescriptorType = TRN_USB_DT_ENDPOINT,
@@ -49,7 +40,7 @@ static usb_interface_descriptor_t interface_descriptor = {
 	.bDescriptorType = TRN_USB_DT_INTERFACE,
 	.bInterfaceNumber = USB_DS_INTERFACE_NUMBER_AUTO,
 	.bAlternateSetting = 0x00,
-	.bNumEndpoints = 0x00,
+	.bNumEndpoints = 0x02,
 	.bInterfaceClass = 0xFF,
 	.bInterfaceSubClass = 0x00,
 	.bInterfaceProtocol = 0x00,
@@ -106,20 +97,15 @@ result_t usb_serial_init() {
 	result_t r;
 	trn_mutex_lock(&usb_serial_mutex);
 	
-	LIB_ASSERT_OK(fail_mutex, usb_ds_init(2));
+	LIB_ASSERT_OK(fail_mutex, usb_ds_init(2, NULL));
 
 	revent_h usb_state_event = 0xFFFFFFFF;
 	LIB_ASSERT_OK(fail_usb, usb_ds_get_state_change_event(&usb_state_event));
-
-	if(env_get_kernel_version() >= KERNEL_VERSION_200) {
-		// added in 2.0.0
-		LIB_ASSERT_OK(fail_usb,              usb_ds_set_vid_pid_bcd(&descriptor_data));
-	}
 	
 	LIB_ASSERT_OK(fail_usb,              usb_ds_get_interface(&interface_descriptor, "usb", &interface));
-	LIB_ASSERT_OK(fail_usb_interface,    usb_ds_interface_get_endpoint(&interface, &endpoint_in_descriptor,  &endpoint_in));
-	LIB_ASSERT_OK(fail_usb_endpoint_in,  usb_ds_interface_get_endpoint(&interface, &endpoint_out_descriptor, &endpoint_out));
-	LIB_ASSERT_OK(fail_usb_endpoint_out, usb_ds_interface_enable(&interface));
+	LIB_ASSERT_OK(fail_usb_interface,  usb_ds_interface_get_endpoint(&interface, &endpoint_out_descriptor, &endpoint_out));
+	LIB_ASSERT_OK(fail_usb_endpoint_out,    usb_ds_interface_get_endpoint(&interface, &endpoint_in_descriptor,  &endpoint_in));
+	LIB_ASSERT_OK(fail_usb_endpoint_in, usb_ds_interface_enable(&interface));
 	usb_serial_debug("enabled interface\n");
 
 	buffer = alloc_pages(USB_SERIAL_TRANSFER_BUFFER_SIZE, USB_SERIAL_TRANSFER_BUFFER_SIZE, NULL);
@@ -143,10 +129,10 @@ fail_buffer_ma:
 	svcSetMemoryAttribute(buffer, USB_SERIAL_TRANSFER_BUFFER_SIZE, 0x0, 0x0);
 fail_buffer:
 	free_pages(buffer);
-fail_usb_endpoint_out:
-	usb_ds_close_endpoint(&endpoint_out);
 fail_usb_endpoint_in:
 	usb_ds_close_endpoint(&endpoint_in);
+fail_usb_endpoint_out:
+	usb_ds_close_endpoint(&endpoint_out);
 fail_usb_interface:
 	usb_ds_close_interface(&interface);
 fail_usb:

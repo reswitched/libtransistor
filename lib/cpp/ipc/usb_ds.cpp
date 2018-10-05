@@ -8,20 +8,20 @@ namespace service {
 namespace usb {
 namespace ds {
 
-Result<DS> DS::Initialize(uint32_t complex_id) {
-	DS obj(complex_id);
-	return ResultCode::ExpectOk(usb_ds_init(complex_id)).map([obj](auto const &v) -> DS { return obj; } );
+Result<DS> DS::Initialize(uint32_t complex_id, usb_device_data_t *data) {
+	DS obj(complex_id, data);
+	return ResultCode::ExpectOk(usb_ds_init(complex_id, data)).map([obj](auto const &v) -> DS { return obj; } );
 }
 
-DS::DS(const DS& other) : complex_id(other.complex_id) {
-	ResultCode::AssertOk(usb_ds_init(other.complex_id));
+DS::DS(const DS& other) : complex_id(other.complex_id), device_data(other.device_data) {
+	ResultCode::AssertOk(usb_ds_init(other.complex_id, other.device_data));
 }
 
-DS::DS(DS&& other) : complex_id(other.complex_id) {
-	ResultCode::AssertOk(usb_ds_init(other.complex_id));
+DS::DS(DS&& other) : complex_id(other.complex_id), device_data(other.device_data) {
+	ResultCode::AssertOk(usb_ds_init(other.complex_id, other.device_data));
 }
 
-DS::DS(uint32_t complex_id) : complex_id(complex_id) {
+DS::DS(uint32_t complex_id, usb_device_data_t *data) : complex_id(complex_id), device_data(data) {
 }
 
 DS::~DS() {
@@ -40,10 +40,6 @@ Result<State> DS::GetState() {
 	return ResultCode::ExpectOk(usb_ds_get_state((usb_ds_state_t*) &state)).map([&state](auto const &v) -> State {
 			return State(state);
 		});
-}
-
-Result<std::nullopt_t> DS::SetVidPidBcd(usb_descriptor_data_t &data) {
-	return ResultCode::ExpectOk(usb_ds_set_vid_pid_bcd(&data));
 }
 
 Result<std::shared_ptr<Interface>> DS::GetInterface(usb_interface_descriptor_t &descriptor, const char *name) {

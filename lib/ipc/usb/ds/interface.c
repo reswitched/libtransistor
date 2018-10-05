@@ -1,6 +1,7 @@
 #include<libtransistor/ipc/usb.h>
 
 #include<libtransistor/types.h>
+#include<libtransistor/environment.h>
 #include<libtransistor/svc.h>
 #include<libtransistor/ipc.h>
 #include<libtransistor/ipc_helpers.h>
@@ -10,26 +11,64 @@
 #include<libtransistor/ipc/sm.h>
 
 #include<assert.h>
+#include<stdio.h> // TODO: remove
 
 result_t usb_ds_interface_get_endpoint(usb_ds_interface_t *intf, usb_endpoint_descriptor_t *descriptor, usb_ds_endpoint_t *endpoint) {
-	ipc_buffer_t buffers[] = { ipc_buffer_from_reference(descriptor, 5) };
+	if(env_get_kernel_version() >= KERNEL_VERSION_500) {
+		if((descriptor->bEndpointAddress & 0x80) == TRN_USB_ENDPOINT_IN) {
+			descriptor->bEndpointAddress = TRN_USB_ENDPOINT_IN | _usb_next_in_ep_number++;
+		} else {
+			descriptor->bEndpointAddress = TRN_USB_ENDPOINT_OUT | _usb_next_out_ep_number++;
+		}
 
-	ipc_request_t rq = ipc_make_request(0);
-	ipc_msg_set_buffers(rq, buffers, buffer_ptrs);
+		result_t r;
+		
+		for(size_t i = 0; _usb_speed_info[i].valid; i++) {
+			LIB_ASSERT_OK(fail, _usb_ds_500_append_configuration_data(intf, _usb_speed_info[i].speed_mode, (usb_descriptor_t*) descriptor));
+		}
 
-	uint8_t raw;
-	
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
-	rs.num_objects = 1;
-	rs.objects = &(endpoint->object);
-	ipc_msg_raw_data_from_value(rs, raw);
-	
-	return ipc_send(intf->object, &rq, &rs);
+		ipc_request_t rq = ipc_make_request(0);
+		ipc_msg_raw_data_from_value(rq, descriptor->bEndpointAddress);
+
+		ipc_response_fmt_t rs = ipc_default_response_fmt;
+		rs.num_objects = 1;
+		rs.objects = &(endpoint->object);
+
+		LIB_ASSERT_OK(fail, ipc_send(intf->object, &rq, &rs));
+		
+		return RESULT_OK;
+	fail:
+		return r;
+	} else {
+		ipc_buffer_t buffers[] = { ipc_buffer_from_reference(descriptor, 5) };
+		
+		ipc_request_t rq = ipc_make_request(0);
+		ipc_msg_set_buffers(rq, buffers, buffer_ptrs);
+		
+		uint8_t raw;
+		
+		ipc_response_fmt_t rs = ipc_default_response_fmt;
+		rs.num_objects = 1;
+		rs.objects = &(endpoint->object);
+		ipc_msg_raw_data_from_value(rs, raw);
+		
+		return ipc_send(intf->object, &rq, &rs);
+	}
 }
 
 result_t usb_ds_interface_enable(usb_ds_interface_t *intf) {
+	result_t r;
+	
 	ipc_request_t rq = ipc_make_request(3);
-	return ipc_send(intf->object, &rq, &ipc_default_response_fmt);
+	LIB_ASSERT_OK(fail, ipc_send(intf->object, &rq, &ipc_default_response_fmt));
+
+	if(!intf->is_enabled) {
+		intf->is_enabled = true;
+		LIB_ASSERT_OK(fail, _usb_ds_enable());
+	}
+	
+fail:
+	return r;
 }
 
 result_t usb_ds_interface_disable(usb_ds_interface_t *intf) {

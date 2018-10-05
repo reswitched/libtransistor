@@ -15,22 +15,13 @@ extern "C" {
 
 #define USB_DS_INTERFACE_NUMBER_AUTO 0x4
 
-typedef struct {
-	uint8_t bLength; //< must be 0x9
-	uint8_t bDescriptorType; //< must be 0x4
-	uint8_t bInterfaceNumber; //< 0x4 means allocate automatically
-	uint8_t bAlternateSetting; //< must be 0x00
-	uint8_t bNumEndpoints; //< ignored
-	uint8_t bInterfaceClass; // 0xff
-	uint8_t bInterfaceSubClass; // 0xff
-	uint8_t bInterfaceProtocol; // 0xff
-	uint8_t iInterface; //< ignored
-} usb_interface_descriptor_t;
-
 extern usb_interface_descriptor_t usb_default_interface_descriptor;
 
 typedef struct {
 	ipc_object_t object;
+	uint8_t interface_id;
+	uint8_t next_in_ep_addr;
+	uint8_t next_out_ep_addr;
 	bool is_enabled;
 } usb_ds_interface_t;
 

@@ -29,19 +29,19 @@ class Endpoint;
 
 class DS {
  public:
-	static Result<DS> Initialize(uint32_t complex_id);
+	static Result<DS> Initialize(uint32_t complex_id, usb_device_data_t *device_data);
 	DS(const DS& other);
 	DS(DS&& other);
 	~DS();
 
 	Result<KEvent> GetStateChangeEvent();
 	Result<State> GetState();
-	Result<std::nullopt_t> SetVidPidBcd(usb_descriptor_data_t &data);
 	Result<std::shared_ptr<Interface>> GetInterface(usb_interface_descriptor_t &descriptor, const char *name);
 	
  private:
-	DS(uint32_t complex_id); // use DS::Initialize
+	DS(uint32_t complex_id, usb_device_data_t *device_data); // use DS::Initialize
 	uint32_t complex_id;
+	usb_device_data_t *device_data;
 };
 
 class Interface {

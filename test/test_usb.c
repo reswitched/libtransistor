@@ -2,7 +2,7 @@
 
 #include<stdio.h>
 
-static usb_descriptor_data_t descriptor_data = {
+static usb_device_data_t device_data = {
 	.id_vendor = 0x57e,
 	.id_product = 0x4000,
 	.bcd_device = 0x0100,
@@ -44,16 +44,13 @@ int main() {
 	usb_ds_state_t usb_state;
 	
 	printf("initializing usb\n");
-	ASSERT_OK(fail, usb_ds_init(2));
+	ASSERT_OK(fail, usb_ds_init(2, &device_data));
 
 	revent_h usb_state_event = 0xFFFFFFFF;
 	printf("getting state change event\n");
 	ASSERT_OK(fail_usb, usb_ds_get_state_change_event(&usb_state_event));
 	printf("  -> 0x%x\n", usb_state_event);
 	
-	printf("setting vid, pid, bcd...\n");
-	ASSERT_OK(fail_usb, usb_ds_set_vid_pid_bcd(&descriptor_data));
-
 	usb_ds_interface_t interface;
 	printf("getting interface...\n");
 	ASSERT_OK(fail_usb, usb_ds_get_interface(&usb_default_interface_descriptor, "usb", &interface));
