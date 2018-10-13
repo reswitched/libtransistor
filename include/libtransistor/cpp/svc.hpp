@@ -76,6 +76,7 @@ Result<std::nullopt_t> WriteDebugProcessMemory(KDebug &debug, uint8_t *buffer, u
 
 Result<std::nullopt_t> SetProcessMemoryPermission(KProcess &process, uint64_t addr, size_t size, uint32_t perm);
 Result<std::shared_ptr<MemoryMapping>> MapProcessMemory(std::shared_ptr<KProcess> process, uint64_t remote_addr, size_t size);
+Result<std::tuple<memory_info_t, uint32_t>> QueryProcessMemory(KProcess &process, uint64_t addr);
 Result<KProcess> CreateProcess(void *process_info, void *caps, uint32_t cap_num);
 Result<std::nullopt_t> StartProcess(KProcess &process, uint32_t main_thread_prio, uint32_t default_cpuid, uint32_t main_thread_stack_size);
 Result<std::nullopt_t> TerminateProcess(KProcess &process);

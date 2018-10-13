@@ -218,6 +218,14 @@ Result<std::shared_ptr<MemoryMapping>> MapProcessMemory(std::shared_ptr<KProcess
 		});
 }
 
+Result<std::tuple<memory_info_t, uint32_t>> QueryProcessMemory(KProcess &process, uint64_t addr) {
+	memory_info_t mem_info;
+	uint32_t page_info;
+	return ResultCode::ExpectOk(svcQueryProcessMemory(&mem_info, &page_info, process.handle, addr)).map([&mem_info, &page_info](auto const &ignored) {
+			return std::make_tuple(mem_info, page_info);
+		});
+}
+
 Result<KProcess> CreateProcess(void *process_info, void *caps, uint32_t cap_num) {
 	process_h process;
 	return ResultCode::ExpectOk(svcCreateProcess(&process, process_info, caps, cap_num)).map([&process](auto const &ignored) {
