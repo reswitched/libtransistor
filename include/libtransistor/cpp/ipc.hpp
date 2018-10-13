@@ -62,7 +62,16 @@ struct copy {};
 struct move {};
 
 template<typename T, typename Transfer>
-struct InHandle;
+struct InHandle {
+	InHandle(handle_t handle) : object(handle) {}
+
+	InHandle<T, Transfer> &operator=(handle_t val) {
+		object = val;
+		return *this;
+	}
+
+	T object;
+};
 
 template<typename Transfer>
 struct InHandle<handle_t, Transfer> {

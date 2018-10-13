@@ -86,7 +86,7 @@ struct AccessorHelper<ipc::InHandle<T, ipc::move>> {
 	}
 
 	void Pack(TransactionFormat &f, ipc::InHandle<T, ipc::move> &arg) const {
-		f.rq.move_handles[index] = arg.value;
+		f.rq.move_handles[index] = arg.handle;
 	}
 
 	void Unpack(TransactionFormat &f, ipc::InHandle<T, ipc::move> &arg) const {

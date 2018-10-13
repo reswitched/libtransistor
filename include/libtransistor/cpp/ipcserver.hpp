@@ -111,6 +111,30 @@ struct AccessorHelper<ipc::OutRaw<T>> {
 };
 
 template<typename T>
+struct AccessorHelper<ipc::InHandle<T, ipc::copy>> {
+	size_t index;
+
+	AccessorHelper(size_t index) : index(index) {
+	}
+
+	ipc::InHandle<T, ipc::copy> Access(TransactionFormat &f) const {
+		return ipc::InHandle<T, ipc::copy>(f.rq.copy_handles[index]);
+	}
+};
+
+template<typename T>
+struct AccessorHelper<ipc::InHandle<T, ipc::move>> {
+	size_t index;
+
+	AccessorHelper(size_t index) : index(index) {
+	}
+
+	ipc::InHandle<T, ipc::move> Access(TransactionFormat &f) const {
+		return ipc::InHandle<T, ipc::move>(f.rq.move_handles[index]);
+	}
+};
+
+template<typename T>
 struct AccessorHelper<ipc::OutHandle<T, ipc::copy>> {
 	size_t index;
 
@@ -207,6 +231,20 @@ struct FormatMutator<ipc::OutRaw<T>> {
 		size_t offset = fmt.rs.raw_data_size;
 		fmt.rs.raw_data_size+= sizeof(T);
 		return AccessorHelper<ipc::OutRaw<T>>(offset);
+	}
+};
+
+template<typename T>
+struct FormatMutator<ipc::InHandle<T, ipc::copy>> {
+	static AccessorHelper<ipc::InHandle<T, ipc::copy>> MutateFormat(TransactionFormat &fmt) {
+		return AccessorHelper<ipc::InHandle<T, ipc::copy>>(fmt.rq.num_copy_handles++);
+	}
+};
+
+template<typename T>
+struct FormatMutator<ipc::InHandle<T, ipc::move>> {
+	static AccessorHelper<ipc::InHandle<T, ipc::move>> MutateFormat(TransactionFormat &fmt) {
+		return AccessorHelper<ipc::InHandle<T, ipc::move>>(fmt.rq.num_move_handles++);
 	}
 };
 
