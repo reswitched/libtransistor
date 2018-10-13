@@ -127,6 +127,15 @@ class KEvent : public KWaitable {
 	Result<std::nullopt_t> WaitSignal(uint64_t timeout);
 };
 
+// Writable event
+class KWEvent : public KObject {
+ public:
+	KWEvent() = default;
+	KWEvent(KEvent &read_end); // creates a new event
+	KWEvent(wevent_h handle);
+	Result<std::nullopt_t> Signal();
+};
+
 class KDebug : public KWaitable {
  public:
 	KDebug() = default;

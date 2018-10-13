@@ -153,10 +153,19 @@ KProcess::KProcess(process_h handle) : KWaitable(handle) {
 KEvent::KEvent(revent_h handle) : KWaitable(handle) {
 }
 
+KWEvent::KWEvent(wevent_h handle) : KObject(handle) {
+}
+
 KDebug::KDebug(debug_h handle) : KWaitable(handle) {
 }
 
 KResourceLimit::KResourceLimit(resource_limit_h handle) : KObject(handle) {
+}
+
+KWEvent::KWEvent(KEvent &read_end) {
+	KEvent read_end_intermediate;
+	ResultCode::AssertOk(svcCreateEvent(&handle, &read_end_intermediate.handle));
+	read_end = std::move(read_end_intermediate);
 }
 
 Result<std::nullopt_t> KProcess::ResetSignal() {
@@ -175,6 +184,10 @@ Result<std::nullopt_t> KEvent::ResetSignal() {
 Result<std::nullopt_t> KEvent::WaitSignal(uint64_t timeout) {
 	uint32_t handle_index;
 	return ResultCode::ExpectOk(svcWaitSynchronization(&handle_index, &handle, 1, timeout));
+}
+
+Result<std::nullopt_t> KWEvent::Signal() {
+	return ResultCode::ExpectOk(svcSignalEvent(handle));
 }
 
 }
