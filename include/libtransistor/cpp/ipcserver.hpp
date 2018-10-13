@@ -55,6 +55,14 @@ class IPCServer {
 			});
 	}
 
+	template<typename T, class... Args>
+	Result<T*> AttachSession(KObject &&object, Args &&... args) {
+		T *obj = new T(this, args...);
+		return ResultCode::ExpectOk(ipc_server_create_session(server, object.Claim(), 0, &obj->object)).map([obj](auto const &ignored) {
+				return obj;
+			});
+	}
+
 	template<typename T>
 	Result<std::nullopt_t> CreateService(const char *name) {
 		return CreateService(name, [](IPCServer *server) {
