@@ -83,6 +83,10 @@ typedef struct ipc_server_session_t {
 	ipc_server_session_state_t state; ///< Session's state
 	struct ipc_server_t *owning_server; ///< Server that owns this session
 	uint8_t message_buffer[0x100]; ///< IPC buffer
+	
+	uint8_t *pointer_buffer;
+	size_t pointer_buffer_size;
+	
 	wait_record_t *wait_record;
 } ipc_server_session_t;
 
@@ -101,15 +105,21 @@ typedef struct ipc_server_port_t {
 } ipc_server_port_t;
 
 typedef struct ipc_server_t {
-	ipc_server_port_t ports[MAX_SERVICE_PORTS];
+	ipc_server_port_t *ports;
 	uint32_t num_ports;
+	uint32_t max_ports;
 	
-	ipc_server_session_t sessions[MAX_SERVICE_SESSIONS];
+	ipc_server_session_t *sessions;
+	uint32_t max_sessions;
 
+	size_t pointer_buffer_size;
+	uint8_t *pointer_buffers;
+	
 	waiter_t *waiter;
 } ipc_server_t;
 
 result_t ipc_server_create(ipc_server_t *srv, waiter_t *waiter);
+result_t ipc_server_create_ex(ipc_server_t *srv, waiter_t *waiter, uint32_t max_ports, uint32_t max_sessions, size_t pointer_buffer_size);
 result_t ipc_server_add_port(ipc_server_t *srv, port_h port, ipc_server_object_factory_t object_factory, void *userdata);
 result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, session_h client_side, ipc_server_object_t *object);
 result_t ipc_server_accept_session(ipc_server_t *srv, ipc_server_port_t *port);

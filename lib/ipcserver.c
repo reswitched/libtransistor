@@ -5,12 +5,17 @@
 #include<libtransistor/tls.h>
 #include<libtransistor/err.h>
 #include<libtransistor/ipc.h>
+#include<libtransistor/ipc_helpers.h>
 #include<libtransistor/loader_config.h>
 
 #include<string.h>
 #include<stdlib.h>
 
 result_t ipc_server_create(ipc_server_t *srv, waiter_t *waiter) {
+	return ipc_server_create_ex(srv, waiter, 63, 63, 0x500); // some defaults
+}
+
+result_t ipc_server_create_ex(ipc_server_t *srv, waiter_t *waiter, uint32_t max_ports, uint32_t max_sessions, size_t pointer_buffer_size) {
 	static const uint8_t syscalls_needed[] = {
 		SVC_ID_CREATE_SESSION,
 		SVC_ID_ACCEPT_SESSION,
@@ -24,9 +29,24 @@ result_t ipc_server_create(ipc_server_t *srv, waiter_t *waiter) {
 	}
 	
 	srv->num_ports = 0;
-	for(int i = 0; i < MAX_SERVICE_SESSIONS; i++) {
+	srv->max_ports = max_ports;
+	srv->max_sessions = max_sessions;
+	srv->pointer_buffer_size = pointer_buffer_size;
+	srv->ports = calloc(max_ports, sizeof(ipc_server_port_t));
+	srv->sessions = calloc(max_sessions, sizeof(ipc_server_session_t));
+	srv->pointer_buffers = calloc(max_sessions, pointer_buffer_size);
+	
+	if(srv->ports == NULL || srv->sessions == NULL || srv->pointer_buffers == NULL) {
+		free(srv->ports);
+		free(srv->sessions);
+		free(srv->pointer_buffers);
+		return LIBTRANSISTOR_ERR_OUT_OF_MEMORY;
+	}
+	
+	for(uint32_t i = 0; i < max_sessions; i++) {
 		srv->sessions[i].state = IPC_SESSION_STATE_INVALID;
 	}
+	
 	srv->waiter = waiter;
 	return RESULT_OK;
 }
@@ -44,7 +64,7 @@ static bool ipc_server_session_signal_callback(void *data, handle_t handle) {
 }
 
 result_t ipc_server_add_port(ipc_server_t *srv, port_h port, ipc_server_object_factory_t factory, void *userdata) {
-	if(srv->num_ports >= MAX_SERVICE_PORTS) {
+	if(srv->num_ports >= srv->max_ports) {
 		return LIBTRANSISTOR_ERR_IPCSERVER_TOO_MANY_PORTS;
 	}
 	ipc_server_port_t *target = &srv->ports[srv->num_ports++];
@@ -64,19 +84,21 @@ static void hipc_manager_dispatch(ipc_server_object_t *obj, ipc_message_t *msg, 
 static void hipc_manager_close(ipc_server_object_t *obj);
 
 result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, session_h client_side, ipc_server_object_t *object) {
-	int i = 0;
-	for(; i < MAX_SERVICE_SESSIONS; i++) {
+	uint32_t i = 0;
+	
+	for(; i < srv->max_sessions; i++) {
 		if(srv->sessions[i].state == IPC_SESSION_STATE_INVALID) {
 			break;
 		}
 	}
-	if(i == MAX_SERVICE_SESSIONS) {
+	if(i == srv->max_sessions) {
 		svcCloseHandle(server_side);
 		if(client_side != 0) {
 			svcCloseHandle(client_side);
 		}
 		return LIBTRANSISTOR_ERR_IPCSERVER_TOO_MANY_SESSIONS;
 	}
+	
 	ipc_server_session_t *sess = &(srv->sessions[i]);
 	sess->handle = server_side;
 	sess->client_handle = client_side;
@@ -99,6 +121,7 @@ result_t ipc_server_create_session(ipc_server_t *srv, session_h server_side, ses
 	sess->object->domain_id = 0;
 	sess->object->owning_domain = NULL;
 	sess->object->owning_session = sess;
+	sess->pointer_buffer = srv->pointer_buffers + (srv->pointer_buffer_size * i);
 	sess->state = IPC_SESSION_STATE_LISTENING;
 	sess->wait_record = waiter_add(srv->waiter, sess->handle, ipc_server_session_signal_callback, sess);
 	if(sess->wait_record == NULL) {
@@ -138,6 +161,9 @@ result_t ipc_server_destroy(ipc_server_t *srv) {
 			ipc_server_session_close(&srv->sessions[i]);
 		}
 	}
+	free(srv->ports);
+	free(srv->sessions);
+	free(srv->pointer_buffers);
 	return RESULT_OK;
 }
 
@@ -190,6 +216,22 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess) {
 		return LIBTRANSISTOR_ERR_IPCSERVER_INVALID_SESSION_STATE;
 	}
 
+	uint32_t *tls = get_tls()->ipc_buffer;
+
+	// pointer buffer is indicated to kernel by c descriptor
+	ipc_request_t message_for_ptrbuf = ipc_default_request;
+	ipc_buffer_t buffers[] = {
+		ipc_make_buffer(sess->pointer_buffer, sess->owning_server->pointer_buffer_size, 0x1a)
+	};
+	ipc_msg_set_buffers(message_for_ptrbuf, buffers, buffer_ptrs);
+	memset(tls, 0, 0x1f8);
+	ipc_object_t obj_for_ptrbuf;
+	memset(&obj_for_ptrbuf, 0, sizeof(obj_for_ptrbuf));
+	r = ipc_pack_request(tls, &message_for_ptrbuf, obj_for_ptrbuf);
+	if(r != RESULT_OK) {
+		goto failure;
+	}
+	
 	r = svcReplyAndReceive(&handle_index, &handle, 1, 0, 0);
 
 	if(r != RESULT_OK) {
@@ -198,9 +240,8 @@ result_t ipc_server_session_receive(ipc_server_session_t *sess) {
 
 	sess->state = IPC_SESSION_STATE_PROCESSING;
 	
-	uint32_t *tls = (uint32_t*) get_tls()->ipc_buffer;
 	memcpy(sess->message_buffer, tls, 0x100);
-	
+
 	ipc_message_t msg;
 	if((r = ipc_unpack((uint32_t*) sess->message_buffer, &msg)) != RESULT_OK) {
 		goto failure;

@@ -433,7 +433,7 @@ result_t ipc_pack_request(uint32_t *marshal_buffer, const ipc_request_t *rq, ipc
 result_t ipc_pack_response(uint32_t *marshal_buffer, const ipc_response_t *rs, ipc_server_object_t *object) {
 	ipc_pack_message_t msg;
 
-	bool from_domain = object->is_domain_object;
+	bool from_domain = object != NULL && object->is_domain_object;
 	
 	msg.num_buffers = rs->num_buffers;
 	msg.buffers = rs->buffers;
@@ -725,7 +725,7 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 				} else if(family == 0b10) { // X
 					list = x_descriptors;
 					assigned = &x_descriptors_assigned;
-					count = msg->num_a_descriptors;
+					count = msg->num_x_descriptors;
 				} else {
 					return LIBTRANSISTOR_ERR_UNSUPPORTED_BUFFER_TYPE;
 				}
@@ -813,7 +813,7 @@ result_t ipc_unflatten_request(ipc_message_t *msg, ipc_request_fmt_t *rq, struct
 	                - 0x10 // padding
 	                - (to_domain ? 0x10 + (rq->num_objects * sizeof(uint32_t)): 0) // domain header + in objects
 	                - (c_descriptor_u16_lengths_count * sizeof(uint16_t))
-		   ) != ipc_pad_size(rq->raw_data_size)) {
+		   ) < ipc_pad_size(rq->raw_data_size)) {
 		dbg_printf("invalid size: expected 0x%x, got 0x%x", ipc_pad_size(rq->raw_data_size), (msg->raw_data_section_size));
 		return LIBTRANSISTOR_ERR_UNEXPECTED_RAW_DATA_SIZE;
 	}

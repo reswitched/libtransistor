@@ -72,9 +72,9 @@ TransactionFormat::~TransactionFormat() {
 	if(out_objects) { delete[] out_objects; }
 }
 
-Result<IPCServer> IPCServer::Create(Waiter *waiter) {
+Result<IPCServer> IPCServer::Create(Waiter *waiter, uint32_t max_ports, uint32_t max_sessions, size_t pointer_buffer_size) {
 	ipc_server_t *server = new ipc_server_t;
-	return ResultCode::ExpectOk(ipc_server_create(server, waiter->waiter))
+	return ResultCode::ExpectOk(ipc_server_create_ex(server, waiter->waiter, max_ports, max_sessions, pointer_buffer_size))
 		.map([server](auto const &v) -> IPCServer {
 				IPCServer cpp_server(server);
 				return cpp_server;

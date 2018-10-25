@@ -38,7 +38,7 @@ class Object {
 
 class IPCServer {
  public:
-	static Result<IPCServer> Create(Waiter *waiter);
+	static Result<IPCServer> Create(Waiter *waiter, uint32_t max_ports=63, uint32_t max_sessions=63, size_t pointer_buffer_size=0x500);
 	
 	IPCServer() = delete;
 	IPCServer(const IPCServer &) = delete;
