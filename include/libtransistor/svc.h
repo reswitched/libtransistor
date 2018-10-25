@@ -714,9 +714,12 @@ result_t svcSetHardwareBreakPoint(uint32_t hw_bkpt_id, uint64_t flags, uint64_t 
 result_t svcGetDebugThreadParam(uint64_t *param1, uint32_t *param2, debug_h handle, uint64_t thread_id, uint32_t debug_thread_param);
 
 // 0x6E-0x6F?
-// createPort
+
+result_t svcCreatePort(handle_t *client, handle_t *server, uint32_t max_sessions, uint32_t is_light, const char *name_ptr);
+
 // manageNamedPort
-// connectToPort
+
+result_t svcConnectToPort(handle_t *session, handle_t port);
 
 /**
  * @brief Reprotect memory in the given process
