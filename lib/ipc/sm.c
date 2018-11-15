@@ -12,7 +12,6 @@
 
 static ipc_object_t sm_object;
 static int sm_initializations = 0;
-static bool sm_registered = false;
 
 result_t sm_init() {
 	if(sm_initializations++ > 0) {
@@ -25,9 +24,22 @@ result_t sm_init() {
 		goto fail;
 	}
 
-	sm_registered = false;
+	// sm:#0 Initialize
+	uint64_t raw = 0;
+	ipc_request_t rq = ipc_make_request(0);
+	rq.send_pid = true;
+	ipc_msg_raw_data_from_value(rq, raw);
+	
+	ipc_response_fmt_t rs = ipc_default_response_fmt;
+	r = ipc_send(sm_object, &rq, &rs);
+	if(r != RESULT_OK) {
+		goto fail_session;
+	}
+
 	return RESULT_OK;
 
+fail_session:
+	ipc_close(sm_object);
 fail:
 	sm_initializations--;
 	return r;
@@ -35,7 +47,6 @@ fail:
 
 void sm_force_finalize() {
 	ipc_close(sm_object);
-	sm_registered = false;
 	sm_initializations = 0;
 }
 
@@ -49,20 +60,6 @@ static __attribute__((destructor)) void sm_destruct() {
 	if(sm_initializations > 0) {
 		sm_force_finalize();
 	}
-}
-
-static result_t sm_register() { // we only do this when necessary
-	uint64_t raw = 0;
-	ipc_request_t rq = ipc_make_request(0);
-	rq.send_pid = true;
-	ipc_msg_raw_data_from_value(rq, raw);
-	
-	ipc_response_fmt_t rs = ipc_default_response_fmt;
-	result_t r = ipc_send(sm_object, &rq, &rs);
-	if(r == RESULT_OK) {
-		sm_registered = true;
-	}
-	return r;
 }
 
 result_t sm_get_service(ipc_object_t *out_object, const char *name) {
@@ -104,15 +101,7 @@ result_t sm_get_service_ex(ipc_object_t *out_object, const char *name, bool requ
 	rs.num_move_handles = 1;
 	rs.move_handles = &(out_object->session);
 
-	result_t r = ipc_send(sm_object, &rq, &rs);
-	if(r == 0x415 && !sm_registered) { // not initialized
-		if((r = sm_register()) != RESULT_OK) {
-			return r;
-		}
-		return sm_get_service_ex(out_object, name, require_override); // retry
-	} else {
-		return r;
-	}
+	return ipc_send(sm_object, &rq, &rs);
 }
 
 result_t sm_register_service(port_h *port, const char *name, uint32_t max_sessions) {
