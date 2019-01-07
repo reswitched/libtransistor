@@ -185,7 +185,10 @@ result_t usb_serial_write(const void *data, size_t size, size_t *bytes_written) 
 	
 	memcpy(buffer, data, size);
 	LIB_ASSERT_OK(fail, usb_ds_post_buffer_async(&endpoint_in,  buffer, size, &urb_id));
-	LIB_ASSERT_OK(fail, svcWaitSynchronization(&handle_idx, &completion_in, 1, 50000000000));
+	while((r = svcWaitSynchronization(&handle_idx, &completion_in, 1, 5000000000)) == 0xea01) {
+		// wait for transaction to complete...
+	}
+	LIB_ASSERT_OK(fail, r);
 	LIB_ASSERT_OK(fail, usb_ds_get_report_data(&endpoint_in, &report));
 	usb_ds_report_entry_t *entry = find_entry(&report, urb_id);
 	if(entry == NULL) {
@@ -217,7 +220,10 @@ result_t usb_serial_read(void *data, size_t size, size_t *bytes_read) {
 	}
 
 	LIB_ASSERT_OK(fail, usb_ds_post_buffer_async(&endpoint_out, buffer, 10, &urb_id));
-	LIB_ASSERT_OK(fail, svcWaitSynchronization(&handle_idx, &completion_out, 1, 50000000000));
+	while((r = svcWaitSynchronization(&handle_idx, &completion_out, 1, 5000000000)) == 0xea01) {
+		// wait for transaction to complete...
+	}
+	LIB_ASSERT_OK(fail, r);
 	LIB_ASSERT_OK(fail, usb_ds_get_report_data(&endpoint_out, &report));
 	usb_ds_report_entry_t *entry = find_entry(&report, urb_id);
 	if(entry == NULL) {
