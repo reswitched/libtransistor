@@ -5,9 +5,6 @@ env:
     - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
     - MEPHISTO_VERSION=v1.2.1
     - LIBTRANSISTOR_BASE_VERSION=v2.2.0-rc1
-cache:
-  directories:
-    - ${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
 matrix:
   include:
     - os: linux
@@ -33,6 +30,7 @@ addons:
       - python3
       - python3-pip
       - jq
+      - doxygen
 install:
     # Set postfix variable
     - export LLVM_POSTFIX=-5.0
@@ -56,13 +54,6 @@ install:
       fi
 
     - pip3 install --user --upgrade pip setuptools wheel
-    # Travis has an OLD doxygen build, so we fetch a recent one
-    - export DOXY_BINPATH=${DEPS_DIR}/doxygen/doxygen-1.8.11/bin
-    - if [ ! -e "$DOXY_BINPATH/doxygen" ]; then mkdir -p ${DEPS_DIR}/doxygen; fi
-    - if [ ! -e "$DOXY_BINPATH/doxygen" ]; then wget -nv http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.linux.bin.tar.gz; fi
-    - if [ ! -e "$DOXY_BINPATH/doxygen" ]; then tar xzf doxygen-1.8.11.linux.bin.tar.gz -C ${DEPS_DIR}/doxygen/; fi
-    - export PATH=$PATH:$DOXY_BINPATH
-
 before_script:
   # Get Mephisto
   - wget -nv https://github.com/reswitched/Mephisto/releases/download/$MEPHISTO_VERSION/ctu_$TRAVIS_OS_NAME
