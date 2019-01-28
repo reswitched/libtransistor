@@ -67,7 +67,7 @@ Result<debug_event_info_t> GetDebugEvent(KDebug &debug);
 Result<std::nullopt_t> ContinueDebugEvent(KDebug &debug, uint32_t continue_debug_flags, ThreadId *thread_ids, uint32_t num_threads); // requires IsDebugMode
 Result<std::vector<ThreadId>> GetThreadList(uint32_t max, KDebug &debug);
 Result<thread_context_t> GetDebugThreadContext(KDebug &debug, uint64_t thread_id, uint32_t thread_context_flags);
-Result<std::nullopt_t> SetDebugThreadContext(KDebug &debug, uint32_t flags, thread_context_t *context, ThreadId thread_id); // requires IsDebugMode
+Result<std::nullopt_t> SetDebugThreadContext(KDebug &debug, ThreadId thread_id, thread_context_t *context, uint32_t flags); // requires IsDebugMode
 Result<std::tuple<memory_info_t, uint32_t>> QueryDebugProcessMemory(KDebug &debug, uint64_t addr);
 Result<std::nullopt_t> ReadDebugProcessMemory(uint8_t *buffer, KDebug &debug, uint64_t addr, size_t size);
 Result<std::nullopt_t> WriteDebugProcessMemory(KDebug &debug, uint8_t *buffer, uint64_t addr, size_t size); // requires IsDebugMode

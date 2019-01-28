@@ -677,7 +677,7 @@ result_t svcGetThreadList(uint32_t *num_out, uint64_t *tids_out, uint32_t max_ou
 
 result_t svcGetDebugThreadContext(thread_context_t *context, debug_h handle, uint64_t thread_id, uint32_t thread_context_flags);
 
-result_t svcSetDebugThreadContext(debug_h handle, uint32_t thread_context_flags, thread_context_t *context, uint64_t thread_id);
+result_t svcSetDebugThreadContext(debug_h handle, uint64_t thread_id, thread_context_t *context, uint32_t thread_context_flags);
 
 /**
  * @brief Query debug process memory

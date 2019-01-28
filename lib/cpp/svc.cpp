@@ -183,8 +183,8 @@ Result<thread_context_t> GetDebugThreadContext(KDebug &debug, uint64_t thread_id
 		});
 }
 
-Result<std::nullopt_t> SetDebugThreadContext(KDebug &debug, uint32_t flags, thread_context_t *context, ThreadId thread_id) {
-	return ResultCode::ExpectOk(svcSetDebugThreadContext(debug.handle, flags, context, thread_id));
+Result<std::nullopt_t> SetDebugThreadContext(KDebug &debug, ThreadId thread_id, thread_context_t *context, uint32_t flags) {
+	return ResultCode::ExpectOk(svcSetDebugThreadContext(debug.handle, thread_id, context, flags));
 }
 
 Result<std::tuple<memory_info_t, uint32_t>> QueryDebugProcessMemory(KDebug &debug, uint64_t addr) {
