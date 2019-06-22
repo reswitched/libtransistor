@@ -58,10 +58,17 @@ static result_t fspfs_lookup(void *data, trn_inode_t *out, const char *name, siz
 	new_inode->fs = inode->fs;
 
 	strncpy(new_inode->path, base_path, base_path_len);
-	new_inode->path[base_path_len] = '/';
-	strncpy(new_inode->path + base_path_len + 1, name, name_len);
-	new_inode->path[base_path_len + 1 + name_len] = '\0';
-	new_inode->path_len = l;
+
+	int extra_slash = 0;
+	if (base_path_len == 0 || new_inode->path[base_path_len - 1] != '/') {
+		new_inode->path[base_path_len] = '/';
+		extra_slash = 1;
+	}
+
+	strncpy(new_inode->path + base_path_len + extra_slash, name, name_len);
+	new_inode->path[base_path_len + extra_slash + name_len] = '\0';
+	new_inode->path_len = base_path_len + name_len + extra_slash;
+
 
 	if ((r = ifilesystem_get_entry_type(inode->fs, &type, new_inode->path)) != RESULT_OK)
 		goto fail;
@@ -112,9 +119,15 @@ static result_t fspfs_create_directory(void *data, const char *name) {
 	base_path_len = inode->path_len;
 
 	strncpy(full_path, base_path, base_path_len);
-	full_path[base_path_len] = '/';
-	strncpy(full_path + base_path_len + 1, name, name_len);
-	full_path[base_path_len + 1 + name_len] = '\0';
+
+	int extra_slash = 0;
+	if (base_path_len == 0 || full_path[base_path_len - 1] != '/') {
+		full_path[base_path_len] = '/';
+		extra_slash = 1;
+	}
+
+	strncpy(full_path + base_path_len + extra_slash, name, name_len);
+	full_path[base_path_len + extra_slash + name_len] = '\0';
 
 	return ifilesystem_create_directory(inode->fs, full_path);
 }
