@@ -21,6 +21,10 @@ struct ResultCode {
 		return code == RESULT_OK;
 	}
 
+	inline bool operator==(const ResultCode &other) const {
+		return code == other.code;
+	}
+
 	trn_result_description_t Lookup();
 	
 	result_t code;
