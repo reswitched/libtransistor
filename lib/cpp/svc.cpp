@@ -203,6 +203,14 @@ Result<std::nullopt_t> WriteDebugProcessMemory(KDebug &debug, uint8_t *buffer, u
 	return ResultCode::ExpectOk(svcWriteDebugProcessMemory(debug.handle, buffer, addr, size));
 }
 
+Result<std::nullopt_t> SetHardwareBreakPoint(uint32_t hw_bkpt_id, uint64_t flags, uint64_t value) {
+	return ResultCode::ExpectOk(svcSetHardwareBreakPoint(hw_bkpt_id, flags, value));
+}
+
+Result<std::nullopt_t> SetHardwareBreakPoint(uint32_t hw_bkpt_id, uint64_t flags, KDebug &debug) {
+	return ResultCode::ExpectOk(svcSetHardwareBreakPoint(hw_bkpt_id, flags, debug.handle));
+}
+
 Result<std::nullopt_t> SetProcessMemoryPermission(KProcess &process, uint64_t addr, size_t size, uint32_t perm) {
 	return ResultCode::ExpectOk(svcSetProcessMemoryPermission(process.handle, addr, size, perm));
 }

@@ -71,6 +71,8 @@ Result<std::nullopt_t> SetDebugThreadContext(KDebug &debug, ThreadId thread_id, 
 Result<std::tuple<memory_info_t, uint32_t>> QueryDebugProcessMemory(KDebug &debug, uint64_t addr);
 Result<std::nullopt_t> ReadDebugProcessMemory(uint8_t *buffer, KDebug &debug, uint64_t addr, size_t size);
 Result<std::nullopt_t> WriteDebugProcessMemory(KDebug &debug, uint8_t *buffer, uint64_t addr, size_t size); // requires IsDebugMode
+Result<std::nullopt_t> SetHardwareBreakPoint(uint32_t hw_bkpt_id, uint64_t flags, uint64_t value);
+Result<std::nullopt_t> SetHardwareBreakPoint(uint32_t hw_bkpt_id, uint64_t flags, KDebug &debug);
 // GetDebugThreadParam
 
 
