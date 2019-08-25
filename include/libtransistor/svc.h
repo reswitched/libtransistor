@@ -107,6 +107,7 @@ typedef struct {
 		struct {
 			uint64_t x[31];
 			uint64_t sp, pc;
+			uint32_t psr;
 		};
 	};
 } thread_context_t;
