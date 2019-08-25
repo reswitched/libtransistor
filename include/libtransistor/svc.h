@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 #include<libtransistor/types.h>
+#include<assert.h>
 
 #define CURRENT_PROCESS 0xffff8001
 #define CURRENT_THREAD 0xffff8000
@@ -108,9 +109,14 @@ typedef struct {
 			uint64_t x[31];
 			uint64_t sp, pc;
 			uint32_t psr;
+			uint32_t _pad;
+			uint64_t fpr[32][2];
+			uint32_t fpcr, fpsr;
+			uint64_t tpidr;
 		};
 	};
 } thread_context_t;
+static_assert(sizeof(thread_context_t) == 800, "sizeof(thread_context_t)");
 
 /**
  * @brief Sets the size of the heap
