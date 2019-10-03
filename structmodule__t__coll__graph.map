@@ -1,0 +1,7 @@
+<map id="module_t" name="module_t">
+<area shape="rect" id="node2" href="$structtrn__list__head__t.html" title="trn_list_head_t" alt="" coords="5,97,112,124"/>
+<area shape="rect" id="node3" href="$structElf64__Dyn.html" title="Elf64_Dyn" alt="" coords="189,97,271,124"/>
+<area shape="rect" id="node4" href="$structElf64__Sym.html" title="Elf64_Sym" alt="" coords="297,97,383,124"/>
+<area shape="rect" id="node5" href="$structmodule__input__t.html" title="module_input_t" alt="" coords="407,97,517,124"/>
+<area shape="rect" id="node6" href="$structld__loader__t.html" title="ld_loader_t" alt="" coords="420,5,505,32"/>
+</map>

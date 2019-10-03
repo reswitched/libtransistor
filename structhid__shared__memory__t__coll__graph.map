@@ -1,0 +1,12 @@
+<map id="hid_shared_memory_t" name="hid_shared_memory_t">
+<area shape="rect" id="node2" href="$structhid__mouse__t.html" title="hid_mouse_t" alt="" coords="87,291,183,317"/>
+<area shape="rect" id="node3" href="$structhid__controller__t.html" title="hid_controller_t" alt="" coords="207,291,317,317"/>
+<area shape="rect" id="node4" href="$structhid__mac.html" title="hid_mac" alt="" coords="5,112,75,139"/>
+<area shape="rect" id="node5" href="$structhid__controller__state__t.html" title="hid_controller_state_t" alt="" coords="100,112,247,139"/>
+<area shape="rect" id="node6" href="$structhid__controller__state__entry__t.html" title="hid_controller_state\l_entry_t" alt="" coords="106,6,240,47"/>
+<area shape="rect" id="node7" href="$structhid__controller__color__t.html" title="hid_controller_color_t" alt="" coords="271,112,416,139"/>
+<area shape="rect" id="node8" href="$structhid__touchscreen__t.html" title="hid_touchscreen_t" alt="" coords="343,291,471,317"/>
+<area shape="rect" id="node9" href="$structhid__touch__entry__t.html" title="hid_touch_entry_t" alt="" coords="441,112,567,139"/>
+<area shape="rect" id="node10" href="$structhid__touch__data__entry__t.html" title="hid_touch_data_entry_t" alt="" coords="425,13,583,40"/>
+<area shape="rect" id="node11" href="$structhid__keyboard__t.html" title="hid_keyboard_t" alt="" coords="495,291,605,317"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="include/libtransistor/display/graphic_buffer_queue.h" name="include/libtransistor/display/graphic_buffer_queue.h">
+<area shape="rect" id="node2" href="$types_8h.html" title="Various system types. " alt="" coords="158,291,292,317"/>
+<area shape="rect" id="node6" href="$binder_8h.html" title="Data structures and functions for interacting with the Android Binder IPC interface used in vi servic..." alt="" coords="53,110,187,151"/>
+<area shape="rect" id="node8" href="$graphic__buffer_8h.html" title="Graphics buffer data structures. " alt="" coords="226,110,360,151"/>
+<area shape="rect" id="node10" href="$fence_8h.html" title="Fence data structures. " alt="" coords="438,201,572,242"/>
+<area shape="rect" id="node11" href="$rect_8h.html" title="Rectangle. " alt="" coords="528,110,662,151"/>
+<area shape="rect" id="node7" href="$parcel_8h.html" title="Data structures and functions for packing/unpacking Android Parcels. " alt="" coords="53,201,187,242"/>
+<area shape="rect" id="node9" href="$gpu_8h.html" title="GPU functions. " alt="" coords="264,208,414,235"/>
+</map>

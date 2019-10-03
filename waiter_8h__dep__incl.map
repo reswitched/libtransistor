@@ -1,0 +1,7 @@
+<map id="include/libtransistor/waiter.h" name="include/libtransistor/waiter.h">
+<area shape="rect" id="node2" href="$waiter_8hpp.html" title="Manager for waiting on synchronizable handles (C++ bindings) " alt="" coords="5,97,139,138"/>
+<area shape="rect" id="node5" href="$ipcserver_8h.html" title="IPC Server data structures and functions. " alt="" coords="163,97,297,138"/>
+<area shape="rect" id="node6" href="$nx_8h.html" title="Central Switch header. Includes all others. " alt="" coords="255,195,417,221"/>
+<area shape="rect" id="node3" href="$ipcserver_8hpp.html" title="IPC server (C++ header) " alt="" coords="95,187,229,229"/>
+<area shape="rect" id="node4" href="$nx_8hpp.html" title="Central Switch header. Includes all others (C++ version). " alt="" coords="95,278,229,319"/>
+</map>

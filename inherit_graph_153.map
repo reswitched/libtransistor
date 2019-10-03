@@ -1,0 +1,12 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classtrn_1_1KObject.html" title="trn::KObject" alt="" coords="6,107,98,133"/>
+<area shape="rect" id="node2" href="$classtrn_1_1KResourceLimit.html" title="trn::KResourceLimit" alt="" coords="152,5,291,32"/>
+<area shape="rect" id="node3" href="$classtrn_1_1KSharedMemory.html" title="trn::KSharedMemory" alt="" coords="150,56,293,83"/>
+<area shape="rect" id="node4" href="$classtrn_1_1KTransferMemory.html" title="trn::KTransferMemory" alt="" coords="147,107,296,133"/>
+<area shape="rect" id="node5" href="$classtrn_1_1KWaitable.html" title="trn::KWaitable" alt="" coords="169,157,274,184"/>
+<area shape="rect" id="node10" href="$classtrn_1_1KWEvent.html" title="trn::KWEvent" alt="" coords="171,208,272,235"/>
+<area shape="rect" id="node6" href="$classtrn_1_1KDebug.html" title="trn::KDebug" alt="" coords="350,81,442,108"/>
+<area shape="rect" id="node7" href="$classtrn_1_1KEvent.html" title="trn::KEvent" alt="" coords="352,132,440,159"/>
+<area shape="rect" id="node8" href="$classtrn_1_1KPort.html" title="trn::KPort" alt="" coords="357,183,435,209"/>
+<area shape="rect" id="node9" href="$classtrn_1_1KProcess.html" title="trn::KProcess" alt="" coords="345,233,447,260"/>
+</map>

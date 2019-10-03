@@ -1,0 +1,5 @@
+<map id="ipc_request_t" name="ipc_request_t">
+<area shape="rect" id="node2" href="$structipc__object__t.html" title="Represents either an object within an IPC domain or a standalone object. " alt="" coords="9,96,100,123"/>
+<area shape="rect" id="node3" href="$structipc__domain__t.html" title="Represents an IPC object domain. " alt="" coords="5,5,104,32"/>
+<area shape="rect" id="node4" href="$structipc__buffer__t.html" title="Buffer for transfer over IPC. " alt="" coords="125,96,216,123"/>
+</map>

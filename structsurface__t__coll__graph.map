@@ -1,0 +1,8 @@
+<map id="surface_t" name="surface_t">
+<area shape="rect" id="node2" href="$structgpu__buffer__t.html" title="Buffer to be used for various GPU functions. " alt="" coords="45,5,139,32"/>
+<area shape="rect" id="node5" href="$structgraphic__buffer__t.html" title="Graphics buffer. " alt="" coords="89,96,203,123"/>
+<area shape="rect" id="node3" href="$structfence__t.html" title="Represents conditions for the completion of an asynchronous graphics operation. " alt="" coords="229,96,294,123"/>
+<area shape="rect" id="node4" href="$structgpu__fence__t.html" title="gpu_fence_t" alt="" coords="215,5,309,32"/>
+<area shape="rect" id="node6" href="$structigbp__t.html" title="IGraphicBufferProducer object. " alt="" coords="348,96,405,123"/>
+<area shape="rect" id="node7" href="$structbinder__t.html" title="Represents a remote interface. " alt="" coords="343,5,410,32"/>
+</map>

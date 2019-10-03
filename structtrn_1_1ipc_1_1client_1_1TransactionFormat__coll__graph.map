@@ -1,0 +1,7 @@
+<map id="trn::ipc::client::TransactionFormat" name="trn::ipc::client::TransactionFormat">
+<area shape="rect" id="node2" href="$structipc__response__fmt__t.html" title="Describes format expectations for an incoming IPC response. " alt="" coords="136,187,271,213"/>
+<area shape="rect" id="node3" href="$structipc__object__t.html" title="Represents either an object within an IPC domain or a standalone object. " alt="" coords="139,96,231,123"/>
+<area shape="rect" id="node5" href="$structipc__request__t.html" title="Represents an unmarshalled outgoing IPC request. " alt="" coords="13,187,112,213"/>
+<area shape="rect" id="node4" href="$structipc__domain__t.html" title="Represents an IPC object domain. " alt="" coords="136,5,235,32"/>
+<area shape="rect" id="node6" href="$structipc__buffer__t.html" title="Buffer for transfer over IPC. " alt="" coords="5,96,96,123"/>
+</map>

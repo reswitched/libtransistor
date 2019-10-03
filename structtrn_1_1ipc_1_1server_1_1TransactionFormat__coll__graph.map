@@ -1,0 +1,12 @@
+<map id="trn::ipc::server::TransactionFormat" name="trn::ipc::server::TransactionFormat">
+<area shape="rect" id="node2" href="$structipc__response__t.html" title="Represents an unmarshalled outgoing IPC response. " alt="" coords="5,105,115,132"/>
+<area shape="rect" id="node3" href="$structipc__buffer__t.html" title="Buffer for transfer over IPC. " alt="" coords="47,5,137,32"/>
+<area shape="rect" id="node11" href="$structipc__request__fmt__t.html" title="Describes format expectations for an incoming IPC request. " alt="" coords="139,105,265,132"/>
+<area shape="rect" id="node4" href="$structipc__server__object__t.html" title="Represents the server side of an IPC object. " alt="" coords="494,5,628,32"/>
+<area shape="rect" id="node5" href="$structipc__server__domain__t.html" title="Represents the server side of an IPC object domain. " alt="" coords="641,105,783,132"/>
+<area shape="rect" id="node6" href="$structipc__server__session__t.html" title="ipc_server_session_t" alt="" coords="667,213,812,240"/>
+<area shape="rect" id="node8" href="$structipc__server__port__t.html" title="ipc_server_port_t" alt="" coords="852,403,975,429"/>
+<area shape="rect" id="node9" href="$classtrn_1_1ipc_1_1server_1_1Object.html" title="trn::ipc::server::Object" alt="" coords="291,105,443,132"/>
+<area shape="rect" id="node7" href="$structipc__server__t.html" title="ipc_server_t" alt="" coords="797,312,891,339"/>
+<area shape="rect" id="node10" href="$classtrn_1_1ipc_1_1server_1_1IPCServer.html" title="trn::ipc::server::IPCServer" alt="" coords="198,5,372,32"/>
+</map>

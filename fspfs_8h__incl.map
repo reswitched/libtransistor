@@ -1,0 +1,8 @@
+<map id="include/libtransistor/fs/fspfs.h" name="include/libtransistor/fs/fspfs.h">
+<area shape="rect" id="node2" href="$types_8h.html" title="Various system types. " alt="" coords="129,352,264,379"/>
+<area shape="rect" id="node6" href="$inode_8h.html" title="Inode structures and functions for virtual filesystem. " alt="" coords="23,104,173,131"/>
+<area shape="rect" id="node8" href="$ifilesystem_8h.html" title="IFileSystem bindings. " alt="" coords="204,97,329,138"/>
+<area shape="rect" id="node9" href="$ifile_8h.html" title="File. " alt="" coords="209,187,334,229"/>
+<area shape="rect" id="node11" href="$idirectory_8h.html" title="Directory. " alt="" coords="358,187,484,229"/>
+<area shape="rect" id="node10" href="$ipc_8h.html" title="Interprocess Communication data structures and functions. " alt="" coords="260,277,381,304"/>
+</map>

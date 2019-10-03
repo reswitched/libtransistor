@@ -1,0 +1,3 @@
+<map id="trn::ipc::Message" name="trn::ipc::Message">
+<area shape="rect" id="node2" href="$structipc__message__t.html" title="Describes an incoming IPC message. Used as an intermediate during unpacking. " alt="" coords="11,5,121,32"/>
+</map>

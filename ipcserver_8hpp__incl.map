@@ -1,0 +1,11 @@
+<map id="include/libtransistor/cpp/ipcserver.hpp" name="include/libtransistor/cpp/ipcserver.hpp">
+<area shape="rect" id="node2" href="$types_8hpp_source.html" title="libtransistor/cpp/types.hpp" alt="" coords="198,171,372,197"/>
+<area shape="rect" id="node13" href="$ipc_8hpp.html" title="IPC (C++ header) " alt="" coords="207,96,365,123"/>
+<area shape="rect" id="node14" href="$ipc_8h.html" title="Interprocess Communication data structures and functions. " alt="" coords="397,171,517,197"/>
+<area shape="rect" id="node16" href="$waiter_8hpp.html" title="Manager for waiting on synchronizable handles (C++ bindings) " alt="" coords="493,96,672,123"/>
+<area shape="rect" id="node21" href="$ipcserver_8h.html" title="IPC Server data structures and functions. " alt="" coords="696,96,853,123"/>
+<area shape="rect" id="node3" href="$types_8h.html" title="Various system types. " alt="" coords="541,320,676,347"/>
+<area shape="rect" id="node7" href="$err_8h.html" title="Error definitions. " alt="" coords="129,245,247,272"/>
+<area shape="rect" id="node8" href="$modules_8h_source.html" title="libtransistor/err/modules.h" alt="" coords="102,320,273,347"/>
+<area shape="rect" id="node17" href="$waiter_8h.html" title="Manager for waiting on synchronizable handles. " alt="" coords="824,171,963,197"/>
+</map>

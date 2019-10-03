@@ -1,0 +1,51 @@
+<map id="include/libtransistor/types.h" name="include/libtransistor/types.h">
+<area shape="rect" id="node2" href="$address__space_8h.html" title="Address space management. " alt="" coords="5,97,139,138"/>
+<area shape="rect" id="node3" href="$alloc__pages_8h.html" title="Page allocation functions. " alt="" coords="163,97,297,138"/>
+<area shape="rect" id="node4" href="$audio_8h.html" title="Audio data structures. " alt="" coords="897,187,1031,229"/>
+<area shape="rect" id="node5" href="$ipc_2audio_8h.html" title="Audio output. " alt="" coords="846,285,980,326"/>
+<area shape="rect" id="node6" href="$condvar_8h.html" title="Condition variables. " alt="" coords="2389,187,2523,229"/>
+<area shape="rect" id="node7" href="$types_8hpp_source.html" title="include/libtransistor\l/cpp/types.hpp" alt="" coords="2547,187,2681,229"/>
+<area shape="rect" id="node8" href="$binder_8h.html" title="Data structures and functions for interacting with the Android Binder IPC interface used in vi servic..." alt="" coords="2859,187,2993,229"/>
+<area shape="rect" id="node9" href="$graphic__buffer__queue_8h.html" title="Graphics buffer queues data structures and functions. " alt="" coords="3009,277,3161,333"/>
+<area shape="rect" id="node10" href="$surface_8h.html" title="Display surface data structures and functions. " alt="" coords="3018,382,3152,423"/>
+<area shape="rect" id="node11" href="$display_8h.html" title="Display data structures and functions. " alt="" coords="3123,473,3257,514"/>
+<area shape="rect" id="node12" href="$vi_8h.html" title="Visual Services. " alt="" coords="3070,563,3204,605"/>
+<area shape="rect" id="node13" href="$fence_8h.html" title="Fence data structures. " alt="" coords="3018,187,3152,229"/>
+<area shape="rect" id="node14" href="$graphic__buffer_8h.html" title="Graphics buffer data structures. " alt="" coords="3177,187,3340,229"/>
+<area shape="rect" id="node15" href="$parcel_8h.html" title="Data structures and functions for packing/unpacking Android Parcels. " alt="" coords="2910,97,3044,138"/>
+<area shape="rect" id="node16" href="$rect_8h.html" title="Rectangle. " alt="" coords="3365,187,3499,229"/>
+<area shape="rect" id="node17" href="$environment_8h.html" title="Functions to query the current environment. " alt="" coords="3483,97,3617,138"/>
+<area shape="rect" id="node18" href="$err_8h.html" title="Error definitions. " alt="" coords="2547,97,2681,138"/>
+<area shape="rect" id="node19" href="$fd_8h.html" title="File operations. " alt="" coords="3643,104,3801,131"/>
+<area shape="rect" id="node20" href="$fs_2fs_8h.html" title="Functions to setup filesystem. " alt="" coords="374,187,508,229"/>
+<area shape="rect" id="node21" href="$fspfs_8h.html" title="FSP&#45;SRV based filesystem. " alt="" coords="479,382,613,423"/>
+<area shape="rect" id="node22" href="$inode_8h.html" title="Inode structures and functions for virtual filesystem. " alt="" coords="513,97,647,138"/>
+<area shape="rect" id="node23" href="$squashfs_8h.html" title="Adapter for squashfuse to libtransistor virtual filesystem. " alt="" coords="585,187,719,229"/>
+<area shape="rect" id="node24" href="$gpu_8h.html" title="GPU functions. " alt="" coords="3171,97,3305,138"/>
+<area shape="rect" id="node25" href="$hid_8h.html" title="Controller input data structures and functions. " alt="" coords="3827,97,3961,138"/>
+<area shape="rect" id="node26" href="$am_8h.html" title="AM (Applet Manager) " alt="" coords="3401,473,3535,514"/>
+<area shape="rect" id="node27" href="$bpc_8h.html" title="Board Power Control. " alt="" coords="3986,97,4120,138"/>
+<area shape="rect" id="node28" href="$bsd_8h.html" title="BSD Sockets. " alt="" coords="2153,285,2287,326"/>
+<area shape="rect" id="node29" href="$fatal_8h.html" title="Fatal error services. " alt="" coords="4145,97,4279,138"/>
+<area shape="rect" id="node30" href="$idirectory_8h.html" title="Directory. " alt="" coords="1214,187,1348,229"/>
+<area shape="rect" id="node31" href="$ifilesystem_8h.html" title="IFileSystem bindings. " alt="" coords="1005,285,1140,326"/>
+<area shape="rect" id="node32" href="$ipc_2fs_8h.html" title="File System. " alt="" coords="1059,382,1193,423"/>
+<area shape="rect" id="node33" href="$ifile_8h.html" title="File. " alt="" coords="1055,187,1189,229"/>
+<area shape="rect" id="node34" href="$ipc_2hid_8h.html" title="Human Interface Device IPC bindings. " alt="" coords="4303,97,4437,138"/>
+<area shape="rect" id="node35" href="$nifm_8h.html" title="Network Interface Manager. " alt="" coords="4462,97,4596,138"/>
+<area shape="rect" id="node36" href="$nv_8h.html" title="Nvidia Services. " alt="" coords="4621,97,4755,138"/>
+<area shape="rect" id="node37" href="$pm_8h.html" title="Process management. " alt="" coords="4779,97,4913,138"/>
+<area shape="rect" id="node38" href="$ro_8h.html" title="Loader Services. " alt="" coords="4938,97,5072,138"/>
+<area shape="rect" id="node39" href="$sm_8h.html" title="Service Manager. " alt="" coords="1425,187,1559,229"/>
+<area shape="rect" id="node40" href="$time_8h.html" title="Time Services. " alt="" coords="5097,97,5231,138"/>
+<area shape="rect" id="node41" href="$twili_8h.html" title="Twili Services See https://github.com/misson20000/twili. " alt="" coords="1810,187,1944,229"/>
+<area shape="rect" id="node42" href="$endpoint_8h.html" title="USB&#45;as&#45;device endpoint. " alt="" coords="1635,187,1785,229"/>
+<area shape="rect" id="node43" href="$interface_8h.html" title="USB&#45;as&#45;device interface. " alt="" coords="1522,285,1672,326"/>
+<area shape="rect" id="node44" href="$usb_8h.html" title="USB Services. " alt="" coords="1643,382,1777,423"/>
+<area shape="rect" id="node45" href="$ipc_8h.html" title="Interprocess Communication data structures and functions. " alt="" coords="1601,97,1735,138"/>
+<area shape="rect" id="node46" href="$ipcserver_8h.html" title="IPC Server data structures and functions. " alt="" coords="1969,187,2103,229"/>
+<area shape="rect" id="node47" href="$loader__config_8h.html" title="Homebrew ABI configuration. " alt="" coords="2127,187,2261,229"/>
+<area shape="rect" id="node48" href="$elf_8h.html" title="ELF structures. " alt="" coords="5255,97,5389,138"/>
+<area shape="rect" id="node49" href="$ld_8h.html" title="Dynamic linking functions. " alt="" coords="5414,97,5548,138"/>
+<area shape="rect" id="node50" href="$mutex_8h.html" title="Mutex functions and thread&#45;safety macros. " alt="" coords="2337,97,2471,138"/>
+</map>

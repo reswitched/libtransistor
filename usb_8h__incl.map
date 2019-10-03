@@ -1,0 +1,7 @@
+<map id="include/libtransistor/ipc/usb.h" name="include/libtransistor/ipc/usb.h">
+<area shape="rect" id="node2" href="$types_8h.html" title="Various system types. " alt="" coords="197,352,332,379"/>
+<area shape="rect" id="node6" href="$encoding_8h.html" title="String encoding functions Based on https://github.com/nothings/stb. " alt="" coords="5,104,160,131"/>
+<area shape="rect" id="node8" href="$endpoint_8h.html" title="USB&#45;as&#45;device endpoint. " alt="" coords="139,187,273,229"/>
+<area shape="rect" id="node10" href="$interface_8h.html" title="USB&#45;as&#45;device interface. " alt="" coords="243,97,377,138"/>
+<area shape="rect" id="node9" href="$ipc_8h.html" title="Interprocess Communication data structures and functions. " alt="" coords="205,277,325,304"/>
+</map>

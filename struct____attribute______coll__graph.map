@@ -1,0 +1,5 @@
+<map id="__attribute__" name="__attribute__">
+<area shape="rect" id="node2" href="$structrect__t.html" title="A simple rectangle. " alt="" coords="5,96,59,123"/>
+<area shape="rect" id="node3" href="$structfence__t.html" title="Represents conditions for the completion of an asynchronous graphics operation. " alt="" coords="83,96,148,123"/>
+<area shape="rect" id="node4" href="$structgpu__fence__t.html" title="gpu_fence_t" alt="" coords="69,5,163,32"/>
+</map>

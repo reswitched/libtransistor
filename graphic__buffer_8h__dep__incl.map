@@ -1,0 +1,8 @@
+<map id="include/libtransistor/display/graphic_buffer.h" name="include/libtransistor/display/graphic_buffer.h">
+<area shape="rect" id="node2" href="$graphic__buffer__queue_8h.html" title="Graphics buffer queues data structures and functions. " alt="" coords="73,96,225,152"/>
+<area shape="rect" id="node3" href="$surface_8h.html" title="Display surface data structures and functions. " alt="" coords="82,201,216,242"/>
+<area shape="rect" id="node4" href="$display_8h.html" title="Display data structures and functions. " alt="" coords="82,291,216,333"/>
+<area shape="rect" id="node5" href="$vi_8h.html" title="Visual Services. " alt="" coords="5,382,139,423"/>
+<area shape="rect" id="node6" href="$nx_8h.html" title="Central Switch header. Includes all others. " alt="" coords="96,472,259,499"/>
+<area shape="rect" id="node7" href="$nx_8hpp.html" title="Central Switch header. Includes all others (C++ version). " alt="" coords="110,547,244,589"/>
+</map>

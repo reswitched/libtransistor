@@ -1,0 +1,12 @@
+<map id="include/libtransistor/cpp/ipc/usb_ds.hpp" name="include/libtransistor/cpp/ipc/usb_ds.hpp">
+<area shape="rect" id="node2" href="$types_8hpp_source.html" title="libtransistor/cpp/types.hpp" alt="" coords="218,187,392,213"/>
+<area shape="rect" id="node13" href="$usb_8hpp.html" title="USB definitions (C++ header) " alt="" coords="467,97,601,138"/>
+<area shape="rect" id="node14" href="$usb_8h.html" title="USB Services. " alt="" coords="588,187,735,213"/>
+<area shape="rect" id="node3" href="$types_8h.html" title="Various system types. " alt="" coords="601,517,736,544"/>
+<area shape="rect" id="node7" href="$err_8h.html" title="Error definitions. " alt="" coords="226,269,344,296"/>
+<area shape="rect" id="node8" href="$modules_8h_source.html" title="libtransistor/err/modules.h" alt="" coords="226,360,397,387"/>
+<area shape="rect" id="node15" href="$encoding_8h.html" title="String encoding functions Based on https://github.com/nothings/stb. " alt="" coords="858,269,1013,296"/>
+<area shape="rect" id="node17" href="$endpoint_8h.html" title="USB&#45;as&#45;device endpoint. " alt="" coords="542,353,676,394"/>
+<area shape="rect" id="node19" href="$interface_8h.html" title="USB&#45;as&#45;device interface. " alt="" coords="647,262,781,303"/>
+<area shape="rect" id="node18" href="$ipc_8h.html" title="Interprocess Communication data structures and functions. " alt="" coords="609,443,729,469"/>
+</map>

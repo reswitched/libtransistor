@@ -1,0 +1,4 @@
+<map id="audio_output_t" name="audio_output_t">
+<area shape="rect" id="node2" href="$structipc__object__t.html" title="Represents either an object within an IPC domain or a standalone object. " alt="" coords="13,96,104,123"/>
+<area shape="rect" id="node3" href="$structipc__domain__t.html" title="Represents an IPC object domain. " alt="" coords="9,5,108,32"/>
+</map>

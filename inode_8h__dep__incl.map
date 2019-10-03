@@ -1,0 +1,8 @@
+<map id="include/libtransistor/fs/inode.h" name="include/libtransistor/fs/inode.h">
+<area shape="rect" id="node2" href="$fs_2fs_8h.html" title="Functions to setup filesystem. " alt="" coords="5,97,139,138"/>
+<area shape="rect" id="node3" href="$nx_8h.html" title="Central Switch header. Includes all others. " alt="" coords="201,187,364,213"/>
+<area shape="rect" id="node5" href="$fspfs_8h.html" title="FSP&#45;SRV based filesystem. " alt="" coords="215,97,349,138"/>
+<area shape="rect" id="node6" href="$mountfs_8h.html" title="Root Filesystem. " alt="" coords="374,97,508,138"/>
+<area shape="rect" id="node7" href="$squashfs_8h.html" title="Adapter for squashfuse to libtransistor virtual filesystem. " alt="" coords="533,97,667,138"/>
+<area shape="rect" id="node4" href="$nx_8hpp.html" title="Central Switch header. Includes all others (C++ version). " alt="" coords="215,262,349,303"/>
+</map>

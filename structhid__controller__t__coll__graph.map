@@ -1,0 +1,6 @@
+<map id="hid_controller_t" name="hid_controller_t">
+<area shape="rect" id="node2" href="$structhid__mac.html" title="hid_mac" alt="" coords="5,112,75,139"/>
+<area shape="rect" id="node3" href="$structhid__controller__state__t.html" title="hid_controller_state_t" alt="" coords="100,112,247,139"/>
+<area shape="rect" id="node4" href="$structhid__controller__state__entry__t.html" title="hid_controller_state\l_entry_t" alt="" coords="106,6,240,47"/>
+<area shape="rect" id="node5" href="$structhid__controller__color__t.html" title="hid_controller_color_t" alt="" coords="271,112,416,139"/>
+</map>

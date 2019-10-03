@@ -1,0 +1,8 @@
+<map id="include/libtransistor/ipc/usb/ds/endpoint.h" name="include/libtransistor/ipc/usb/ds/endpoint.h">
+<area shape="rect" id="node2" href="$interface_8h.html" title="USB&#45;as&#45;device interface. " alt="" coords="49,97,199,138"/>
+<area shape="rect" id="node3" href="$usb_8h.html" title="USB Services. " alt="" coords="113,187,247,229"/>
+<area shape="rect" id="node4" href="$usb_8hpp.html" title="USB definitions (C++ header) " alt="" coords="113,278,247,319"/>
+<area shape="rect" id="node5" href="$usb__ds_8hpp.html" title="USB&#45;DS IPC bindings (C++ header) " alt="" coords="5,369,144,410"/>
+<area shape="rect" id="node7" href="$nx_8h.html" title="Central Switch header. Includes all others. " alt="" coords="219,376,381,403"/>
+<area shape="rect" id="node6" href="$nx_8hpp.html" title="Central Switch header. Includes all others (C++ version). " alt="" coords="114,459,248,501"/>
+</map>

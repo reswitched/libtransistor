@@ -1,0 +1,4 @@
+<map id="usb_ds_interface_t" name="usb_ds_interface_t">
+<area shape="rect" id="node2" href="$structipc__object__t.html" title="Represents either an object within an IPC domain or a standalone object. " alt="" coords="25,96,116,123"/>
+<area shape="rect" id="node3" href="$structipc__domain__t.html" title="Represents an IPC object domain. " alt="" coords="21,5,120,32"/>
+</map>

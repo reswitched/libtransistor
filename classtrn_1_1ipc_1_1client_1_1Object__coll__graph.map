@@ -1,0 +1,4 @@
+<map id="trn::ipc::client::Object" name="trn::ipc::client::Object">
+<area shape="rect" id="node2" href="$structipc__object__t.html" title="Represents either an object within an IPC domain or a standalone object. " alt="" coords="33,96,124,123"/>
+<area shape="rect" id="node3" href="$structipc__domain__t.html" title="Represents an IPC object domain. " alt="" coords="29,5,128,32"/>
+</map>

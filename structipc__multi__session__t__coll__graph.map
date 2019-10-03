@@ -1,0 +1,5 @@
+<map id="ipc_multi_session_t" name="ipc_multi_session_t">
+<area shape="rect" id="node2" href="$structipc__object__t.html" title="Represents either an object within an IPC domain or a standalone object. " alt="" coords="9,96,100,123"/>
+<area shape="rect" id="node4" href="$structipc__multi__session__node__t.html" title="ipc_multi_session_node_t" alt="" coords="103,188,275,215"/>
+<area shape="rect" id="node3" href="$structipc__domain__t.html" title="Represents an IPC object domain. " alt="" coords="5,5,104,32"/>
+</map>

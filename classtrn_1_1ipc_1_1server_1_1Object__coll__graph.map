@@ -1,0 +1,8 @@
+<map id="trn::ipc::server::Object" name="trn::ipc::server::Object">
+<area shape="rect" id="node2" href="$classtrn_1_1ipc_1_1server_1_1IPCServer.html" title="trn::ipc::server::IPCServer" alt="" coords="506,5,680,32"/>
+<area shape="rect" id="node3" href="$structipc__server__object__t.html" title="Represents the server side of an IPC object. " alt="" coords="219,5,353,32"/>
+<area shape="rect" id="node4" href="$structipc__server__domain__t.html" title="Represents the server side of an IPC object domain. " alt="" coords="153,105,295,132"/>
+<area shape="rect" id="node5" href="$structipc__server__session__t.html" title="ipc_server_session_t" alt="" coords="154,205,299,232"/>
+<area shape="rect" id="node7" href="$structipc__server__port__t.html" title="ipc_server_port_t" alt="" coords="317,387,440,413"/>
+<area shape="rect" id="node6" href="$structipc__server__t.html" title="ipc_server_t" alt="" coords="268,296,361,323"/>
+</map>
